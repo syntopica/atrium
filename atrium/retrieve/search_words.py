@@ -24,8 +24,10 @@ def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) ->
     match = _match_expression(query)
     if not match:
         return []
-    rows = connection.execute(_QUERY, (match, limit)).fetchall()
-    return [
+    verifiers, has_plain_term = _verifiers(query)
+    fetch = limit if has_plain_term or not verifiers else max(limit * 5, 50)
+    rows = connection.execute(_QUERY, (match, fetch)).fetchall()
+    hits = [
         Hit(
             record_id=row[0],
             text=row[1],
@@ -38,6 +40,9 @@ def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) ->
         )
         for row in rows
     ]
+    if verifiers and not has_plain_term:
+        hits = [hit for hit in hits if any(rx.search(hit.text) for rx in verifiers)]
+    return hits[:limit]
 
 
 def _match_expression(query: str) -> str:
@@ -68,3 +73,30 @@ def _match_expression(query: str) -> str:
             # from around it, which is what distinguishes `C#` from a stray `a`.
             expressions.append(f'"{parts[0]}"')
     return " OR ".join(expressions)
+
+
+def _verifiers(query: str) -> tuple[list[re.Pattern], bool]:
+    """Build adjacency checks for punctuated terms, and note plain ones.
+
+    An FTS5 phrase preserves token order but not the punctuation between tokens,
+    so the phrase for `3.7.0` also matches `allocate 3 7 0 workers`. Each
+    multi-part term therefore gets a regex requiring its parts to be joined by
+    punctuation, not whitespace, in the stored text. The filter applies only when
+    every term is punctuated: terms are OR-ed, and a hit that fails the regexes
+    may still have matched a plain word this function cannot see.
+    """
+    verifiers = []
+    has_plain_term = False
+    for raw_term in query.split():
+        parts = re.findall(r"[^\W_]+", raw_term, flags=re.UNICODE)
+        if not parts:
+            continue
+        if len(parts) > 1:
+            # The separator class is "punctuation": anything that is neither
+            # whitespace nor alphanumeric. `_` must be included explicitly --
+            # it counts as \w, yet it is exactly what joins snake_case parts.
+            joined = r"(?:[^\w\s]|_)+".join(re.escape(part) for part in parts)
+            verifiers.append(re.compile(rf"(?<!\w){joined}(?!\w)", re.IGNORECASE))
+        else:
+            has_plain_term = True
+    return verifiers, has_plain_term

@@ -71,4 +71,20 @@ def _split_to_size(section: str) -> list[str]:
             current = candidate
     if current:
         pieces.append(current)
-    return pieces
+    return [slice_ for piece in pieces for slice_ in _hard_split(piece)]
+
+
+def _hard_split(piece: str) -> list[str]:
+    """Bound even a single unbroken paragraph.
+
+    Paragraph packing alone let a 17,999-character table through (reproduced by
+    review), and past the embedder's 2,048-token truncation the tail of such a
+    chunk contributes nothing to its vector -- two long texts differing only in
+    their tails embedded byte-identically. The cut is positional, so it stays
+    deterministic across machines.
+    """
+    if len(piece) <= _MAX_CHUNK_CHARS:
+        return [piece]
+    return [
+        piece[start : start + _MAX_CHUNK_CHARS] for start in range(0, len(piece), _MAX_CHUNK_CHARS)
+    ]

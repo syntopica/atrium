@@ -26,7 +26,9 @@ def fuse_ranked(lexical: list[Hit], dense: list[Hit], limit: int = 20) -> list[H
         for rank, hit in enumerate(hits, start=1):
             scores[hit.record_id] = scores.get(hit.record_id, 0.0) + weight / (_K + rank)
             first_seen.setdefault(hit.record_id, hit)
-    ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)[:limit]
+    # record_id breaks score ties so equal-score fusions rank identically on
+    # every machine, whatever order the lanes delivered their hits in.
+    ranked = sorted(scores.items(), key=lambda item: (-item[1], item[0]))[:limit]
     return [
         replace(first_seen[record_id], score=score, lane="fused") for record_id, score in ranked
     ]

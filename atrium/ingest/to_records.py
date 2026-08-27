@@ -1,6 +1,6 @@
 """Turn one canonical conversation into retrievable records."""
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from atrium.record import Record
 

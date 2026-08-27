@@ -1,7 +1,6 @@
 """One retrievable unit of memory."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -25,7 +24,7 @@ class Record:
     provider: str
     role: str
     text: str
-    authored_at: Optional[str]
-    workspace: Optional[str]
-    title: Optional[str]
+    authored_at: str | None
+    workspace: str | None
+    title: str | None
     event_index: int

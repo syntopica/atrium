@@ -1,7 +1,7 @@
 """Write records into the index and keep both lexical lanes in step."""
 
 import sqlite3
-from typing import Iterable
+from collections.abc import Iterable
 
 from atrium.record import Record
 

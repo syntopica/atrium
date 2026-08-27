@@ -50,6 +50,15 @@ def main(argv: list[str] | None = None) -> int:
 
     subcommands.add_parser("embed", help="Embed semantic-layer records that lack a vector")
 
+    synthesize = subcommands.add_parser(
+        "synthesize", help="Synthesize archive episodes into the registry (Max lane)"
+    )
+    synthesize.add_argument("archive", type=Path)
+    synthesize.add_argument("--limit", type=_positive_limit, default=None)
+    synthesize.add_argument("--dry-run", action="store_true")
+
+    subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
+
     search = subcommands.add_parser("search", help="Search the index")
     search.add_argument("query")
     search.add_argument("--limit", type=_positive_limit, default=10)
@@ -73,6 +82,10 @@ def main(argv: list[str] | None = None) -> int:
         )
     if args.command == "embed":
         return _embed(args.index)
+    if args.command == "synthesize":
+        return _synthesize(args.archive, args.limit, args.dry_run)
+    if args.command == "ingest-synthesis":
+        return _ingest_synthesis(args.index)
     if args.command == "search":
         lane = (
             "substring"
@@ -210,6 +223,64 @@ def _embed(index: Path) -> int:
         connection.close()
     if written < processed:
         print(f"  {processed - written} superseded mid-run and skipped; run embed again")
+    return 0
+
+
+def _synthesize(archive: Path, limit: int | None, dry_run: bool) -> int:
+    """Synthesize episodes newest-first; resumable, so interruption is cheap."""
+    from atrium.synthesize.max_lane_tokens import max_lane_tokens
+    from atrium.synthesize.segment_episodes import segment_episodes
+    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
+    from atrium.synthesize.synthesize_conversation import synthesize_conversation
+
+    conversations = sorted(
+        read_archive(archive),
+        key=lambda c: c.get("updatedAt") or c.get("startedAt") or "",
+        reverse=True,
+    )
+    if limit is not None:
+        conversations = conversations[:limit]
+    if dry_run:
+        episodes = sum(len(segment_episodes(c.get("events") or [])) for c in conversations)
+        print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
+        return 0
+    tokens = max_lane_tokens()
+    made = skipped = 0
+    for position, conversation in enumerate(conversations, start=1):
+        result = synthesize_conversation(conversation, tokens, DEFAULT_REGISTRY)
+        made += result["synthesized"]
+        skipped += result["skipped"]
+        print(
+            f"  [{position}/{len(conversations)}] {conversation['id'][:12]} "
+            f"+{result['synthesized']} (skipped {result['skipped']}) total {made}",
+            flush=True,
+        )
+    print(f"  synthesized {made}, already present {skipped}, registry {DEFAULT_REGISTRY}")
+    return 0
+
+
+def _ingest_synthesis(index: Path) -> int:
+    """Index every registry record; same sweep contract as the other ingests."""
+    from atrium.ingest.to_synthesis_records import to_synthesis_records
+    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY, read_records
+
+    connection = open_store(index)
+    total = 0
+    seen: set[str] = set()
+    by_conversation: dict[str, list] = {}
+    for record in read_records(DEFAULT_REGISTRY):
+        for row in to_synthesis_records(record):
+            by_conversation.setdefault(row.conversation_id, []).append(row)
+    try:
+        with connection:
+            for conversation_id, rows in sorted(by_conversation.items()):
+                total += write_conversation(connection, conversation_id, rows)
+                seen.add(conversation_id)
+            removed = delete_absent_conversations(connection, "synthesis", seen)
+    finally:
+        connection.close()
+    swept = f", {removed} absent removed" if removed else ""
+    print(f"  {len(seen)} conversations -> {total} synthesis records indexed{swept}")
     return 0
 
 

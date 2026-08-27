@@ -82,6 +82,49 @@ def test_a_version_query_finds_the_version(tmp_path):
     assert [hit.record_id for hit in hits] == ["ver"]
 
 
+def test_a_version_query_rejects_the_same_tokens_separated_by_spaces(tmp_path):
+    """An FTS5 phrase preserves token order but not the punctuation between
+    tokens, so `3.7.0` also matched `allocate 3 7 0 workers`. The adjacency
+    filter requires the parts to be joined by punctuation in the stored text."""
+    connection = _store(
+        tmp_path,
+        [
+            _record("ver", "the fork is pinned to memstore 3.7.0 for now"),
+            _record("shift", "allocate 3 7 0 workers across shifts"),
+        ],
+    )
+    hits = search_words(connection, "3.7.0")
+    assert [hit.record_id for hit in hits] == ["ver"]
+
+
+def test_a_snake_case_identifier_still_matches_through_the_adjacency_filter(tmp_path):
+    """`_` is a \\w character, so a separator class of bare `[^\\w\\s]+` would
+    silently drop every snake_case hit. The identifier query keeps working."""
+    connection = _store(
+        tmp_path,
+        [
+            _record("fn", "call memstore_delete_drawers to remove them"),
+            _record("spaced", "memstore delete drawers one at a time"),
+        ],
+    )
+    hits = search_words(connection, "memstore_delete_drawers")
+    assert [hit.record_id for hit in hits] == ["fn"]
+
+
+def test_a_punctuated_term_next_to_a_plain_word_keeps_or_semantics(tmp_path):
+    """Terms are OR-ed. A hit that fails the adjacency check may still have
+    matched a plain word the filter cannot see, so mixed queries do not filter."""
+    connection = _store(
+        tmp_path,
+        [
+            _record("prose", "the retrieval layer was rebuilt yesterday"),
+            _record("shift", "allocate 3 7 0 workers across shifts"),
+        ],
+    )
+    hits = search_words(connection, "retrieval 3.7.0")
+    assert "prose" in [hit.record_id for hit in hits]
+
+
 def test_a_hyphenated_model_name_is_not_truncated(tmp_path):
     connection = _store(tmp_path, [_record("m", "we benchmarked GPT-5.3 against the others")])
     assert [hit.record_id for hit in search_words(connection, "GPT-5.3")] == ["m"]

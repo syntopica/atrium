@@ -29,8 +29,8 @@
   needs authorization to change that repo).
 - [~] Materialize the full canonical archive: every exportable source is now
   exported and ingested (2026-08-27) — claude-code 442,447 records, cursor
-  67,568, opencode 2,586, pi 63, openclaw 2, plus brain notes 3,599 = 516,265
-  records, 6 sources. Counts match the export CLI exactly (the identity fix
+  67,568, opencode 2,586, pi 63, openclaw 2, plus brain notes 4,545 = 517,211
+  records, 6 sources (rebuilt under pipeline 2 after the review fixes). Counts match the export CLI exactly (the identity fix
   holds at full scale; the pre-fix path lost 73 Cursor rows). Remaining:
   decide a durable location for the canonical archive files (today they live
   in a session scratchpad — the index survives rebuilds only if the archive
@@ -86,10 +86,6 @@
   contradiction resolved first: layer 2 must stay disposable, so synthesis,
   query log and proposal state either live in brain or in an explicitly
   backed-up sidecar. As designed today a rebuild would erase them.
-- [ ] Studies directory: one note per memory system analyzed (which mechanism
-  to adopt and why). Pending second research round: mem0, Letta/MemGPT,
-  Graphiti — the systems `~/p/brain/topics/agent-memory.md` does not cover in
-  depth.
 
 ## Cross-project
 

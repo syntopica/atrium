@@ -64,3 +64,28 @@ def test_every_hit_names_the_lane_that_found_it(tmp_path):
     """Fusion is never allowed to be the only output, so lane is not optional."""
     connection = _store(tmp_path, [_record("a", "a record about retrieval and memory")])
     assert search_words(connection, "retrieval")[0].lane == "words"
+
+
+def test_a_version_query_finds_the_version(tmp_path):
+    """`3.7.0` must not return nothing. The index tokenizer splits on punctuation,
+    so the query becomes a phrase over the adjacent tokens instead of being
+    dropped -- this lane exists for versions, identifiers and names."""
+    connection = _store(
+        tmp_path,
+        [
+            _record("ver", "the fork is pinned to memstore 3.7.0 for now"),
+            _record("apart", "we tried 3 approaches, 7 failures and 0 regressions"),
+        ],
+    )
+    hits = search_words(connection, "3.7.0")
+    assert [hit.record_id for hit in hits] == ["ver"]
+
+
+def test_a_hyphenated_model_name_is_not_truncated(tmp_path):
+    connection = _store(tmp_path, [_record("m", "we benchmarked GPT-5.3 against the others")])
+    assert [hit.record_id for hit in search_words(connection, "GPT-5.3")] == ["m"]
+
+
+def test_a_query_of_only_punctuation_returns_nothing_rather_than_raising(tmp_path):
+    connection = _store(tmp_path, [_record("a", "some ordinary prose about retrieval")])
+    assert search_words(connection, "...") == []

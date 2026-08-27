@@ -1,5 +1,6 @@
 """Turn one canonical conversation into retrievable records."""
 
+import re
 from collections.abc import Iterator
 
 from atrium.record import Record
@@ -11,18 +12,27 @@ from atrium.record import Record
 # search.
 CONVERSATIONAL_ROLES = frozenset({"user", "assistant"})
 
-# An event shorter than this carries no retrievable claim. Measured on the
-# previous index: 101,967 records (7.6%) were under this length, and they are
-# acknowledgements -- "ok", "adelante", "gracias".
-MIN_TEXT_LENGTH = 120
+# Bare acknowledgements carry no retrievable claim. This is deliberately a
+# pattern and not a length: measured over 882 real conversational messages,
+# dropping everything under 120 characters would discard 43.4% of them, and the
+# sample is full of short facts a memory exists to keep -- "63 tests verdes",
+# "Commit hecho. Deploy a server-a.", "YAML roto: dos puntos dentro de scalar
+# plano". The pattern below drops 1.0% of the same set.
+_ACKNOWLEDGEMENT = re.compile(
+    r"^(ok|okay|vale|dale|adelante|s[ií]|no|gracias|perfecto|genial|"
+    r"contin[uú]a|continua|sigue|listo|hecho|bien|correcto|exacto|claro)"
+    r"[\s.,!¡¿?]*$",
+    re.IGNORECASE,
+)
 
 
 def to_records(conversation: dict) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
-    Skips non-conversational events and acknowledgements. Nothing is deleted by
-    skipping: the archive keeps every event, and this only decides what earns a
-    row in a derived index that can be rebuilt with a different rule tomorrow.
+    Skips non-conversational events and bare acknowledgements. Nothing is
+    deleted by skipping: the archive keeps every event, and this only decides
+    what earns a row in a derived index that can be rebuilt with a different
+    rule tomorrow.
     """
     conversation_id = conversation.get("id")
     provenance = conversation.get("provenance") or {}
@@ -40,7 +50,7 @@ def to_records(conversation: dict) -> Iterator[Record]:
         if event.get("role") not in CONVERSATIONAL_ROLES:
             continue
         text = (event.get("text") or "").strip()
-        if len(text) < MIN_TEXT_LENGTH:
+        if not text or _ACKNOWLEDGEMENT.match(text):
             continue
         event_id = event.get("id")
         if not event_id:

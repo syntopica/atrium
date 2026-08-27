@@ -1,8 +1,8 @@
 """Stream conversations out of a canonical rocket-agents archive."""
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator
 
 
 def read_archive(path: Path) -> Iterator[dict]:

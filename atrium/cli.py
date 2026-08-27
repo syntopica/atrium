@@ -140,9 +140,14 @@ def _embed(index: Path) -> int:
 
     connection = open_store(index)
     placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
+    # Ordered by text length so each sub-batch pads to a similar length: the
+    # ONNX graph's attention cost grows with the square of the padded length,
+    # and one long chunk in a batch of short ones prices the whole batch at
+    # the long one's padding.
     pending = connection.execute(
         f"SELECT record_id, text FROM records WHERE role IN ({placeholders}) "
-        "AND record_id NOT IN (SELECT record_id FROM vectors) ORDER BY record_id",
+        "AND record_id NOT IN (SELECT record_id FROM vectors) "
+        "ORDER BY length(text), record_id",
         SEMANTIC_ROLES,
     ).fetchall()
     if not pending:

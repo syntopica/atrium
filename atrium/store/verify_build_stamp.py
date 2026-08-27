@@ -23,7 +23,11 @@ def verify_build_stamp(connection: sqlite3.Connection, *, stamp_if_empty: bool) 
         ) from error
 
     if not stored:
-        if not stamp_if_empty:
+        populated = connection.execute("SELECT 1 FROM records LIMIT 1").fetchone()
+        if not stamp_if_empty or populated:
+            # A populated index with no stamp predates versioning (or lost its
+            # metadata); adopting and stamping it would launder unknown-pipeline
+            # content as current. Refusing is cheap -- the index is disposable.
             raise RuntimeError(
                 "this index was never stamped with build versions -- delete it and re-ingest"
             )

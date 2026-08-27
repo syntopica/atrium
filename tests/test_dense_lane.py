@@ -61,7 +61,7 @@ def _store_with_vectors(tmp_path, vectors_by_id, texts_by_id=None):
         )
         write_vectors(
             connection,
-            list(vectors_by_id),
+            [(rid, "s") for rid in vectors_by_id],
             np.asarray(list(vectors_by_id.values()), dtype=np.float32),
         )
     return connection
@@ -123,6 +123,81 @@ def test_hybrid_degrades_to_lexical_when_nothing_is_embedded(tmp_path):
     connection.close()
     assert [h.record_id for h in hits] == ["a"]
     assert hits[0].lane == "words"
+
+
+def test_a_stale_revision_never_gets_its_vector_stored(tmp_path):
+    """Embedding takes seconds; a reconciliation landing in between must not
+    leave a vector computed from superseded text attached to the new revision."""
+    connection = open_store(tmp_path / "index.sqlite3")
+    with connection:
+        write_conversation(connection, "c", [_record("a", "new meaning")])
+        written = write_vectors(
+            connection, [("a", "sha-of-the-old-revision")], np.asarray([[1.0, 0.0]])
+        )
+    remaining = connection.execute("SELECT count(*) FROM vectors").fetchone()[0]
+    connection.close()
+    assert written == 0
+    assert remaining == 0
+
+
+def test_hybrid_fetches_deeper_than_the_requested_limit(tmp_path):
+    """With limit=1, a record ranked second in BOTH lanes must still win the
+    fusion -- reusing the output limit as candidate depth returned the wrong
+    top result."""
+    connection = _store_with_vectors(
+        tmp_path,
+        {"both": [0.8, 0.2], "dense-only": [1.0, 0.0]},
+        texts_by_id={
+            "both": "retrieval retrieval prose",
+            "dense-only": "unrelated words entirely",
+        },
+    )
+    with connection:
+        write_conversation(
+            connection,
+            "c2",
+            [
+                Record(
+                    record_id="lex-only",
+                    event_id="lex-only",
+                    conversation_id="c2",
+                    source_sha256="s",
+                    provider="test",
+                    role="user",
+                    text="retrieval retrieval retrieval retrieval",
+                    authored_at=None,
+                    workspace=None,
+                    title=None,
+                    event_index=0,
+                )
+            ],
+        )
+    hits = search_hybrid(connection, _FakeEmbedder([1.0, 0.0]), "retrieval", limit=1)
+    connection.close()
+    assert [h.record_id for h in hits] == ["both"]
+
+
+def test_equal_scores_rank_identically_whatever_the_insertion_order(tmp_path):
+    """A fresh build and a reconciled build store identical rows in different
+    physical order; equal-score dense results must not follow row order."""
+
+    def build(tmp, ids):
+        connection = open_store(tmp)
+        with connection:
+            write_conversation(connection, "c", [_record(rid, rid) for rid in ids])
+            write_vectors(
+                connection, [(rid, "s") for rid in ids], np.asarray([[1.0, 0.0]] * len(ids))
+            )
+        return connection
+
+    first = build(tmp_path / "one.sqlite3", ["b", "a"])
+    second = build(tmp_path / "two.sqlite3", ["a", "b"])
+    query = np.asarray([1.0, 0.0], dtype=np.float32)
+    order_one = [h.record_id for h in search_dense(first, query)]
+    order_two = [h.record_id for h in search_dense(second, query)]
+    first.close()
+    second.close()
+    assert order_one == order_two == ["a", "b"]
 
 
 def test_hybrid_fuses_when_both_lanes_see_the_query(tmp_path):

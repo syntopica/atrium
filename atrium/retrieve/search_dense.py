@@ -11,6 +11,7 @@ SELECT v.record_id, v.vector, r.text, r.conversation_id, r.source_sha256,
        r.authored_at, r.provider
 FROM vectors v
 JOIN records r ON r.record_id = v.record_id
+ORDER BY v.record_id
 """
 
 
@@ -31,7 +32,11 @@ def search_dense(
         len(rows), -1
     )
     scores = matrix @ np.asarray(query_vector, dtype=np.float32)
-    order = np.argsort(scores)[::-1][:limit]
+    # Ties break on record_id (the rows arrive record_id-ordered and the sort
+    # is stable), never on physical row order: a fresh build and a reconciled
+    # build store identical rows in different order, and equal-score results
+    # must still rank identically on every machine.
+    order = np.argsort(-scores, kind="stable")[:limit]
     return [
         Hit(
             record_id=rows[i][0],

@@ -1,7 +1,8 @@
-"""Word-level lexical retrieval — the exact-recall lane."""
+"""Word-level lexical retrieval -- the exact-recall lane."""
 
 import re
 import sqlite3
+import unicodedata
 
 from atrium.retrieve.hit import Hit
 
@@ -14,9 +15,11 @@ SELECT r.record_id, r.text, -bm25(words) AS score, r.conversation_id,
 FROM words
 JOIN records r ON r.rowid = words.rowid
 WHERE words MATCH ?
-ORDER BY bm25(words)
-LIMIT ?
+ORDER BY bm25(words), r.record_id
+LIMIT ? OFFSET ?
 """
+
+_PAGE = 200
 
 
 def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) -> list[Hit]:
@@ -25,9 +28,28 @@ def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) ->
     if not match:
         return []
     verifiers, has_plain_term = _verifiers(query)
-    fetch = limit if has_plain_term or not verifiers else max(limit * 5, 50)
-    rows = connection.execute(_QUERY, (match, fetch)).fetchall()
-    hits = [
+    if has_plain_term or not verifiers:
+        return _hits(connection.execute(_QUERY, (match, limit, 0)).fetchall())[:limit]
+    # Every term is punctuated, so every candidate must pass an adjacency
+    # check. Paginate until enough verified hits or the candidates run out: a
+    # fixed oversample cannot guarantee recall -- with 60 spaced `3 7 0` rows
+    # ranked above the one real `3.7.0`, any finite prefetch under 61 returns
+    # nothing (reproduced by review).
+    verified: list[Hit] = []
+    offset = 0
+    while len(verified) < limit:
+        rows = connection.execute(_QUERY, (match, _PAGE, offset)).fetchall()
+        if not rows:
+            break
+        verified.extend(
+            hit for hit in _hits(rows) if any(rx.search(_fold(hit.text)) for rx in verifiers)
+        )
+        offset += _PAGE
+    return verified[:limit]
+
+
+def _hits(rows: list) -> list[Hit]:
+    return [
         Hit(
             record_id=row[0],
             text=row[1],
@@ -40,9 +62,6 @@ def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) ->
         )
         for row in rows
     ]
-    if verifiers and not has_plain_term:
-        hits = [hit for hit in hits if any(rx.search(hit.text) for rx in verifiers)]
-    return hits[:limit]
 
 
 def _match_expression(query: str) -> str:
@@ -84,6 +103,11 @@ def _verifiers(query: str) -> tuple[list[re.Pattern], bool]:
     punctuation, not whitespace, in the stored text. The filter applies only when
     every term is punctuated: terms are OR-ed, and a hit that fails the regexes
     may still have matched a plain word this function cannot see.
+
+    Patterns are built over diacritic-folded text and must be matched against
+    ``_fold``-ed text: the index tokenizer removes diacritics, so `café-au-lait`
+    finds a stored `cafe-au-lait`, and a verifier comparing raw strings would
+    silently throw that legitimate hit away (reproduced by review).
     """
     verifiers = []
     has_plain_term = False
@@ -95,8 +119,14 @@ def _verifiers(query: str) -> tuple[list[re.Pattern], bool]:
             # The separator class is "punctuation": anything that is neither
             # whitespace nor alphanumeric. `_` must be included explicitly --
             # it counts as \w, yet it is exactly what joins snake_case parts.
-            joined = r"(?:[^\w\s]|_)+".join(re.escape(part) for part in parts)
+            joined = r"(?:[^\w\s]|_)+".join(re.escape(_fold(part)) for part in parts)
             verifiers.append(re.compile(rf"(?<!\w){joined}(?!\w)", re.IGNORECASE))
         else:
             has_plain_term = True
     return verifiers, has_plain_term
+
+
+def _fold(text: str) -> str:
+    """Strip diacritics the way the index tokenizer does (remove_diacritics 2)."""
+    decomposed = unicodedata.normalize("NFKD", text)
+    return "".join(char for char in decomposed if not unicodedata.combining(char))

@@ -10,6 +10,7 @@ from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
 from atrium.retrieve.search_substrings import search_substrings
 from atrium.retrieve.search_words import search_words
+from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
 from atrium.store.write_conversation import write_conversation
 
@@ -23,6 +24,12 @@ def main(argv: list[str] | None = None) -> int:
 
     ingest = subcommands.add_parser("ingest", help="Index a canonical archive")
     ingest.add_argument("archive", type=Path)
+    ingest.add_argument(
+        "--partial",
+        action="store_true",
+        help="The archive is a slice, not a source's full export: skip the sweep "
+        "that removes conversations absent from it",
+    )
 
     notes = subcommands.add_parser("ingest-notes", help="Index a tree of curated markdown notes")
     notes.add_argument("root", type=Path)
@@ -33,6 +40,12 @@ def main(argv: list[str] | None = None) -> int:
         default=[],
         metavar="DIR",
         help="Directory name to skip anywhere under the root (repeatable)",
+    )
+    notes.add_argument(
+        "--partial",
+        action="store_true",
+        help="The root is a slice of the provider's notes: skip the sweep that "
+        "removes notes absent from it",
     )
 
     subcommands.add_parser("embed", help="Embed semantic-layer records that lack a vector")
@@ -53,9 +66,11 @@ def main(argv: list[str] | None = None) -> int:
 
     args = parser.parse_args(argv)
     if args.command == "ingest":
-        return _ingest(args.index, args.archive)
+        return _ingest(args.index, args.archive, sweep=not args.partial)
     if args.command == "ingest-notes":
-        return _ingest_notes(args.index, args.root, args.provider, tuple(args.exclude))
+        return _ingest_notes(
+            args.index, args.root, args.provider, tuple(args.exclude), sweep=not args.partial
+        )
     if args.command == "embed":
         return _embed(args.index)
     if args.command == "search":
@@ -72,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
     return _status(args.index)
 
 
-def _ingest(index: Path, archive: Path) -> int:
+def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     """Index an archive, or change nothing at all.
 
     One transaction for the whole run. A malformed line partway through an
@@ -80,10 +95,17 @@ def _ingest(index: Path, archive: Path) -> int:
     behaviour committed each conversation as it went, so a mid-file failure left
     records written but unsearchable, and the operator saw an error next to an
     index that looked populated.
+
+    An archive is a source's full export, so after ingesting it the index must
+    hold exactly its conversations for the providers it carries: conversations
+    deleted or redacted away upstream never appear in the new input, and only
+    the sweep removes them. `--partial` opts out for deliberate slices.
     """
     connection = open_store(index)
     total = 0
     conversations = 0
+    removed = 0
+    seen_by_provider: dict[str, set[str]] = {}
     try:
         with connection:
             for conversation in read_archive(archive):
@@ -91,9 +113,15 @@ def _ingest(index: Path, archive: Path) -> int:
                 total += write_conversation(
                     connection, conversation["id"], to_records(conversation)
                 )
+                provider = conversation.get("source") or "unknown"
+                seen_by_provider.setdefault(provider, set()).add(conversation["id"])
+            if sweep:
+                for provider, seen in seen_by_provider.items():
+                    removed += delete_absent_conversations(connection, provider, seen)
     finally:
         connection.close()
-    print(f"  {conversations} conversations -> {total} records indexed at {index}")
+    swept = f", {removed} absent removed" if removed else ""
+    print(f"  {conversations} conversations -> {total} records indexed at {index}{swept}")
     return 0
 
 
@@ -109,11 +137,20 @@ def _positive_limit(raw: str) -> int:
     return value
 
 
-def _ingest_notes(index: Path, root: Path, provider: str, exclude: tuple[str, ...]) -> int:
-    """Index a curated notes tree, same transactional contract as `_ingest`."""
+def _ingest_notes(
+    index: Path,
+    root: Path,
+    provider: str,
+    exclude: tuple[str, ...],
+    *,
+    sweep: bool = True,
+) -> int:
+    """Index a curated notes tree, same transactional and sweep contract as `_ingest`."""
     connection = open_store(index)
     total = 0
     files = 0
+    removed = 0
+    seen: set[str] = set()
     try:
         with connection:
             for note in read_notes(root, exclude):
@@ -121,9 +158,13 @@ def _ingest_notes(index: Path, root: Path, provider: str, exclude: tuple[str, ..
                 total += write_conversation(
                     connection, note["path"], to_note_records(note, provider)
                 )
+                seen.add(note["path"])
+            if sweep:
+                removed = delete_absent_conversations(connection, provider, seen)
     finally:
         connection.close()
-    print(f"  {files} notes -> {total} records indexed at {index}")
+    swept = f", {removed} absent removed" if removed else ""
+    print(f"  {files} notes -> {total} records indexed at {index}{swept}")
     return 0
 
 
@@ -145,7 +186,7 @@ def _embed(index: Path) -> int:
     # and one long chunk in a batch of short ones prices the whole batch at
     # the long one's padding.
     pending = connection.execute(
-        f"SELECT record_id, text FROM records WHERE role IN ({placeholders}) "
+        f"SELECT record_id, source_sha256, text FROM records WHERE role IN ({placeholders}) "
         "AND record_id NOT IN (SELECT record_id FROM vectors) "
         "ORDER BY length(text), record_id",
         SEMANTIC_ROLES,
@@ -156,15 +197,19 @@ def _embed(index: Path) -> int:
         return 0
     embedder = Embedder()
     written = 0
+    processed = 0
     try:
         for start in range(0, len(pending), 256):
             batch = pending[start : start + 256]
-            matrix = embedder.embed([text for _, text in batch])
+            matrix = embedder.embed([text for _, _, text in batch])
             with connection:
-                written += write_vectors(connection, [rid for rid, _ in batch], matrix)
+                written += write_vectors(connection, [(rid, sha) for rid, sha, _ in batch], matrix)
+            processed += len(batch)
             print(f"  embedded {written}/{len(pending)}", flush=True)
     finally:
         connection.close()
+    if written < processed:
+        print(f"  {processed - written} superseded mid-run and skipped; run embed again")
     return 0
 
 

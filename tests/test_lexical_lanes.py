@@ -130,6 +130,24 @@ def test_a_hyphenated_model_name_is_not_truncated(tmp_path):
     assert [hit.record_id for hit in search_words(connection, "GPT-5.3")] == ["m"]
 
 
+def test_the_adjacency_filter_keeps_diacritic_insensitive_hits(tmp_path):
+    """The index tokenizer removes diacritics, so `café-au-lait` finds a stored
+    `cafe-au-lait`; a verifier comparing raw strings threw that hit away."""
+    connection = _store(tmp_path, [_record("c", "we ordered a cafe-au-lait at the bar")])
+    assert [h.record_id for h in search_words(connection, "café-au-lait")] == ["c"]
+
+
+def test_the_adjacency_filter_survives_a_wall_of_false_candidates(tmp_path):
+    """With 60 spaced `3 7 0` rows outranking the one real `3.7.0`, a fixed
+    prefetch returned nothing; the filter must paginate until it verifies."""
+    decoys = [
+        _record(f"spaced-{i:02d}", f"allocate 3 7 0 workers across shifts run {i}")
+        for i in range(60)
+    ]
+    connection = _store(tmp_path, [*decoys, _record("ver", "pinned to memstore 3.7.0 for now")])
+    assert [h.record_id for h in search_words(connection, "3.7.0")] == ["ver"]
+
+
 def test_a_query_of_only_punctuation_returns_nothing_rather_than_raising(tmp_path):
     connection = _store(tmp_path, [_record("a", "some ordinary prose about retrieval")])
     assert search_words(connection, "...") == []

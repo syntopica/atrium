@@ -2,6 +2,7 @@
 
 import sqlite3
 from pathlib import Path
+from urllib.parse import quote
 
 from atrium.store.schema import SCHEMA
 
@@ -28,7 +29,10 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
     if read_only:
         if not path.exists():
             raise FileNotFoundError(f"no index at {path}; run `atrium ingest` first")
-        connection = sqlite3.connect(f"file:{path}?mode=ro", uri=True)
+        # The path goes into a URI, so `?` and `#` in a filename would be read
+        # as the query and fragment separators and silently open the wrong file.
+        uri = f"file:{quote(str(path.resolve()))}?mode=ro"
+        connection = sqlite3.connect(uri, uri=True)
         connection.execute("PRAGMA busy_timeout = 30000")
         return connection
 

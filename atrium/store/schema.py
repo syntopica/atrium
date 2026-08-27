@@ -9,6 +9,7 @@
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
     record_id        TEXT PRIMARY KEY,
+    event_id         TEXT NOT NULL,
     conversation_id  TEXT NOT NULL,
     source_sha256    TEXT NOT NULL,
     provider         TEXT NOT NULL,
@@ -40,6 +41,29 @@ CREATE VIRTUAL TABLE IF NOT EXISTS substrings USING fts5 (
 
 -- What produced the index, so a machine can tell "different content" from
 -- "different pipeline" instead of silently disagreeing with its sibling.
+-- External-content FTS does not follow the base table on its own. Without these
+-- triggers the index goes observably wrong rather than merely stale: a MATCH
+-- resolves stale row ids and then reads current text from `records`, so a search
+-- for a deleted word returns a row displaying different text entirely. Keeping
+-- both lanes in step here means no window exists where that is true, and it
+-- makes deletion work, which a periodic rebuild alone does not.
+CREATE TRIGGER IF NOT EXISTS records_ai AFTER INSERT ON records BEGIN
+    INSERT INTO words(rowid, text) VALUES (new.rowid, new.text);
+    INSERT INTO substrings(rowid, text) VALUES (new.rowid, new.text);
+END;
+
+CREATE TRIGGER IF NOT EXISTS records_ad AFTER DELETE ON records BEGIN
+    INSERT INTO words(words, rowid, text) VALUES ('delete', old.rowid, old.text);
+    INSERT INTO substrings(substrings, rowid, text) VALUES ('delete', old.rowid, old.text);
+END;
+
+CREATE TRIGGER IF NOT EXISTS records_au AFTER UPDATE ON records BEGIN
+    INSERT INTO words(words, rowid, text) VALUES ('delete', old.rowid, old.text);
+    INSERT INTO substrings(substrings, rowid, text) VALUES ('delete', old.rowid, old.text);
+    INSERT INTO words(rowid, text) VALUES (new.rowid, new.text);
+    INSERT INTO substrings(rowid, text) VALUES (new.rowid, new.text);
+END;
+
 CREATE TABLE IF NOT EXISTS build_metadata (
     key    TEXT PRIMARY KEY,
     value  TEXT NOT NULL

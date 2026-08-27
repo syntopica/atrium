@@ -55,6 +55,27 @@
   - Evidence: benchmark tables recorded in `AGENTS.md`; session `a88ac62e`
     (2026-08-26/27) and Codex rounds 1-3.
 
+- [x] 2026-08-27 — **Retrieval:** Dense lane and adaptive hybrid retrieval
+  built and verified against real data. Embedder: `embeddinggemma-300m` ONNX
+  q8 on CPU, per-batch NaN/zero validation, L2-normalized; vectors only over
+  `note`/`synthesis` roles; fusion weighted RRF 70/30 k=60; adaptive routing
+  (dense-only when lexical is blind, lexical-only when nothing is embedded);
+  lanes addressable via `--words`/`--dense`/`--substring`.
+  - Result: 235 curated brain notes -> 3,599 chunks ingested and 3,599/3,599
+    embedded; real hybrid search answers in ~1.6 s with `lane=fused`; batching
+    by text length fixed an 8-minute stall (padded attention cost).
+  - Evidence: commits `a2e3d0c`, `72295bb`, `8fbe4c3`; 38 tests green;
+    `atrium search "WAL SIGBUS" --words` returns the exact 2026-08-25 SIGBUS
+    conversation; `atrium search "3.7.0" --words` returns `3.7.0-prefetch`
+    records with punctuation intact.
+
+- [x] 2026-08-27 — **Self-improvement:** Studies directory created with the
+  pending second research round: `docs/studies/mem0.md`, `letta-memgpt.md`,
+  `graphiti.md` — mechanisms, what to steal mapped to the disposable-index
+  constraints, what to avoid; researched via Codex with live web search,
+  claims cited.
+  - Evidence: commit `aa81f8a`.
+
 - [x] 2026-08-27 — **Bugs:** Adjacent-token phrase false positive closed
   (Codex review finding 6). `3.7.0` no longer matches `allocate 3 7 0 workers`:
   punctuated terms carry an adjacency verifier requiring parts joined by

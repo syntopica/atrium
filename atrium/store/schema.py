@@ -68,4 +68,15 @@ CREATE TABLE IF NOT EXISTS build_metadata (
     key    TEXT PRIMARY KEY,
     value  TEXT NOT NULL
 );
+
+-- The dense lane. Vectors cover only the semantic layer (curated notes and
+-- session synthesis, ~34k rows measured) -- never the raw corpus, whose 972k
+-- surviving records would cost 1.49 GB per brute-force query. At semantic-layer
+-- scale a full scan is 1.15 ms p50, so there is no ANN index to corrupt.
+-- ON DELETE CASCADE keeps reconciliation honest: when a superseded record goes,
+-- its vector cannot linger and keep answering queries.
+CREATE TABLE IF NOT EXISTS vectors (
+    record_id  TEXT PRIMARY KEY REFERENCES records(record_id) ON DELETE CASCADE,
+    vector     BLOB NOT NULL
+);
 """

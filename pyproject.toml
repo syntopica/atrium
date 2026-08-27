@@ -3,7 +3,12 @@ name = "atrium"
 version = "0.1.0"
 description = "Local-first memory and knowledge retrieval over a canonical conversation archive"
 requires-python = ">=3.11"
-dependencies = ["numpy>=1.26"]
+dependencies = [
+    "numpy>=1.26",
+    "onnxruntime>=1.18",
+    "tokenizers>=0.19",
+    "huggingface_hub>=0.23",
+]
 
 [project.scripts]
 atrium = "atrium.cli:main"

@@ -3,12 +3,13 @@
 from atrium.record import Record
 from atrium.retrieve.search_words import search_words
 from atrium.store.open_store import open_store
-from atrium.store.write_records import rebuild_lexical_lanes, write_records
+from atrium.store.write_conversation import write_conversation
 
 
 def _record(record_id, text):
     return Record(
         record_id=record_id,
+        event_id=record_id,
         conversation_id="c",
         source_sha256="s",
         provider="test",
@@ -23,8 +24,8 @@ def _record(record_id, text):
 
 def _store(tmp_path, records):
     connection = open_store(tmp_path / "index.sqlite3")
-    write_records(connection, records)
-    rebuild_lexical_lanes(connection)
+    with connection:
+        write_conversation(connection, "c", records)
     return connection
 
 

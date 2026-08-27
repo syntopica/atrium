@@ -59,12 +59,13 @@ def test_tool_events_and_acknowledgements_are_not_records():
             {"id": "sys", "kind": "message", "role": "unknown", "text": LONG},
         ]
     )
-    assert [r.record_id for r in to_records(conversation)] == ["keep", "keep2"]
+    assert [r.event_id for r in to_records(conversation)] == ["keep", "keep2"]
 
 
 def test_records_carry_the_revision_they_came_from():
     """Citations resolve to a revision hash, never to a byte offset."""
     (record,) = to_records(_conversation([_message("assistant", LONG)]))
+    assert record.event_id == "e1"
     assert record.source_sha256 == "abc123"
     assert record.conversation_id == "conv-1"
     assert record.authored_at == "2026-08-01T00:00:00Z"
@@ -85,7 +86,7 @@ def test_short_messages_are_kept_because_they_carry_facts():
             _message("user", "Arregla todo y guarda los findings en brain", "fact3"),
         ]
     )
-    assert [r.record_id for r in to_records(conversation)] == ["fact1", "fact2", "fact3"]
+    assert [r.event_id for r in to_records(conversation)] == ["fact1", "fact2", "fact3"]
 
 
 def test_bare_acknowledgements_are_dropped():
@@ -98,4 +99,4 @@ def test_bare_acknowledgements_are_dropped():
             _message("assistant", "Listo.", "a3"),
         ]
     )
-    assert [r.record_id for r in to_records(conversation)] == ["keep"]
+    assert [r.event_id for r in to_records(conversation)] == ["keep"]

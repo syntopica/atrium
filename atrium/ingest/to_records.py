@@ -3,6 +3,7 @@
 import re
 from collections.abc import Iterator
 
+from atrium.ingest.record_identity import record_identity
 from atrium.record import Record
 
 # Roles that carry conversation. Everything else in an archive event stream is
@@ -56,7 +57,8 @@ def to_records(conversation: dict) -> Iterator[Record]:
         if not event_id:
             continue
         yield Record(
-            record_id=event_id,
+            record_id=record_identity(conversation_id, event_id),
+            event_id=event_id,
             conversation_id=conversation_id,
             source_sha256=source_sha256,
             provider=provider,

@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from atrium.store.schema import SCHEMA
+from atrium.store.verify_build_stamp import verify_build_stamp
 
 # Readers must never block behind the writer. This is the one lesson the previous
 # system paid for twice: in rollback-journal mode a search waited on every mine
@@ -34,6 +35,7 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
         uri = f"file:{quote(str(path.resolve()))}?mode=ro"
         connection = sqlite3.connect(uri, uri=True)
         connection.execute("PRAGMA busy_timeout = 30000")
+        verify_build_stamp(connection, stamp_if_empty=False)
         return connection
 
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -41,4 +43,6 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
     for pragma in _PRAGMAS:
         connection.execute(pragma)
     connection.executescript(SCHEMA)
+    with connection:
+        verify_build_stamp(connection, stamp_if_empty=True)
     return connection

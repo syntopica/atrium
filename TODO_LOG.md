@@ -1,0 +1,90 @@
+# TODO Log
+
+> Searchable record of closed project work. Active work lives in `TODO.md`.
+
+## 2026
+
+### 2026-08
+
+- [x] 2026-08-27 — **Backend:** First slice: ingest the canonical
+  rocket-agents archive into a two-lane lexical index with a CLI
+  (`ingest` / `search` / `--substring` / `status`).
+  - Result: End-to-end ingest and retrieval over real exports; the `WAL` vs
+    `wall...` defect of the old system is closed by test (word lane returns
+    only the exact hit; fragment behavior isolated in the substring lane).
+  - Evidence: commits `ae79234`..`5ff9cbb`; `uv run --with pytest pytest
+    tests/ -q` — 19 passed; `ruff check` clean.
+
+- [x] 2026-08-27 — **Bugs:** Two defects found self-reviewing the first slice
+  against real data.
+  - Result: Version/identifier queries no longer return nothing (`3.7.0`,
+    `C#`, `GPT-5.3` become phrase queries), and the <120-char message filter
+    was replaced by a confirmation-pattern filter — the old filter discarded
+    43.4% of real messages (the 26.4% figure came from the old chunked index,
+    a category error); the new one discards 1.0%.
+  - Evidence: commit `2985c3a`; `tests/test_lexical_lanes.py` version test
+    against a real index.
+
+- [x] 2026-08-27 — **Bugs:** Codex adversarial review (BLOCK) — three
+  criticals and three minors fixed.
+  - Result: Record identity is now `sha256(conversation_id, event_id)`
+    (canonical event IDs are only conversation-local; collisions lost rows and
+    mixed provenance — OpenCode stored 2,569 of 2,586), re-ingest reconciles
+    and deletes superseded records (corrected redactions now reach the index),
+    ingest is atomic with trigger-maintained FTS, the substring lane is
+    exposed via `--substring`, negative `--limit` is rejected, and read-only
+    URIs escape `?`/`#` in paths.
+  - Evidence: commit `83ac330`; re-ingest of the same OpenCode export stores
+    2,586/2,586 with the 17 collisions preserved; 19 tests green. Review
+    transcript: Codex rollout `01a04379` (2026-08-27).
+
+- [x] 2026-08-27 — **Infrastructure:** Repository created and published:
+  `BusiRocket/atrium`, private, 5 commits; README and `AGENTS.md` record the
+  layer boundary and the measured decisions (embedder, fusion weights,
+  separate lexical lanes, addressable dense lane).
+  - Evidence: https://github.com/BusiRocket/atrium (visibility verified
+    PRIVATE); `git log --oneline` 5 commits.
+
+- [x] 2026-08-27 — **Pending Decisions:** Design converged after three
+  adversarial Codex rounds with real measurements over the user's corpus.
+  Settled: Atrium is layer 2 (derived, disposable) over the rocket-agents
+  canonical archive and brain; CLI core with thin adapters; FTS5 over
+  everything, vectors only over the semantic layer; `embeddinggemma-300m`
+  (dense R@10 70.4% vs 40.8% for the English-only default on this corpus);
+  fusion 70/30 (five-fold CV); synthesis promoted to the core.
+  - Evidence: benchmark tables recorded in `AGENTS.md`; session `a88ac62e`
+    (2026-08-26/27) and Codex rounds 1-3.
+
+- [x] 2026-08-27 — **Bugs:** Adjacent-token phrase false positive closed
+  (Codex review finding 6). `3.7.0` no longer matches `allocate 3 7 0 workers`:
+  punctuated terms carry an adjacency verifier requiring parts joined by
+  punctuation (underscore included) in the stored text; mixed queries keep OR
+  semantics untouched.
+  - Evidence: commit `103a065`; `tests/test_lexical_lanes.py` exclusion,
+    snake_case and mixed-query tests (10 passed).
+
+- [x] 2026-08-27 — **Backend:** `build_metadata` written and enforced (Codex
+  review finding 5). New indexes are stamped with schema+pipeline versions;
+  opening a mismatched or unstamped index fails with the remedy (delete and
+  re-ingest); `status` reports the stamp.
+  - Evidence: commit `132d776`; `tests/test_build_stamp.py` (4 tests);
+    `atrium status` prints `built by: schema 2, pipeline 1`.
+
+- [x] 2026-08-27 — **Backend:** Per-ingest O(corpus) FTS rebuild (Codex review
+  finding 4) — verified already fixed by `83ac330` before this run: both FTS
+  lanes are trigger-maintained, no rebuild call exists anywhere
+  (`rg rebuild|optimize` returns only comments), and ingest is one
+  transaction with per-conversation delete+insert.
+  - Evidence: `atrium/store/schema.py` triggers; `tests/test_index_consistency.py`.
+
+- [-] 2026-08-27 — **Ingest:** "Decide whether Trae `unknown`-role events are
+  admissible" — resolved by looking at the data: the full Trae export holds 3
+  events with texts `rule`, `code`, `folder` from `state.vscdb:ItemTable` —
+  VS Code workspace metadata, not conversation. The admission gate is correct
+  to drop them; the defect is the layer-1 exporter, filed in
+  `~/p/rocket-agents/TODO.md`.
+
+- [-] 2026-08-27 — **Refactors:** "Bounded semantic layer via admission gate
+  on raw drawers" — superseded. Measured: a deterministic filter removes only
+  27.5% of 1.34M drawers, leaving 972,760 vectors (1.49 GB brute-force per
+  query). Replaced by: vectors only over synthesis + curated notes (~34k).

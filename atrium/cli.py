@@ -27,6 +27,13 @@ def main(argv: list[str] | None = None) -> int:
     notes = subcommands.add_parser("ingest-notes", help="Index a tree of curated markdown notes")
     notes.add_argument("root", type=Path)
     notes.add_argument("--provider", default="brain")
+    notes.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        metavar="DIR",
+        help="Directory name to skip anywhere under the root (repeatable)",
+    )
 
     subcommands.add_parser("embed", help="Embed semantic-layer records that lack a vector")
 
@@ -48,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "ingest":
         return _ingest(args.index, args.archive)
     if args.command == "ingest-notes":
-        return _ingest_notes(args.index, args.root, args.provider)
+        return _ingest_notes(args.index, args.root, args.provider, tuple(args.exclude))
     if args.command == "embed":
         return _embed(args.index)
     if args.command == "search":
@@ -102,14 +109,14 @@ def _positive_limit(raw: str) -> int:
     return value
 
 
-def _ingest_notes(index: Path, root: Path, provider: str) -> int:
+def _ingest_notes(index: Path, root: Path, provider: str, exclude: tuple[str, ...]) -> int:
     """Index a curated notes tree, same transactional contract as `_ingest`."""
     connection = open_store(index)
     total = 0
     files = 0
     try:
         with connection:
-            for note in read_notes(root):
+            for note in read_notes(root, exclude):
                 files += 1
                 total += write_conversation(
                     connection, note["path"], to_note_records(note, provider)

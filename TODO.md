@@ -27,12 +27,14 @@
   held hostage by 2. Smallest unblock: fix the rocket-agents exporter to skip
   oversized files with a warning (filed in `~/p/rocket-agents/TODO.md`;
   needs authorization to change that repo).
-- [~] Materialize the full canonical archive: claude-code ingested 2026-08-27
-  (566 MB export, 4,734 conversations -> 442,447 records, 4m40s, 1.8 GB
-  index); cursor/opencode/openclaw/pi export+ingest running. Remaining:
-  record final per-provider numbers, decide a durable location for the
-  canonical archive files (today they live in a session scratchpad), and the
-  codex source above.
+- [~] Materialize the full canonical archive: every exportable source is now
+  exported and ingested (2026-08-27) — claude-code 442,447 records, cursor
+  67,568, opencode 2,586, pi 63, openclaw 2, plus brain notes 3,599 = 516,265
+  records, 6 sources. Counts match the export CLI exactly (the identity fix
+  holds at full scale; the pre-fix path lost 73 Cursor rows). Remaining:
+  decide a durable location for the canonical archive files (today they live
+  in a session scratchpad — the index survives rebuilds only if the archive
+  does), and the blocked codex source above.
 
 ## Synthesis
 
@@ -65,9 +67,11 @@
 - [ ] Early spike (deliberately promoted from phase 3): ChatGPT and Grok have
   no local transcript — design the remote-export adapter family before the
   local-file assumption hardens.
-- [ ] Connect the captured-but-never-indexed sources end to end once the
-  archive is materialized: cursor 101 artifacts, opencode 358, openclaw 13,
-  trae 12, windsurf 4, pi 4 — none ever reached the old index.
+- [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
+  emits 0 conversations from its 4 database artifacts, and the Trae exporter
+  emits VS Code workspace metadata instead of dialogue. Both filed in
+  `~/p/rocket-agents/TODO.md`; smallest unblock is fixing those exporters
+  (needs authorization to change that repo).
 
 ## Security
 

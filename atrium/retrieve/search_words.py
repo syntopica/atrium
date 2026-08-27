@@ -1,5 +1,6 @@
 """Word-level lexical retrieval — the exact-recall lane."""
 
+import re
 import sqlite3
 
 from atrium.retrieve.hit import Hit
@@ -20,10 +21,9 @@ LIMIT ?
 
 def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) -> list[Hit]:
     """Return records matching ``query`` on word boundaries."""
-    terms = [t for t in _tokenize(query) if t]
-    if not terms:
+    match = _match_expression(query)
+    if not match:
         return []
-    match = " OR ".join(f'"{t}"' for t in terms)
     rows = connection.execute(_QUERY, (match, limit)).fetchall()
     return [
         Hit(
@@ -40,12 +40,31 @@ def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) ->
     ]
 
 
-def _tokenize(query: str) -> list[str]:
-    """Split a query into FTS-safe terms.
+def _match_expression(query: str) -> str:
+    """Build an FTS5 MATCH expression that survives identifiers and versions.
 
-    Quoting each term and dropping punctuation keeps a query like
-    `mempalace_delete_drawers()` from being read as FTS5 syntax, which is a
-    parse error rather than a search.
+    The index tokenizer splits on punctuation, so `3.7.0` is stored as the three
+    adjacent tokens `3 7 0`. Dropping the punctuated term -- or worse, dropping
+    every fragment shorter than two characters -- makes a version search return
+    nothing at all, in the one lane whose entire purpose is exact recall of
+    versions, identifiers and names.
+
+    So a term whose parts were joined by punctuation becomes a PHRASE, which
+    matches only where those tokens are adjacent in that order. `3.7.0` finds
+    `3.7.0` and not a document that merely mentions 3, 7 and 0 apart.
+
+    Everything is quoted, so a query like `mempalace_delete_drawers()` is a
+    search rather than an FTS5 syntax error.
     """
-    cleaned = "".join(char if char.isalnum() or char in "_-" else " " for char in query)
-    return [term for term in cleaned.split() if len(term) > 1]
+    expressions = []
+    for raw_term in query.split():
+        parts = re.findall(r"[^\W_]+", raw_term, flags=re.UNICODE)
+        if not parts:
+            continue
+        if len(parts) > 1:
+            expressions.append('"' + " ".join(parts) + '"')
+        elif len(parts[0]) > 1 or len(raw_term) > len(parts[0]):
+            # A one-character part is kept only when punctuation was stripped
+            # from around it, which is what distinguishes `C#` from a stray `a`.
+            expressions.append(f'"{parts[0]}"')
+    return " OR ".join(expressions)

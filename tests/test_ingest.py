@@ -73,3 +73,29 @@ def test_records_carry_the_revision_they_came_from():
 def test_a_conversation_without_provenance_is_refused():
     with pytest.raises(ValueError, match="provenance"):
         list(to_records({"id": "c", "events": []}))
+
+
+def test_short_messages_are_kept_because_they_carry_facts():
+    """Measured over 882 real messages, a 120-character floor would discard 43.4%
+    of them -- including "63 tests verdes" and "Commit hecho. Deploy a nova."."""
+    conversation = _conversation(
+        [
+            _message("assistant", "63 tests verdes.", "fact1"),
+            _message("assistant", "YAML roto: dos puntos dentro de scalar plano.", "fact2"),
+            _message("user", "Arregla todo y guarda los findings en brain", "fact3"),
+        ]
+    )
+    assert [r.record_id for r in to_records(conversation)] == ["fact1", "fact2", "fact3"]
+
+
+def test_bare_acknowledgements_are_dropped():
+    """The same measurement puts this pattern at 1.0% of messages."""
+    conversation = _conversation(
+        [
+            _message("user", "vale", "a1"),
+            _message("user", "adelante!", "a2"),
+            _message("user", "sí, gracias", "keep"),
+            _message("assistant", "Listo.", "a3"),
+        ]
+    )
+    assert [r.record_id for r in to_records(conversation)] == ["keep"]

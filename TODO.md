@@ -14,12 +14,6 @@
 
 ## Retrieval
 
-- [~] Dense lane + adaptive hybrid: implemented and unit-tested (embedder on
-  CPU with per-batch validation, vectors only over `note`/`synthesis` roles,
-  weighted RRF 70/30 k=60, adaptive routing, every lane addressable via
-  `--words`/`--dense`/`--substring`). Remaining to close: finish the first
-  real embed of the 3,599 brain-note chunks and verify a real hybrid search
-  end to end.
 - [ ] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
@@ -27,10 +21,18 @@
 
 ## Ingest / Store
 
-- [~] Materialize the full canonical archive. Full exports of claude-code
-  (7,359 artifacts) and codex (4,347) launched 2026-08-27; small providers
-  (pi, openclaw, trae, opencode, cursor) already exported. Remaining: finish
-  the two big exports, ingest them, and record the numbers in `status`.
+- [!] Codex source cannot be exported: `conversations:export --source codex`
+  aborts the whole source because two rollouts exceed the exporter's 64 MiB
+  limit (2026-08-19T21-06-36, 2026-08-26T13-41-24) — 4,345 exportable rollouts
+  held hostage by 2. Smallest unblock: fix the rocket-agents exporter to skip
+  oversized files with a warning (filed in `~/p/rocket-agents/TODO.md`;
+  needs authorization to change that repo).
+- [~] Materialize the full canonical archive: claude-code ingested 2026-08-27
+  (566 MB export, 4,734 conversations -> 442,447 records, 4m40s, 1.8 GB
+  index); cursor/opencode/openclaw/pi export+ingest running. Remaining:
+  record final per-provider numbers, decide a durable location for the
+  canonical archive files (today they live in a session scratchpad), and the
+  codex source above.
 
 ## Synthesis
 

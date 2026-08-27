@@ -13,9 +13,13 @@ from atrium.store.verify_build_stamp import verify_build_stamp
 # database -- the SIGBUS crashes that forced WAL off there came from chromadb
 # holding a stale mmap across a checkpoint, and Atrium holds no such handle.
 _PRAGMAS = (
+    # busy_timeout first: until it is set, this connection has no patience at
+    # all, and two processes running their first `journal_mode = WAL` against
+    # the same fresh index race straight into `database is locked` (reproduced
+    # 43 times in 100 concurrent first-opens).
+    "PRAGMA busy_timeout = 30000",
     "PRAGMA journal_mode = WAL",
     "PRAGMA synchronous = NORMAL",
-    "PRAGMA busy_timeout = 30000",
     "PRAGMA foreign_keys = ON",
 )
 

@@ -34,6 +34,23 @@ def test_an_index_built_by_a_different_pipeline_refuses_to_open(tmp_path):
         open_store(path, read_only=True)
 
 
+def test_a_populated_unstamped_index_is_not_silently_adopted(tmp_path):
+    """CREATE TABLE IF NOT EXISTS completes the schema on any database, so a
+    writable open of a pre-versioning index would otherwise stamp legacy
+    content as current -- laundering unknown-pipeline records."""
+    path = tmp_path / "index.sqlite3"
+    connection = open_store(path)
+    with connection:
+        connection.execute(
+            "INSERT INTO records (record_id, event_id, conversation_id, source_sha256,"
+            " provider, role, text, event_index) VALUES ('r','e','c','s','p','user','legacy',0)"
+        )
+        connection.execute("DELETE FROM build_metadata")
+    connection.close()
+    with pytest.raises(RuntimeError, match="never stamped"):
+        open_store(path)
+
+
 def test_an_unstamped_index_refuses_read_only_opening(tmp_path):
     path = tmp_path / "index.sqlite3"
     connection = open_store(path)

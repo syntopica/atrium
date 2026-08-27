@@ -45,6 +45,15 @@ def test_editing_a_note_replaces_its_records(tmp_path):
     connection.close()
 
 
+def test_an_unbroken_oversized_paragraph_is_still_bounded():
+    """Paragraph packing alone let a 17,999-character table through, and past
+    the embedder's truncation the tail contributes nothing to the vector."""
+    note = _note("# T\n\n" + "x" * 5000)
+    lengths = [len(r.text) for r in to_note_records(note)]
+    assert max(lengths) <= 2000
+    assert sum(lengths) >= 5000
+
+
 def test_read_notes_skips_hidden_directories_and_non_markdown(tmp_path):
     (tmp_path / ".git").mkdir()
     (tmp_path / ".git" / "config.md").write_text("hidden")

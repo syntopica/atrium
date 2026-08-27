@@ -76,6 +76,22 @@
   claims cited.
   - Evidence: commit `aa81f8a`.
 
+- [x] 2026-08-27 — **Bugs:** Second adversarial Codex review (BLOCK, nine
+  findings, all [REAL] and reproduced) closed the same day. Critical: absent
+  conversations/notes were never swept on re-ingest, so upstream deletions and
+  redactions never reached a long-lived index — fixed with a per-provider
+  sweep (`--partial` opts out). High: pipeline version not bumped with an
+  admission change; populated unstamped indexes silently adopted; mid-embed
+  reconciliation could attach a stale vector to a new revision; the adjacency
+  verifier dropped diacritic-folded hits and could be exhausted by a wall of
+  false candidates; hybrid truncated lanes to the output limit before fusing.
+  Medium: unbroken oversized paragraphs bypassed the chunk bound (a 17,999-char
+  chunk embedded identically to its prefix); busy_timeout was set after
+  journal_mode (43/100 concurrent first-opens failed); dense/fused score ties
+  followed physical row order and diverged between machines.
+  - Evidence: commit `71b8eb3`; 49 tests green; review transcript in Codex
+    rollout `01a04450` (2026-08-27); index rebuilt under pipeline 2.
+
 - [x] 2026-08-27 — **Integrations:** Every exportable source is in the index —
   including four that never reached the old system's memory (cursor, opencode,
   pi, openclaw). Totals: claude-code 442,447 records (4,734 conversations,

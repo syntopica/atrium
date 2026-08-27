@@ -42,11 +42,18 @@
   so the unit is the episode (cut on human turns + topic change), not the
   session file; 8.3% of sessions exceed 100k tokens (max 5.49M), so the long
   tail needs map-reduce. One-time cost for 8,570 sessions measured at $22-104.
-  Budget approved 2026-08-27. **Design pinned in the 2026-08-27 two-agent
-  consult (build to this, re-open only with evidence):**
-  * Producer: Claude Batch API only, one exact dated Sonnet-class model ID,
-    structured output, no tools; Codex CLI is the independent evaluator and
-    never produces baseline records (no mixed populations).
+  **Built 2026-08-28** (commit `6263938`): cutter, registry, Max-lane
+  producer, `synthesize` + `ingest-synthesis` CLI; verified live; first
+  tranche (newest 500 conversations) running. Remaining: finish the tranches
+  (35,794 episodes total), ingest + embed the records, and spot-check quality
+  with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
+  consult, one amendment by operator directive:**
+  * Producer: the Max OAuth lane (Messages API with the Claude Code keychain
+    tokens, three accounts rotated on 429/5xx) instead of the Batch API — the
+    operator's standing pattern from consumer-g/consumer-y; no API key.
+    Still one producer population (`claude-sonnet-5`, resolved model recorded
+    per record); Codex CLI is the independent evaluator and never produces
+    baseline records.
   * Segmentation: `episode-texttiling-v1` — turn blocks per human message;
     hard cuts at reset markers; TF-IDF TextTiling over human turns only
     (bilingual ES/EN stopwords), three-turn windows, valley depth > session

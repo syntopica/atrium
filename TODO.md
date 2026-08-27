@@ -21,20 +21,18 @@
 
 ## Ingest / Store
 
-- [!] Codex source cannot be exported: `conversations:export --source codex`
-  aborts the whole source because two rollouts exceed the exporter's 64 MiB
-  limit (2026-08-19T21-06-36, 2026-08-26T13-41-24) — 4,345 exportable rollouts
-  held hostage by 2. Smallest unblock: fix the rocket-agents exporter to skip
-  oversized files with a warning (filed in `~/p/rocket-agents/TODO.md`;
-  needs authorization to change that repo).
-- [~] Materialize the full canonical archive: every exportable source is now
-  exported and ingested (2026-08-27) — claude-code 442,447 records, cursor
-  67,568, opencode 2,586, pi 63, openclaw 2, plus brain notes 4,545 = 517,211
-  records, 6 sources (rebuilt under pipeline 2 after the review fixes). Counts match the export CLI exactly (the identity fix
-  holds at full scale; the pre-fix path lost 73 Cursor rows). Remaining:
-  decide a durable location for the canonical archive files (today they live
-  in a session scratchpad — the index survives rebuilds only if the archive
-  does), and the blocked codex source above.
+- [ ] Codex source unblocked 2026-08-27: rocket-agents gained
+  `--allow-partial` (commit `bfa54ec` there) and the full codex export landed
+  — 4,356 conversations -> 21,219 records ingested, manifest declares
+  `complete:false` with the two >64 MiB rollouts listed. Remaining here: once
+  rocket-agents ships the streaming exporter (its TODO), re-export codex
+  complete and re-ingest so those two rollouts join the index.
+- [ ] Multi-machine archive sync: the durable archive now lives at
+  `~/.local/share/rocket-agents/conversations/archive.jsonl` (decided in the
+  2026-08-27 consult; XDG data, 0600/0700, import-verified). Remaining:
+  point the dotfiles `sync-conversations` transport at `.local/share`
+  (it currently syncs `.local/state`) and prove convergence on the second
+  machine with the dry-run-reports-no-changes check. Cross-project: dotfiles.
 
 ## Synthesis
 
@@ -44,8 +42,29 @@
   so the unit is the episode (cut on human turns + topic change), not the
   session file; 8.3% of sessions exceed 100k tokens (max 5.49M), so the long
   tail needs map-reduce. One-time cost for 8,570 sessions measured at $22-104.
-  Derived episodes go to a versioned registry of Atrium's own; only
-  user-approved notes are proposed to brain (a tray, not a dump).
+  Budget approved 2026-08-27. **Design pinned in the 2026-08-27 two-agent
+  consult (build to this, re-open only with evidence):**
+  * Producer: Claude Batch API only, one exact dated Sonnet-class model ID,
+    structured output, no tools; Codex CLI is the independent evaluator and
+    never produces baseline records (no mixed populations).
+  * Segmentation: `episode-texttiling-v1` — turn blocks per human message;
+    hard cuts at reset markers; TF-IDF TextTiling over human turns only
+    (bilingual ES/EN stopwords), three-turn windows, valley depth > session
+    median + 1 MAD, >=2 human turns between cuts; 32k-token ceiling with one
+    pinned tokenizer; oversized coherent episodes map-reduce mechanically and
+    the map chunks are never retrieval episodes. Deterministic, no LLM and no
+    embeddings in the cutter.
+  * Storage: immutable content-addressed registry at
+    `~/.local/share/atrium/synthesis/` with an atomic active-recipe manifest;
+    one designated synthesis writer, other machines consume; synced by the
+    dotfiles transport, never the SQLite index.
+  * Every record carries the full recipe (archive hashes, episode id +
+    ordered event hashes, segmentation fingerprint, provider + exact model
+    snapshot, prompt sha256, output schema version, inference params,
+    generator version, parent map ids, output sha256). Job key = hash of all
+    inputs minus output; same job key with different output hashes is a hard
+    divergence error, never resolved by timestamps.
+  Only user-approved notes are proposed to brain (a tray, not a dump).
 - [ ] Session-start injection: frozen-snapshot discipline (write at session
   close, inject at the *next* session start to preserve prefix cache), budget
   ~170-900 tokens — the mechanism users remember as valuable from memstore;

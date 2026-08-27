@@ -76,6 +76,15 @@
   claims cited.
   - Evidence: commit `aa81f8a`.
 
+- [x] 2026-08-27 — **Integrations:** Every exportable source is in the index —
+  including four that never reached the old system's memory (cursor, opencode,
+  pi, openclaw). Totals: claude-code 442,447 records (4,734 conversations,
+  566 MB export, 4m40s ingest), cursor 67,568 (2,002), opencode 2,586 (67),
+  pi 63, openclaw 2, brain notes 3,599 = 516,265 records, 1.8+ GB index.
+  Stored counts match the export CLI exactly at every size.
+  - Evidence: `atrium status` per-provider table; export logs `ok: true` for
+    all four new sources.
+
 - [x] 2026-08-27 — **Bugs:** Adjacent-token phrase false positive closed
   (Codex review finding 6). `3.7.0` no longer matches `allocate 3 7 0 workers`:
   punctuated terms carry an adjacency verifier requiring parts joined by

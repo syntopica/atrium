@@ -76,6 +76,29 @@
   claims cited.
   - Evidence: commit `aa81f8a`.
 
+- [x] 2026-08-27 — **Integrations:** Canonical archive materialized durably
+  and the codex source landed. rocket-agents gained `--allow-partial`
+  (fail-closed default; partial manifests declare `complete:false` + every
+  skip), unblocking codex: 4,356 conversations -> 21,219 records ingested.
+  The merged durable archive lives at
+  `~/.local/share/rocket-agents/conversations/archive.jsonl` (11,164
+  conversations, 1.5 GB, per-consult XDG decision), built via
+  `conversations:import --apply` per source and verified by a convergence
+  dry-run (added 0, duplicates 4,734). Index total: 538,430 records across 7
+  sources.
+  - Evidence: rocket-agents commits `bfa54ec`, `3f35a60` pushed; `atrium
+    status`; import dry-run output.
+
+- [x] 2026-08-27 — **Cross-project (mempalace):** Retirement calls executed
+  per the two-agent consult: the `embeddinggemma` re-embed is skipped (`[-]`,
+  36 h CPU on a retiring system), and the private-key-shaped drawers are
+  purged — re-scan found 7 live matches (stricter body heuristic; the earlier
+  14 predates the base64/checkpoint purges), daemon dry-run matched 7/7,
+  delete removed 7/7, post-scan finds 0. No values printed. Raw-transcript
+  mining deliberately stays on until Atrium replaces the live system.
+  - Evidence: `mempalace_delete_drawers` dry-run and delete results;
+    read-only re-scan count 0; `~/p/mempalace/TODO.md` updated.
+
 - [x] 2026-08-27 — **Bugs:** Second adversarial Codex review (BLOCK, nine
   findings, all [REAL] and reproduced) closed the same day. Critical: absent
   conversations/notes were never swept on re-ingest, so upstream deletions and

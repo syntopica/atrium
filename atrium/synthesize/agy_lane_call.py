@@ -3,6 +3,7 @@
 import json
 import re
 import subprocess
+import time
 
 # The brain's routing rule: whole-corpus bulk goes to Gemini via agy -- its
 # quota is the one that survives it. Newest Flash at medium effort; synthesis
@@ -11,6 +12,8 @@ import subprocess
 AGY_MODEL_ID = "gemini-3.7-flash-medium"
 
 _JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
+_ATTEMPTS = 3
+_BACKOFF_SECONDS = 20.0
 
 
 def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
@@ -18,9 +21,11 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
 
     Gemini prompting inverts the usual order: the transcript goes FIRST and
     the instructions last, anchored to it -- instructions ahead of a large
-    context get diluted. Plan mode plus disabled slash expansion because the
-    prompt inlines captured conversation text (the brain's standing rule for
-    read-only passes over untrusted inline content).
+    context get diluted. Slash expansion disabled because the prompt inlines
+    captured conversation text (the brain's standing rule for passes over
+    untrusted inline content; --mode plan is a no-op with it disabled and only
+    polluted stderr). Retries with backoff absorb the 503 bursts that eight
+    parallel workers provoke.
     """
     schema = {**tool["input_schema"], "additionalProperties": False}
     prompt = (
@@ -36,31 +41,58 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
     # ARG_MAX, but guard anyway rather than fail with an opaque E2BIG.
     if len(prompt) > 700_000:
         raise RuntimeError(f"prompt too large for argv ({len(prompt)} chars)")
-    completed = subprocess.run(  # noqa: PLW1510 -- returncode handled below
-        [
-            "agy",
-            f"--print={prompt}",
-            "--model",
-            AGY_MODEL_ID,
-            "--mode",
-            "plan",
-            "--disable-slash-commands",
-            "--print-timeout",
-            "10m",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=900,
-    )
-    if completed.returncode != 0:
-        raise RuntimeError(
-            f"agy failed ({completed.returncode}): {(completed.stderr or completed.stdout)[-300:]}"
+    last_error = "no attempt"
+    for attempt in range(_ATTEMPTS):
+        if attempt:
+            time.sleep(_BACKOFF_SECONDS * attempt)
+        completed = subprocess.run(  # noqa: PLW1510 -- returncode handled below
+            [
+                "agy",
+                f"--print={prompt}",
+                "--model",
+                AGY_MODEL_ID,
+                "--disable-slash-commands",
+                "--print-timeout",
+                "10m",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=900,
         )
-    match = _JSON_BLOCK.search(completed.stdout)
-    if match is None:
-        raise RuntimeError(f"agy returned no JSON object: {completed.stdout[-300:]!r}")
-    output = json.loads(match.group(0))
-    missing = [key for key in tool["input_schema"]["required"] if key not in output]
-    if missing:
-        raise RuntimeError(f"agy output missing required keys: {missing}")
-    return {"input": output, "model": AGY_MODEL_ID, "usage": {}}
+        if completed.returncode != 0:
+            # stderr's tail is often only a benign warning; the real error
+            # (503s, eligibility checks) rides stdout. Keep both.
+            last_error = (
+                f"agy failed ({completed.returncode}): "
+                f"stdout={completed.stdout[-250:]!r} stderr={completed.stderr[-250:]!r}"
+            )
+            continue
+        match = _JSON_BLOCK.search(completed.stdout)
+        if match is None:
+            last_error = f"agy returned no JSON object: {completed.stdout[-250:]!r}"
+            continue
+        try:
+            output = _parse_loose_json(match.group(0))
+        except json.JSONDecodeError as error:
+            last_error = f"agy JSON did not parse: {error}"
+            continue
+        missing = [key for key in tool["input_schema"]["required"] if key not in output]
+        if missing:
+            last_error = f"agy output missing required keys: {missing}"
+            continue
+        return {"input": output, "model": AGY_MODEL_ID, "usage": {}}
+    raise RuntimeError(last_error)
+
+
+def _parse_loose_json(text: str) -> dict:
+    """Parse Gemini's JSON, tolerating its two observed sloppinesses.
+
+    Raw control characters inside strings (strict=False accepts them) and
+    invalid backslash escapes (repaired to literal backslashes). Anything
+    still broken raises and the retry loop takes another attempt.
+    """
+    try:
+        return json.loads(text, strict=False)
+    except json.JSONDecodeError:
+        repaired = re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", text)
+        return json.loads(repaired, strict=False)

@@ -45,11 +45,15 @@
   **Built 2026-08-28** (commit `6263938`): cutter, registry, Max-lane
   producer, `synthesize` + `ingest-synthesis` CLI; verified live; first
   tranche done on the Max lane (383 episodes, 4.7M input tokens -- measured
-  cost that triggered the routing change below). Remaining: let the bulk
-  codex run finish (35,794 episodes, ~weeks at 3 workers; `nohup` pid on
-  this machine, log at `~/.local/share/atrium/synthesis/run.log`,
-  resumable), re-run `ingest-synthesis` + `embed` periodically, and
-  spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
+  cost that triggered the routing change below). Bulk now runs on the agy
+  drip loop (`~/.local/share/atrium/synthesis/drip-loop.sh`, quota-aware
+  via CodexBar; log `run.log`, passes logged in `drip.log`); a pass aborts
+  at the Gemini quota wall instead of grinding failures (commit `cf9a320`).
+  2026-08-28 22:50: 13,309 records in registry, 11,835 embedded; a stale
+  duplicate run (workers 6, pre-drip orphan) was killed -- it was doubling
+  quota burn. Remaining: let the drip finish (~35,794 episodes total),
+  re-run `ingest-synthesis` + `embed` periodically, and spot-check quality
+  with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**
   * Producer, second amendment (operator, 2026-08-28): the Codex CLI's own
     quota (`--producer codex`, default) after the Max lane measured 4.7M

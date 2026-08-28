@@ -2,10 +2,10 @@
 
 import hashlib
 import json
+from collections.abc import Callable
 from pathlib import Path
 
 from atrium.synthesize.episode_identity import episode_identity
-from atrium.synthesize.max_lane_call import MODEL, max_lane_call
 from atrium.synthesize.segment_episodes import SEGMENTATION_FINGERPRINT, segment_episodes
 from atrium.synthesize.synthesis_prompt import PROMPT_SHA256, SYNTHESIS_SYSTEM_TEXT
 from atrium.synthesize.synthesis_registry import has_record, write_record
@@ -13,8 +13,16 @@ from atrium.synthesize.synthesis_schema import OUTPUT_SCHEMA_VERSION, SYNTHESIS_
 
 GENERATOR_VERSION = "atrium-synthesize-2"
 
+# A producer is (system_text, user_text, tool) -> {"input", "model", "usage"},
+# plus the deterministic model string that enters the job key. Two exist: the
+# Max OAuth lane and the Codex CLI. Their records carry different recipe
+# fingerprints and coexist in the registry without mixing.
+Producer = Callable[[str, str, dict], dict]
 
-def synthesize_conversation(conversation: dict, tokens: list[str], registry: Path) -> dict:
+
+def synthesize_conversation(
+    conversation: dict, producer: Producer, model_id: str, registry: Path
+) -> dict:
     """Synthesize each episode not already in the registry. Returns counts.
 
     The job key hashes every input and recipe field except the output, so a
@@ -28,11 +36,11 @@ def synthesize_conversation(conversation: dict, tokens: list[str], registry: Pat
     for episode in segment_episodes(events):
         event_ids = [events[i].get("id") or str(i) for i in episode["event_indexes"]]
         episode_id = episode_identity(conversation["id"], event_ids)
-        job_key = _job_key(conversation["id"], revision, episode_id)
+        job_key = _job_key(conversation["id"], revision, episode_id, model_id)
         if has_record(registry, job_key):
             skipped += 1
             continue
-        result = _synthesize_episode(episode, events, tokens)
+        result = _synthesize_episode(episode, events, producer)
         output_json = json.dumps(result["input"], ensure_ascii=False, sort_keys=True)
         write_record(
             registry,
@@ -45,7 +53,7 @@ def synthesize_conversation(conversation: dict, tokens: list[str], registry: Pat
                 "episode_id": episode_id,
                 "event_ids": event_ids,
                 "segmentation": SEGMENTATION_FINGERPRINT,
-                "model_requested": MODEL,
+                "model_requested": model_id,
                 "model_resolved": result["model"],
                 "prompt_sha256": PROMPT_SHA256,
                 "output_schema": OUTPUT_SCHEMA_VERSION,
@@ -61,32 +69,29 @@ def synthesize_conversation(conversation: dict, tokens: list[str], registry: Pat
     return {"synthesized": made, "skipped": skipped}
 
 
-def _job_key(conversation_id: str, revision: str, episode_id: str) -> str:
+def _job_key(conversation_id: str, revision: str, episode_id: str, model_id: str) -> str:
     payload = (
         f"{conversation_id}\x00{revision}\x00{episode_id}\x00{SEGMENTATION_FINGERPRINT}"
-        f"\x00{MODEL}\x00{PROMPT_SHA256}\x00{OUTPUT_SCHEMA_VERSION}\x00{GENERATOR_VERSION}"
+        f"\x00{model_id}\x00{PROMPT_SHA256}\x00{OUTPUT_SCHEMA_VERSION}\x00{GENERATOR_VERSION}"
     )
     return hashlib.sha256(payload.encode()).hexdigest()[:32]
 
 
-def _synthesize_episode(episode: dict, events: list[dict], tokens: list[str]) -> dict:
+def _synthesize_episode(episode: dict, events: list[dict], producer: Producer) -> dict:
     chunks = episode["chunks"]
     if len(chunks) == 1:
-        return max_lane_call(
-            tokens, SYNTHESIS_SYSTEM_TEXT, _transcript(chunks[0], events), SYNTHESIS_TOOL
-        )
+        return producer(SYNTHESIS_SYSTEM_TEXT, _transcript(chunks[0], events), SYNTHESIS_TOOL)
     # Map-reduce for the long tail: chunk syntheses exist only to fit model
     # context and are folded back into exactly one episode record.
     partials = [
-        max_lane_call(tokens, SYNTHESIS_SYSTEM_TEXT, _transcript(chunk, events), SYNTHESIS_TOOL)
+        producer(SYNTHESIS_SYSTEM_TEXT, _transcript(chunk, events), SYNTHESIS_TOOL)
         for chunk in chunks
     ]
     reduce_input = "\n\n".join(
         f"[part {index + 1}]\n{json.dumps(partial['input'], ensure_ascii=False)}"
         for index, partial in enumerate(partials)
     )
-    reduced = max_lane_call(
-        tokens,
+    reduced = producer(
         SYNTHESIS_SYSTEM_TEXT
         + "\nThe user message holds partial syntheses of consecutive parts of ONE "
         "episode. Merge them into a single faithful synthesis of the whole episode.",

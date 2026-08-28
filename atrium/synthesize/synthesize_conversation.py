@@ -21,7 +21,11 @@ Producer = Callable[[str, str, dict], dict]
 
 
 def synthesize_conversation(
-    conversation: dict, producer: Producer, model_id: str, registry: Path
+    conversation: dict,
+    producer: Producer,
+    model_id: str,
+    registry: Path,
+    done_episodes: set[str] | None = None,
 ) -> dict:
     """Synthesize each episode not already in the registry. Returns counts.
 
@@ -37,7 +41,10 @@ def synthesize_conversation(
         event_ids = [events[i].get("id") or str(i) for i in episode["event_indexes"]]
         episode_id = episode_identity(conversation["id"], event_ids)
         job_key = _job_key(conversation["id"], revision, episode_id, model_id)
-        if has_record(registry, job_key):
+        # An episode any population already holds is not re-synthesized: recipe
+        # coexistence is for deliberate re-runs, never for a producer switch
+        # silently paying the whole corpus again.
+        if has_record(registry, job_key) or (done_episodes and episode_id in done_episodes):
             skipped += 1
             continue
         result = _synthesize_episode(episode, events, producer)

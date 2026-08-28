@@ -56,6 +56,14 @@ def main(argv: list[str] | None = None) -> int:
     synthesize.add_argument("archive", type=Path)
     synthesize.add_argument("--limit", type=_positive_limit, default=None)
     synthesize.add_argument("--dry-run", action="store_true")
+    synthesize.add_argument(
+        "--producer",
+        choices=("codex", "max"),
+        default="codex",
+        help="codex: the Codex CLI's own quota (default, operator directive "
+        "2026-08-28); max: the Claude Max OAuth lane",
+    )
+    synthesize.add_argument("--workers", type=_positive_limit, default=3)
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
 
@@ -83,7 +91,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "embed":
         return _embed(args.index)
     if args.command == "synthesize":
-        return _synthesize(args.archive, args.limit, args.dry_run)
+        return _synthesize(args.archive, args.limit, args.dry_run, args.producer, args.workers)
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
     if args.command == "search":
@@ -226,9 +234,16 @@ def _embed(index: Path) -> int:
     return 0
 
 
-def _synthesize(archive: Path, limit: int | None, dry_run: bool) -> int:
-    """Synthesize episodes newest-first; resumable, so interruption is cheap."""
-    from atrium.synthesize.max_lane_tokens import max_lane_tokens
+def _synthesize(
+    archive: Path, limit: int | None, dry_run: bool, producer: str, workers: int
+) -> int:
+    """Synthesize episodes newest-first; resumable, so interruption is cheap.
+
+    Conversations run in a small worker pool: registry writes are atomic and
+    never overwrite, so the worst a race costs is one duplicate call.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+
     from atrium.synthesize.segment_episodes import segment_episodes
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
@@ -244,31 +259,78 @@ def _synthesize(archive: Path, limit: int | None, dry_run: bool) -> int:
         episodes = sum(len(segment_episodes(c.get("events") or [])) for c in conversations)
         print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
         return 0
-    tokens = max_lane_tokens()
-    made = skipped = 0
-    for position, conversation in enumerate(conversations, start=1):
-        result = synthesize_conversation(conversation, tokens, DEFAULT_REGISTRY)
-        made += result["synthesized"]
-        skipped += result["skipped"]
+    if producer == "max":
+        from atrium.synthesize.max_lane_call import MODEL, max_lane_call
+        from atrium.synthesize.max_lane_tokens import max_lane_tokens
+
+        tokens = max_lane_tokens()
+
+        def call(system_text, user_text, tool):
+            return max_lane_call(tokens, system_text, user_text, tool)
+
+        model_id = MODEL
+    else:
+        from atrium.synthesize.codex_lane_call import CODEX_MODEL_ID, codex_lane_call
+
+        call = codex_lane_call
+        model_id = CODEX_MODEL_ID
+
+    made = skipped = failed = 0
+    total = len(conversations)
+
+    def run_one(item):
+        position, conversation = item
+        try:
+            result = synthesize_conversation(conversation, call, model_id, DEFAULT_REGISTRY)
+        except Exception as error:  # noqa: BLE001 -- keep the run alive; the episode stays pending
+            print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
+            return {"synthesized": 0, "skipped": 0, "failed": 1}
         print(
-            f"  [{position}/{len(conversations)}] {conversation['id'][:12]} "
-            f"+{result['synthesized']} (skipped {result['skipped']}) total {made}",
+            f"  [{position}/{total}] {conversation['id'][:12]} "
+            f"+{result['synthesized']} (skipped {result['skipped']})",
             flush=True,
         )
-    print(f"  synthesized {made}, already present {skipped}, registry {DEFAULT_REGISTRY}")
-    return 0
+        return {**result, "failed": 0}
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for result in pool.map(run_one, enumerate(conversations, start=1)):
+            made += result["synthesized"]
+            skipped += result["skipped"]
+            failed += result["failed"]
+    print(
+        f"  synthesized {made}, already present {skipped}, failed conversations {failed}, "
+        f"registry {DEFAULT_REGISTRY}"
+    )
+    return 0 if failed == 0 else 1
 
 
 def _ingest_synthesis(index: Path) -> int:
-    """Index every registry record; same sweep contract as the other ingests."""
+    """Index one record per episode; same sweep contract as the other ingests.
+
+    Several recipe populations may hold the same episode (different producers,
+    different job keys). The active-recipe manifest picks which one the index
+    serves, so coexistence in the registry never becomes a duplicate -- or a
+    primary-key collision -- in the index.
+    """
     from atrium.ingest.to_synthesis_records import to_synthesis_records
+    from atrium.synthesize.active_recipe import active_recipe_priority
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY, read_records
+
+    priority = active_recipe_priority(DEFAULT_REGISTRY)
+    rank = {model: position for position, model in enumerate(priority)}
+    chosen: dict[str, dict] = {}
+    for record in read_records(DEFAULT_REGISTRY):
+        episode = record["episode_id"]
+        record_rank = rank.get(record.get("model_requested"), len(priority))
+        best = chosen.get(episode)
+        if best is None or record_rank < rank.get(best.get("model_requested"), len(priority)):
+            chosen[episode] = record
 
     connection = open_store(index)
     total = 0
     seen: set[str] = set()
     by_conversation: dict[str, list] = {}
-    for record in read_records(DEFAULT_REGISTRY):
+    for record in chosen.values():
         for row in to_synthesis_records(record):
             by_conversation.setdefault(row.conversation_id, []).append(row)
     try:

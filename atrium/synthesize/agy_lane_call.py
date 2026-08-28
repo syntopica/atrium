@@ -31,10 +31,15 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
         "no prose, no code fence:\n"
         f"{json.dumps(schema)}"
     )
+    # agy does not read the prompt from stdin: it must be attached to the
+    # flag itself (`--print='...'`). Episodes are ceiling-bounded well under
+    # ARG_MAX, but guard anyway rather than fail with an opaque E2BIG.
+    if len(prompt) > 700_000:
+        raise RuntimeError(f"prompt too large for argv ({len(prompt)} chars)")
     completed = subprocess.run(  # noqa: PLW1510 -- returncode handled below
         [
             "agy",
-            "--print",
+            f"--print={prompt}",
             "--model",
             AGY_MODEL_ID,
             "--mode",
@@ -43,7 +48,6 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
             "--print-timeout",
             "10m",
         ],
-        input=prompt,
         capture_output=True,
         text=True,
         timeout=900,

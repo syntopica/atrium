@@ -58,10 +58,11 @@ def main(argv: list[str] | None = None) -> int:
     synthesize.add_argument("--dry-run", action="store_true")
     synthesize.add_argument(
         "--producer",
-        choices=("codex", "max"),
-        default="codex",
-        help="codex: the Codex CLI's own quota (default, operator directive "
-        "2026-08-28); max: the Claude Max OAuth lane",
+        choices=("agy", "codex", "max"),
+        default="agy",
+        help="agy: Gemini bulk quota via the Antigravity CLI (default -- the "
+        "standing routing rule for whole-corpus passes); codex: the Codex "
+        "CLI's quota; max: the Claude Max OAuth lane",
     )
     synthesize.add_argument("--workers", type=_positive_limit, default=3)
 
@@ -269,19 +270,29 @@ def _synthesize(
             return max_lane_call(tokens, system_text, user_text, tool)
 
         model_id = MODEL
-    else:
+    elif producer == "codex":
         from atrium.synthesize.codex_lane_call import CODEX_MODEL_ID, codex_lane_call
 
         call = codex_lane_call
         model_id = CODEX_MODEL_ID
+    else:
+        from atrium.synthesize.agy_lane_call import AGY_MODEL_ID, agy_lane_call
 
+        call = agy_lane_call
+        model_id = AGY_MODEL_ID
+
+    from atrium.synthesize.synthesis_registry import read_records
+
+    done_episodes = {record["episode_id"] for record in read_records(DEFAULT_REGISTRY)}
     made = skipped = failed = 0
     total = len(conversations)
 
     def run_one(item):
         position, conversation = item
         try:
-            result = synthesize_conversation(conversation, call, model_id, DEFAULT_REGISTRY)
+            result = synthesize_conversation(
+                conversation, call, model_id, DEFAULT_REGISTRY, done_episodes
+            )
         except Exception as error:  # noqa: BLE001 -- keep the run alive; the episode stays pending
             print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}

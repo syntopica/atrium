@@ -5,6 +5,8 @@ import re
 import subprocess
 import time
 
+from atrium.synthesize.quota_exhausted import QuotaExhausted
+
 # The brain's routing rule: whole-corpus bulk goes to Gemini via agy -- its
 # quota is the one that survives it. Newest Flash at medium effort; synthesis
 # is extraction, not judgement, which is the one place the measured comparison
@@ -60,6 +62,13 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
             timeout=900,
         )
         if completed.returncode != 0:
+            # A spent quota window cannot succeed until its reset: raising a
+            # typed error lets the pass abort instead of failing every
+            # remaining episode one by one through the whole backoff ladder.
+            if "quota reached" in (completed.stderr + completed.stdout).lower():
+                raise QuotaExhausted(
+                    completed.stderr.strip() or completed.stdout.strip()
+                )
             # stderr's tail is often only a benign warning; the real error
             # (503s, eligibility checks) rides stdout. Keep both.
             last_error = (

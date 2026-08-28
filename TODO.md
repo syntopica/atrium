@@ -44,16 +44,20 @@
   tail needs map-reduce. One-time cost for 8,570 sessions measured at $22-104.
   **Built 2026-08-28** (commit `6263938`): cutter, registry, Max-lane
   producer, `synthesize` + `ingest-synthesis` CLI; verified live; first
-  tranche (newest 500 conversations) running. Remaining: finish the tranches
-  (35,794 episodes total), ingest + embed the records, and spot-check quality
-  with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
+  tranche done on the Max lane (383 episodes, 4.7M input tokens -- measured
+  cost that triggered the routing change below). Remaining: let the bulk
+  codex run finish (35,794 episodes, ~weeks at 3 workers; `nohup` pid on
+  this machine, log at `~/.local/share/atrium/synthesis/run.log`,
+  resumable), re-run `ingest-synthesis` + `embed` periodically, and
+  spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**
-  * Producer: the Max OAuth lane (Messages API with the Claude Code keychain
-    tokens, three accounts rotated on 429/5xx) instead of the Batch API — the
-    operator's standing pattern from verticagtm/intelifactu; no API key.
-    Still one producer population (`claude-sonnet-5`, resolved model recorded
-    per record); Codex CLI is the independent evaluator and never produces
-    baseline records.
+  * Producer, second amendment (operator, 2026-08-28): the Codex CLI's own
+    quota (`--producer codex`, default) after the Max lane measured 4.7M
+    input tokens for 383 episodes; the Max lane stays as `--producer max`.
+    Populations never mix: the model id is in the job key and the
+    active-recipe manifest picks exactly one record per episode at ingest.
+    The one-producer-population and codex-as-evaluator clauses of the
+    original consult are amended by these operator directives.
   * Segmentation: `episode-texttiling-v1` — turn blocks per human message;
     hard cuts at reset markers; TF-IDF TextTiling over human turns only
     (bilingual ES/EN stopwords), three-turn windows, valley depth > session

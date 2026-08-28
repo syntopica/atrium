@@ -243,8 +243,10 @@ def _synthesize(
     Conversations run in a small worker pool: registry writes are atomic and
     never overwrite, so the worst a race costs is one duplicate call.
     """
+    import threading
     from concurrent.futures import ThreadPoolExecutor
 
+    from atrium.synthesize.quota_exhausted import QuotaExhausted
     from atrium.synthesize.segment_episodes import segment_episodes
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
@@ -286,13 +288,24 @@ def _synthesize(
     done_episodes = {record["episode_id"] for record in read_records(DEFAULT_REGISTRY)}
     made = skipped = failed = 0
     total = len(conversations)
+    # Once the quota window is spent nothing left in the pass can succeed:
+    # stop calling, count the rest as failed (still pending), and let the
+    # outer drip loop sleep until the reset instead of grinding failures.
+    quota_wall = threading.Event()
 
     def run_one(item):
         position, conversation = item
+        if quota_wall.is_set():
+            return {"synthesized": 0, "skipped": 0, "failed": 1}
         try:
             result = synthesize_conversation(
                 conversation, call, model_id, DEFAULT_REGISTRY, done_episodes
             )
+        except QuotaExhausted as error:
+            if not quota_wall.is_set():
+                quota_wall.set()
+                print(f"  [{position}/{total}] quota wall, aborting pass: {error}", flush=True)
+            return {"synthesized": 0, "skipped": 0, "failed": 1}
         except Exception as error:  # noqa: BLE001 -- keep the run alive; the episode stays pending
             print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}

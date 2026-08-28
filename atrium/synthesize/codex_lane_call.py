@@ -38,6 +38,13 @@ def codex_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
                 "codex",
                 "exec",
                 "--skip-git-repo-check",
+                # Synthesis is pure text-to-JSON: no MCP server is needed, and
+                # serena is `required = true` in the user config -- under
+                # parallel workers its per-session startup times out and kills
+                # session creation (179 conversations failed that way before
+                # this flag).
+                "-c",
+                "mcp_servers.serena.enabled=false",
                 "-s",
                 "read-only",
                 "-C",

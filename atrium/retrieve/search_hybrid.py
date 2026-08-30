@@ -16,7 +16,11 @@ _FUSION_DEPTH = 60
 
 
 def search_hybrid(
-    connection: sqlite3.Connection, embedder: Embedder, query: str, limit: int = 20
+    connection: sqlite3.Connection,
+    embedder: Embedder,
+    query: str,
+    limit: int = 20,
+    workspace: str | None = None,
 ) -> list[Hit]:
     """Route between lanes by what the query gives each one to work with.
 
@@ -28,10 +32,10 @@ def search_hybrid(
     lexical rather than failing.
     """
     depth = max(limit, _FUSION_DEPTH)
-    lexical = search_words(connection, query, depth)
+    lexical = search_words(connection, query, depth, workspace)
     if not connection.execute("SELECT 1 FROM vectors LIMIT 1").fetchone():
         return lexical[:limit]
-    dense = search_dense(connection, embedder.embed([query])[0], depth)
+    dense = search_dense(connection, embedder.embed([query])[0], depth, workspace)
     if not dense:
         return lexical[:limit]
     if not lexical:

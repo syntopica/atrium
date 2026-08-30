@@ -20,6 +20,7 @@ def search(
     lane: str = "auto",
     *,
     embedder: "Embedder | None" = None,
+    workspace: str | None = None,
 ) -> list[Hit]:
     """Return whole hits for ``query`` on ``lane``.
 
@@ -33,13 +34,18 @@ def search(
     long-lived caller -- an MCP server answering many queries in one process --
     passes its own resident instance instead, so that cost is paid once for the
     life of the process rather than once per query.
+
+    ``workspace`` narrows every lane to one project before it takes its own
+    limit, so a scoped search returns that project's best matches rather than
+    whatever survives filtering the global top N. Unscoped is the default: a
+    question is often about work done elsewhere.
     """
     if lane not in LANES:
         raise ValueError(f"unknown lane {lane!r}; expected one of {', '.join(LANES)}")
     if lane == "substring":
-        return search_substrings(connection, query, limit)
+        return search_substrings(connection, query, limit, workspace)
     if lane == "words":
-        return search_words(connection, query, limit)
+        return search_words(connection, query, limit, workspace)
 
     if embedder is None:
         from atrium.embed.embedder import Embedder
@@ -49,8 +55,8 @@ def search(
     if lane == "dense":
         from atrium.retrieve.search_dense import search_dense
 
-        return search_dense(connection, embedder.embed([query])[0], limit)
+        return search_dense(connection, embedder.embed([query])[0], limit, workspace)
 
     from atrium.retrieve.search_hybrid import search_hybrid
 
-    return search_hybrid(connection, embedder, query, limit)
+    return search_hybrid(connection, embedder, query, limit, workspace)

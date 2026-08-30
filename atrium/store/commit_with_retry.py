@@ -30,6 +30,11 @@ def commit_with_retry(connection: sqlite3.Connection, write: Callable[[], T]) ->
 
     Only ``database is locked`` is retried. Every other OperationalError -- a
     corrupt page, a missing table -- propagates immediately.
+
+    ``write`` must confine itself to this connection. It can be called several
+    times, and every effect outside the transaction survives the rollback: a
+    callable that also sent a request, appended to a file, or advanced a counter
+    would do it once per attempt with nothing to undo it.
     """
     for delay in (*_BACKOFF, None):
         try:

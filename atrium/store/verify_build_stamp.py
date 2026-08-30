@@ -17,6 +17,13 @@ def verify_build_stamp(connection: sqlite3.Connection, *, stamp_if_empty: bool) 
     try:
         stored = dict(connection.execute("SELECT key, value FROM build_metadata"))
     except sqlite3.OperationalError as error:
+        # Only a missing table means "unversioned". Every other operational
+        # fault -- a locked database, an unreadable file, a failing disk -- is
+        # transient or environmental, and answering it with "delete it and
+        # re-ingest" hands an agent a destructive instruction for a problem
+        # that deleting cannot fix.
+        if "no such table" not in str(error):
+            raise
         raise RuntimeError(
             "this index has no build_metadata table; it predates index "
             "versioning -- delete it and re-ingest"

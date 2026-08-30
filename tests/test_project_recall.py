@@ -142,3 +142,28 @@ def test_a_path_is_a_path_not_a_like_pattern(tmp_path):
     hits = recent_episodes(connection, "[HOME]/p/my_app", 10)
     connection.close()
     assert [hit.text for hit in hits] == ["episode 1"]
+
+
+def test_a_relative_path_names_the_same_project_as_an_absolute_one(tmp_path, monkeypatch):
+    """`--project .` is the natural way to ask about the project you are in."""
+    home, root = _project(tmp_path, "p", "atrium")
+    (root / ".git").mkdir()
+    monkeypatch.chdir(root)
+    assert project_workspace(".", home) == project_workspace(root, home) == "[HOME]/p/atrium"
+
+
+def test_a_symlinked_checkout_resolves_to_its_real_project(tmp_path):
+    """Records were stored under the real path; the link has to reach them."""
+    home, root = _project(tmp_path, "p", "atrium")
+    (root / ".git").mkdir()
+    link = tmp_path / "home" / "shortcut"
+    link.symlink_to(root)
+    assert project_workspace(link, home) == "[HOME]/p/atrium"
+
+
+def test_the_home_directory_is_not_a_project(tmp_path):
+    """`[HOME]` as a prefix would match every redacted path in the index."""
+    home = tmp_path / "home"
+    home.mkdir(parents=True, exist_ok=True)
+    (home / ".git").mkdir()
+    assert project_workspace(home, home) is None

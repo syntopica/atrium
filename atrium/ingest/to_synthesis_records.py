@@ -6,7 +6,7 @@ from atrium.ingest.record_identity import record_identity
 from atrium.record import Record
 
 
-def to_synthesis_records(record: dict) -> Iterator[Record]:
+def to_synthesis_records(record: dict, workspace: str | None) -> Iterator[Record]:
     """Yield one index record per synthesized episode.
 
     The index-side conversation id is namespaced (`synthesis/<source id>`):
@@ -15,6 +15,12 @@ def to_synthesis_records(record: dict) -> Iterator[Record]:
     ``source_sha256`` is the registry job key -- a citation resolves to the
     immutable registry record, which names the exact source events, revision,
     model and prompt behind it.
+
+    ``workspace`` is the source conversation's, recovered by the caller. It has
+    no default: a synthesis record with none is unreachable from a
+    project-scoped recall -- the shape every session-start injection asks for --
+    and that was the original bug here. Passing ``None`` must be a decision a
+    caller writes down, not one it can fall into.
     """
     output = record.get("output") or {}
     parts = [output.get("title") or "", output.get("summary") or ""]
@@ -33,7 +39,7 @@ def to_synthesis_records(record: dict) -> Iterator[Record]:
         role="synthesis",
         text=text,
         authored_at=record.get("authored_at"),
-        workspace=None,
+        workspace=workspace,
         title=output.get("title"),
         event_index=0,
     )

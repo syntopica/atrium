@@ -28,10 +28,21 @@ def project_workspace(cwd: str | Path, home: str | Path | None = None) -> str | 
     repository has no boundary to recall within, and answering with the bare
     path would either match nothing or, for a root path, match everything.
     """
-    home = Path(home) if home is not None else Path.home()
-    path = Path(cwd).expanduser()
+    home = Path(home).expanduser().resolve() if home is not None else Path.home().resolve()
+    # Resolved, not merely expanded. `--project .` is the natural way to ask
+    # about the project you are standing in, and an unresolved `.` compares
+    # against nothing; a symlinked checkout would likewise miss every record
+    # stored under its real path.
+    try:
+        path = Path(cwd).expanduser().resolve()
+    except OSError:
+        return None
     root = _repository_root(path)
     if root is None:
+        return None
+    if root == home:
+        # The home directory itself is not a project. Answering `[HOME]` would
+        # make its prefix match every path the exporter ever redacted.
         return None
     try:
         text = f"{_HOME}/{root.relative_to(home)}"

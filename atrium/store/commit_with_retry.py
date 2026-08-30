@@ -3,6 +3,9 @@
 import sqlite3
 import time
 from collections.abc import Callable
+from typing import TypeVar
+
+T = TypeVar("T")
 
 # Ingest holds one write transaction for a whole archive, which on this corpus
 # runs for many minutes. busy_timeout only buys 30 seconds, so a writer that
@@ -11,8 +14,14 @@ from collections.abc import Callable
 _BACKOFF = (1, 2, 5, 10, 30, 60, 120, 240, 480, 600)
 
 
-def commit_with_retry(connection: sqlite3.Connection, write: Callable[[], None]) -> None:
+def commit_with_retry(connection: sqlite3.Connection, write: Callable[[], T]) -> T:
     """Run ``write`` inside a transaction, retrying while the database is locked.
+
+    Returns what ``write`` returned on the attempt that committed. It returns
+    rather than letting the caller accumulate, because a lock can be raised by
+    the commit itself, after ``write`` has already run: a callable that added to
+    a running total would count that attempt, roll it back, and count it again
+    on the retry.
 
     SQLite in WAL mode allows concurrent readers, never concurrent writers, and
     the jobs here legitimately overlap: an hourly refresh ingests while a drip
@@ -25,9 +34,10 @@ def commit_with_retry(connection: sqlite3.Connection, write: Callable[[], None])
     for delay in (*_BACKOFF, None):
         try:
             with connection:
-                write()
-            return
+                result = write()
+            return result
         except sqlite3.OperationalError as error:
             if "locked" not in str(error) or delay is None:
                 raise
             time.sleep(delay)
+    raise AssertionError("unreachable: the ladder ends with a re-raise")

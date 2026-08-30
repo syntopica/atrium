@@ -59,3 +59,26 @@ def test_an_unstamped_index_refuses_read_only_opening(tmp_path):
     connection.close()
     with pytest.raises(RuntimeError, match="never stamped"):
         open_store(path, read_only=True)
+
+
+def test_a_transient_fault_is_never_answered_with_delete_and_re_ingest(tmp_path):
+    """Deleting the index cannot fix a locked file, and an agent may act on it."""
+    import sqlite3
+
+    import pytest
+
+    from atrium.store.verify_build_stamp import verify_build_stamp
+
+    class Unreadable:
+        def execute(self, *_):
+            raise sqlite3.OperationalError("unable to open database file")
+
+    with pytest.raises(sqlite3.OperationalError, match="unable to open database file"):
+        verify_build_stamp(Unreadable(), stamp_if_empty=False)
+
+    class Unversioned:
+        def execute(self, *_):
+            raise sqlite3.OperationalError("no such table: build_metadata")
+
+    with pytest.raises(RuntimeError, match="predates index versioning"):
+        verify_build_stamp(Unversioned(), stamp_if_empty=False)

@@ -12,9 +12,13 @@ dependencies = [
 
 [project.scripts]
 atrium = "atrium.cli:main"
+atrium-mcp = "atrium.adapters.mcp_server:main"
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "ruff>=0.6"]
+# The MCP adapter is optional: the core must stay installable, and testable,
+# without the protocol SDK. An adapter is never allowed to become the engine.
+mcp = ["mcp>=2.1"]
 
 [tool.ruff]
 line-length = 100

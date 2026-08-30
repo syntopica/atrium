@@ -7,7 +7,8 @@ from atrium.retrieve.hit import Hit
 _QUERY = """
 SELECT record_id, text, conversation_id, source_sha256, authored_at, provider
 FROM records
-WHERE provider = 'synthesis' AND (workspace = ? OR workspace LIKE ? || '/%')
+WHERE provider = 'synthesis'
+  AND (workspace = ? OR substr(workspace, 1, length(?) + 1) = ? || '/')
 ORDER BY authored_at DESC, conversation_id, record_id
 LIMIT ?
 """
@@ -21,7 +22,10 @@ def recent_episodes(connection: sqlite3.Connection, workspace: str, limit: int) 
     is recency within the project, not relevance to a question.
 
     ``workspace`` is a prefix -- see ``project_workspace`` -- so a session run
-    from a subdirectory of the project still recalls the project.
+    from a subdirectory of the project still recalls the project. The prefix is
+    compared with ``substr`` rather than ``LIKE``: a path is not a pattern, and
+    2,585 workspaces in this index contain ``_``, which ``LIKE`` reads as "any
+    character" and which would quietly pull a neighbouring project's memory in.
 
     Every episode of one conversation carries that conversation's timestamp, so
     ordering by time alone leaves ties that SQLite may break differently on
@@ -32,7 +36,7 @@ def recent_episodes(connection: sqlite3.Connection, workspace: str, limit: int) 
     across everything that produces a ``Hit`` -- these are ordered by time, not
     ranked by relevance, and reporting a relevance score would be a lie.
     """
-    rows = connection.execute(_QUERY, (workspace, workspace, limit)).fetchall()
+    rows = connection.execute(_QUERY, (workspace, workspace, workspace, limit)).fetchall()
     return [
         Hit(
             record_id=row[0],

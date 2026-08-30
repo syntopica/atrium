@@ -171,8 +171,11 @@ def test_a_locked_database_is_waited_out_not_raised(tmp_path):
         attempts.append(len(attempts))
         if len(attempts) < 3:
             raise sqlite3.OperationalError("database is locked")
+        return 7
 
-    commit_with_retry(connection, write)
+    # The value comes back from the attempt that committed, so a caller can
+    # total it without counting a rolled-back attempt twice.
+    assert commit_with_retry(connection, write) == 7
     assert len(attempts) == 3
 
     # Anything that is not a lock is a real fault and must not be slept on.
@@ -181,4 +184,55 @@ def test_a_locked_database_is_waited_out_not_raised(tmp_path):
             connection,
             lambda: (_ for _ in ()).throw(sqlite3.OperationalError("no such table: nope")),
         )
+    connection.close()
+
+
+def test_an_unchanged_comparison_never_hides_a_real_change(tmp_path):
+    """Deciding "unchanged" wrongly means the index disagreeing with the archive."""
+    from atrium.record import Record
+    from atrium.store.write_conversation import write_conversation
+
+    def record(record_id, **overrides):
+        fields = {
+            "record_id": record_id,
+            "event_id": "e",
+            "conversation_id": "conv",
+            "source_sha256": "s",
+            "provider": "claude-code",
+            "role": "user",
+            "text": "t",
+            "authored_at": None,
+            "workspace": None,
+            "title": None,
+            "event_index": 0,
+        }
+        fields.update(overrides)
+        return Record(**fields)
+
+    connection = open_store(tmp_path / "index.sqlite3")
+
+    def stored():
+        return connection.execute("SELECT count(*) FROM records").fetchone()
+
+    with connection:
+        assert write_conversation(connection, "conv", [record("a"), record("b")]) == 2
+    with connection:
+        # Same rows, opposite order: the comparison sorts, so this is unchanged.
+        assert write_conversation(connection, "conv", [record("b"), record("a")]) == 0
+    with connection:
+        # Losing a record is a change even though the survivor is identical.
+        assert write_conversation(connection, "conv", [record("a")]) == 1
+    assert stored()[0] == 1
+    with connection:
+        # Gaining one is a change too.
+        assert write_conversation(connection, "conv", [record("a"), record("c")]) == 2
+    with connection:
+        # A field moving off NULL is a change, not a tie.
+        assert (
+            write_conversation(connection, "conv", [record("a", workspace="/w"), record("c")]) == 2
+        )
+    with connection:
+        # Emptying the conversation deletes it rather than reading as unchanged.
+        assert write_conversation(connection, "conv", []) == 0
+    assert stored()[0] == 0
     connection.close()

@@ -45,3 +45,36 @@ def test_an_empty_output_yields_no_index_record():
     empty = _record()
     empty["output"] = {"title": "", "summary": "", "facts": [], "open_ends": []}
     assert list(to_synthesis_records(empty)) == []
+
+
+def test_concurrent_writers_never_overwrite_a_claimed_key(tmp_path):
+    """Two writers racing one job key: the first content survives.
+
+    os.rename would replace the destination, resolving a divergence by arrival
+    order -- exactly what the registry exists to surface.
+    """
+    import threading
+
+    from atrium.synthesize.synthesis_registry import read_records, write_record
+
+    start = threading.Barrier(2)
+
+    def claim(payload):
+        start.wait()
+        write_record(tmp_path, "sharedkey", payload)
+
+    first = {"episode_id": "a", "output": {"title": "first"}}
+    second = {"episode_id": "a", "output": {"title": "second"}}
+    threads = [
+        threading.Thread(target=claim, args=(first,)),
+        threading.Thread(target=claim, args=(second,)),
+    ]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    records = list(read_records(tmp_path))
+    assert len(records) == 1
+    assert records[0]["output"]["title"] in {"first", "second"}
+    assert not list((tmp_path / "records").glob("*.tmp-*"))

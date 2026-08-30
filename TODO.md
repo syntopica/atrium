@@ -110,51 +110,20 @@
 
 ## Cutover from memstore
 
-- [x] **Freshness automated 2026-08-30.** `~/.local/bin/atrium-refresh` runs
-  export -> import -> ingest -> ingest-synthesis -> embed, under
-  `~/.local/bin/atrium-lock` (a real `fcntl.flock` held across `execvp`; macOS
-  has no `flock(1)`, and the `mkdir` + stale-pid pattern it replaced let two
-  contenders both judge one lock stale). Two triggers, per operator directive:
-  the hourly `com.cristian.atrium-refresh` LaunchAgent and the `Stop` hook
-  `~/.claude/hooks/atrium-refresh-on-stop.sh`. The first live run showed the
-  gap was far worse than three days: **the archive went from 11,164 to 23,449
-  conversations** (`added: 12285`), and the index from 553,083 to 614,359
-  records -- `codex` alone 21,219 -> 57,603. Only the newest archive backup is
-  kept; the importer writes a full 2.6 GB copy on every apply.
-- [x] **Read-side adapters shipped 2026-08-30** (`d917a35`). `atrium recall`
-  renders the project's newest synthesized episodes in ~1.2 s with no embedder;
-  `~/.claude/hooks/atrium-recall.sh` replaced the memstore recall hook in
-  `SessionStart` and was verified to load in *both* profiles by asking the
-  the work organization profile to quote the injected block back. The MCP server
-  (`atrium.adapters.mcp_server`, optional `mcp` extra, registered as `atrium` in
-  both `.claude.json`) keeps one resident `Embedder`: measured over the
-  protocol, the first search costs 20.7 s and the next 2.7 s.
-  Deliberate divergence from the frozen-snapshot design: `atrium recall` is
-  deterministic given the index and cheap enough to run live, so a snapshot
-  file would add a staleness window and a writer for no measured gain.
-  Revisit if recall ever needs the dense lane.
-- [x] **Synthesis records carry their conversation's workspace** (`28e2c7b`).
-  14,630 of 14,653 now do; the 23 without are conversations the exporter could
-  not place, and they stay unscoped rather than borrow a neighbour's.
-- [x] **memstore retired 2026-08-30**, reversibly -- every switch flipped, no
-  data touched. The Claude plugin is disabled (`claude plugin disable
-  memstore@memstore`), `atrium` replaced it as an MCP server in both Claude
-  profiles and in `~/.codex/config.toml`, and the four LaunchAgents
-  (`daemon`, `watchdog`, `retention`, `codex-mine`) are unloaded. Global
-  guidance in `~/.claude/CLAUDE.md` now points at Atrium; leaving it pointing
-  at memstore would have sent every future session to a tool that is gone.
-  Verified by asking each client, not by assuming: Claude answers NO to a
-  memstore tool and YES to `atrium_recall`, and Codex returns a real episode
-  through `atrium_recall`.
-  Two things a *host* config still needs, both pre-existing and neither caused
-  by this work:
-  * The `~/.claude` profile loads no stdio MCP server at all -- `atrium`,
-    `chrome-devtools`, `codegraph` and `serena` are all absent from its tool
-    list, while `~/.claude-second-profile` loads them. Only plugin-provided servers
-    reach it. Worth diagnosing; it means that profile has no Atrium MCP.
-  * An MCP command must be an absolute path. `uv` is not on the minimal PATH a
-    host spawns with, and `command = "uv"` failed silently in Codex -- the
-    server was listed as enabled and its tools simply never appeared.
+> Done 2026-08-30; the record is in `TODO_LOG.md`. What is left here is the
+> disk, and two host-config faults the cutover surfaced.
+
+- [ ] The `~/.claude` profile loads no stdio MCP server at all: `atrium`,
+  `chrome-devtools`, `codegraph` and `serena` are all absent from its tool
+  list, while `~/.claude-second-profile` loads every one from an identical
+  configuration. Only plugin-provided servers reach it, which is why the
+  memstore plugin worked there. Predates this work; it means that profile
+  currently has no Atrium MCP (its SessionStart recall hook works either way).
+- [ ] `~/p/dotfiles` has an unresolved merge conflict in `claude/settings.json`
+  (`UU`), which blocks committing the guidance change made there on
+  2026-08-30. The working tree carries the Atrium guidance in
+  `agent-guidance/shared.md` and `agent-guidance/policy.json`; both are
+  uncommitted until that conflict is resolved by whoever created it.
 - [ ] Reclaim `~/.memstore` (118 GB). Deliberately not done: stopping the
   system does not require deleting it, and deletion is not reversible. Two
   things to settle first:
@@ -167,54 +136,6 @@
     recall. 118 GB, of which ~87 GB is dead rebuild snapshots and a 14 GB
     `chroma.sqlite3.pre-wal-20260825`; the live palace is 31 GB against
     atrium's 3.3 GB index.
-
-- [-] Freshness blocker as originally filed:
-  `~/.local/share/rocket-agents/conversations/archive.jsonl` was last written
-  2026-08-27 23:47 and *nothing* refreshes it: no LaunchAgent, no crontab
-  entry runs `run-conversations-export`. The only scheduled rocket-agents job
-  is `com.cristian.library-loop` (a learning report, and it has been logging
-  `skipped: a report younger than 7 day(s) exists` for weeks). memstore
-  captures live on Stop; atrium's corpus is frozen until a human exports.
-  Until this is automated, switching memstore off loses memory. Chain is
-  `run-conversations-export --output <slice>` ->
-  `run-conversations-import --input <slice> --archive <archive> --apply` ->
-  `atrium ingest` -> `atrium embed`. Operator directive 2026-08-30: build
-  *both* a periodic LaunchAgent and a session-Stop hook.
-- [-] Superseded by the entries above. Read-side adapters (supersedes the generic "thin adapters" item below
-  for the cutover). Two pieces, per the 2026-08-30 two-agent consult:
-  * A long-lived stdio MCP server exposing `atrium_search(query, limit, lane,
-    workspace?)` that calls the retrieval functions directly and keeps one
-    lazy `Embedder`. The measured 7 s of `atrium search` is model load, paid
-    per subprocess; a resident server pays it once. It must **not** parse CLI
-    output -- `cli.py:393` truncates text to 200 chars for humans. Extract a
-    shared function returning whole `Hit` objects.
-  * Session-start injection as a frozen snapshot written at session close and
-    injected at the *next* start (see the Synthesis section), so the hook
-    only reads a file and the prefix cache survives.
-  Then rewire `~/.claude/hooks/recall.sh`, the MCP registration and the
-  recall skill, and verify in a fresh session before disabling memstore.
-- [-] Superseded by the entries above. **Synthesis records carry no workspace, so project-scoped recall cannot
-  reach them.** `to_synthesis_records.py:38` sets `workspace=None`; 0 of the
-  indexed synthesis records have one, against 466k of 550k raw records that
-  do. The memstore hook being replaced is wing-scoped (project folder name),
-  so this blocks parity on the read side. No re-synthesis needed: the registry
-  record carries `conversation_id` and that conversation is already indexed
-  with its workspace -- resolve it at ingest.
-- [-] Folded into the retirement entry above. memstore write side, measured 2026-08-30 -- smaller than assumed:
-  knowledge graph, artifacts and events are **not** load-bearing. The live
-  `~/.memstore/knowledge_graph.sqlite3` holds 0 entities and 0 triples, and
-  the active logstream holds 0 artifacts and 0 events. Only checkpoints and
-  the diary are in use (3,269 diary drawers), and those are literal message
-  tails, which the frozen snapshot replaces properly rather than ports.
-  One exception before any deletion: `~/.memstore/palace/knowledge_graph.sqlite3`
-  (untouched since 2026-06-09) holds 2,897 entities and 1,912 triples -- the
-  only memstore content not reconstructible from the archive. Decide whether
-  any of it belongs in brain before retiring the store.
-- [-] Folded into the retirement entry above. Reclaim: `~/.memstore` is 118 GB, of which ~87 GB is dead rebuild
-  snapshots (`palace.pre-rebuild-20260804/-20260820/-20260824`,
-  `palace.backup-20260825-purge`, `palace.pre-codeprune`, `palace.pre-mdprune`)
-  plus a 14 GB `chroma.sqlite3.pre-wal-20260825`. The live palace is 31 GB;
-  atrium's whole index is 3.3 GB. Do not delete until the cutover is verified.
 
 ## Measurement
 

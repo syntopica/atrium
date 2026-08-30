@@ -102,3 +102,22 @@ def test_a_project_with_no_episodes_injects_nothing():
     from atrium.recall.render_snapshot import render_snapshot
 
     assert render_snapshot("[HOME]/p/nothing", []) == ""
+
+
+def test_a_path_is_a_path_not_a_like_pattern(tmp_path):
+    """`_` is a LIKE wildcard; 2,585 workspaces in the live index contain one."""
+    connection = open_store(tmp_path / "index.sqlite3")
+    with connection:
+        write_conversation(
+            connection,
+            "synthesis/mine",
+            [_episode(1, "synthesis/mine", "[HOME]/p/my_app/src", "2026-08-01T00:00:00Z")],
+        )
+        write_conversation(
+            connection,
+            "synthesis/theirs",
+            [_episode(2, "synthesis/theirs", "[HOME]/p/myXapp/src", "2026-08-02T00:00:00Z")],
+        )
+    hits = recent_episodes(connection, "[HOME]/p/my_app", 10)
+    connection.close()
+    assert [hit.text for hit in hits] == ["episode 1"]

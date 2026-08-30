@@ -241,12 +241,9 @@ def _embed(index: Path) -> int:
             batch = pending[start : start + 256]
             matrix = embedder.embed([text for _, _, text in batch])
             rows = [(rid, sha) for rid, sha, _ in batch]
-
-            def commit(rows=rows, matrix=matrix):
-                nonlocal written
-                written += write_vectors(connection, rows, matrix)
-
-            commit_with_retry(connection, commit)
+            written += commit_with_retry(
+                connection, lambda rows=rows, matrix=matrix: write_vectors(connection, rows, matrix)
+            )
             processed += len(batch)
             print(f"  embedded {written}/{len(pending)}", flush=True)
     finally:

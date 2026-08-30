@@ -193,22 +193,26 @@ def _ingest_notes(
     connection = open_store(index)
     total = 0
     files = 0
+    unchanged = 0
     removed = 0
     seen: set[str] = set()
     try:
         with connection:
             for note in read_notes(root, exclude):
                 files += 1
-                total += write_conversation(
+                written = write_conversation(
                     connection, note["path"], to_note_records(note, provider)
                 )
+                unchanged += written == UNCHANGED
+                total += max(written, 0)
                 seen.add(note["path"])
             if sweep:
                 removed = delete_absent_conversations(connection, provider, seen)
     finally:
         connection.close()
     swept = f", {removed} absent removed" if removed else ""
-    print(f"  {files} notes -> {total} records indexed at {index}{swept}")
+    skipped = f", {unchanged} notes unchanged" if unchanged else ""
+    print(f"  {files} notes -> {total} records written at {index}{skipped}{swept}")
     return 0
 
 

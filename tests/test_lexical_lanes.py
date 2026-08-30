@@ -151,3 +151,45 @@ def test_the_adjacency_filter_survives_a_wall_of_false_candidates(tmp_path):
 def test_a_query_of_only_punctuation_returns_nothing_rather_than_raising(tmp_path):
     connection = _store(tmp_path, [_record("a", "some ordinary prose about retrieval")])
     assert search_words(connection, "...") == []
+
+
+def test_a_scope_narrows_before_the_limit_not_after(tmp_path):
+    """Filtering returned hits would ask for the global top N and discard it.
+
+    The scoped project's records rank *below* sixty others here, so a lane that
+    took its limit first and filtered afterwards would answer nothing.
+    """
+    from atrium.record import Record
+    from atrium.retrieve.search_words import search_words
+    from atrium.store.open_store import open_store
+    from atrium.store.write_conversation import write_conversation
+
+    def record(index, workspace, text):
+        return Record(
+            record_id=f"r{index}",
+            event_id=f"e{index}",
+            conversation_id=f"c{index}",
+            source_sha256=f"s{index}",
+            provider="claude-code",
+            role="user",
+            text=text,
+            authored_at="2026-08-01T00:00:00Z",
+            workspace=workspace,
+            title=None,
+            event_index=0,
+        )
+
+    connection = open_store(tmp_path / "index.sqlite3")
+    with connection:
+        for index in range(60):
+            write_conversation(
+                connection, f"c{index}", [record(index, "[HOME]/p/other", "sentinel sentinel")]
+            )
+        write_conversation(
+            connection, "c60", [record(60, "[HOME]/p/mine", "sentinel mentioned once")]
+        )
+
+    assert len(search_words(connection, "sentinel", 5)) == 5
+    scoped = search_words(connection, "sentinel", 5, "[HOME]/p/mine")
+    connection.close()
+    assert [hit.record_id for hit in scoped] == ["r60"]

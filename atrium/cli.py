@@ -8,8 +8,6 @@ from atrium.ingest.read_archive import read_archive
 from atrium.ingest.read_notes import read_notes
 from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
-from atrium.retrieve.search_substrings import search_substrings
-from atrium.retrieve.search_words import search_words
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
 from atrium.store.write_conversation import write_conversation
@@ -126,15 +124,18 @@ def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     connection = open_store(index)
     total = 0
     conversations = 0
+    unchanged = 0
     removed = 0
     seen_by_provider: dict[str, set[str]] = {}
     try:
         with connection:
             for conversation in read_archive(archive):
                 conversations += 1
-                total += write_conversation(
+                written = write_conversation(
                     connection, conversation["id"], to_records(conversation)
                 )
+                total += written
+                unchanged += written == 0
                 provider = conversation.get("source") or "unknown"
                 seen_by_provider.setdefault(provider, set()).add(conversation["id"])
             if sweep:
@@ -143,7 +144,8 @@ def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     finally:
         connection.close()
     swept = f", {removed} absent removed" if removed else ""
-    print(f"  {conversations} conversations -> {total} records indexed at {index}{swept}")
+    skipped = f", {unchanged} conversations unchanged" if unchanged else ""
+    print(f"  {conversations} conversations -> {total} records written at {index}{skipped}{swept}")
     return 0
 
 
@@ -199,6 +201,7 @@ def _embed(index: Path) -> int:
     """
     from atrium.embed.embedder import Embedder
     from atrium.embed.semantic_roles import SEMANTIC_ROLES
+    from atrium.store.commit_with_retry import commit_with_retry
     from atrium.store.write_vectors import write_vectors
 
     connection = open_store(index)
@@ -224,8 +227,13 @@ def _embed(index: Path) -> int:
         for start in range(0, len(pending), 256):
             batch = pending[start : start + 256]
             matrix = embedder.embed([text for _, _, text in batch])
-            with connection:
-                written += write_vectors(connection, [(rid, sha) for rid, sha, _ in batch], matrix)
+            rows = [(rid, sha) for rid, sha, _ in batch]
+
+            def commit(rows=rows, matrix=matrix):
+                nonlocal written
+                written += write_vectors(connection, rows, matrix)
+
+            commit_with_retry(connection, commit)
             processed += len(batch)
             print(f"  embedded {written}/{len(pending)}", flush=True)
     finally:
@@ -336,6 +344,7 @@ def _ingest_synthesis(index: Path) -> int:
     serves, so coexistence in the registry never becomes a duplicate -- or a
     primary-key collision -- in the index.
     """
+    from atrium.ingest.conversation_workspaces import conversation_workspaces
     from atrium.ingest.to_synthesis_records import to_synthesis_records
     from atrium.synthesize.active_recipe import active_recipe_priority
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY, read_records
@@ -352,40 +361,37 @@ def _ingest_synthesis(index: Path) -> int:
 
     connection = open_store(index)
     total = 0
+    unchanged = 0
     seen: set[str] = set()
-    by_conversation: dict[str, list] = {}
-    for record in chosen.values():
-        for row in to_synthesis_records(record):
-            by_conversation.setdefault(row.conversation_id, []).append(row)
     try:
+        # Read the workspaces before writing anything: the map comes from the
+        # raw conversations, which this pass never touches.
+        workspaces = conversation_workspaces(connection)
+        by_conversation: dict[str, list] = {}
+        for record in chosen.values():
+            workspace = workspaces.get(record["conversation_id"])
+            for row in to_synthesis_records(record, workspace):
+                by_conversation.setdefault(row.conversation_id, []).append(row)
         with connection:
             for conversation_id, rows in sorted(by_conversation.items()):
-                total += write_conversation(connection, conversation_id, rows)
+                written = write_conversation(connection, conversation_id, rows)
+                total += written
+                unchanged += written == 0
                 seen.add(conversation_id)
             removed = delete_absent_conversations(connection, "synthesis", seen)
     finally:
         connection.close()
     swept = f", {removed} absent removed" if removed else ""
-    print(f"  {len(seen)} conversations -> {total} synthesis records indexed{swept}")
+    skipped = f", {unchanged} unchanged" if unchanged else ""
+    print(f"  {len(seen)} conversations -> {total} synthesis records written{skipped}{swept}")
     return 0
 
 
 def _search(index: Path, query: str, limit: int, lane: str) -> int:
+    from atrium.retrieve.search import search
+
     connection = open_store(index, read_only=True)
-    if lane == "substring":
-        hits = search_substrings(connection, query, limit)
-    elif lane == "words":
-        hits = search_words(connection, query, limit)
-    elif lane == "dense":
-        from atrium.embed.embedder import Embedder
-        from atrium.retrieve.search_dense import search_dense
-
-        hits = search_dense(connection, Embedder().embed([query])[0], limit)
-    else:
-        from atrium.embed.embedder import Embedder
-        from atrium.retrieve.search_hybrid import search_hybrid
-
-        hits = search_hybrid(connection, Embedder(), query, limit)
+    hits = search(connection, query, limit, lane)
     connection.close()
     if not hits:
         print("  no matches")

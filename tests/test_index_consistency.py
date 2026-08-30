@@ -1,6 +1,7 @@
 """The index must never disagree with the archive it was derived from."""
 
 import json
+from dataclasses import replace
 
 import pytest
 
@@ -108,3 +109,76 @@ def test_search_never_returns_a_row_whose_text_changed(tmp_path):
     connection = open_store(index, read_only=True)
     assert search_words(connection, "old") == []
     assert [hit.text for hit in search_words(connection, "new")] == ["new sentinel passage"]
+
+
+def test_rewriting_an_unchanged_conversation_keeps_its_vectors(tmp_path):
+    """A no-op reconciliation must not cost the whole dense lane.
+
+    vectors.record_id cascades on delete, so a write that deletes and reinserts
+    identical rows silently drops every embedding for that conversation. Run
+    hourly over the whole archive, that is the entire index re-embedded each
+    time.
+    """
+    import numpy as np
+
+    from atrium.record import Record
+    from atrium.store.open_store import open_store
+    from atrium.store.write_conversation import write_conversation
+    from atrium.store.write_vectors import write_vectors
+
+    record = Record(
+        record_id="r1",
+        event_id="e1",
+        conversation_id="conv1",
+        source_sha256="s1",
+        provider="synthesis",
+        role="synthesis",
+        text="an episode",
+        authored_at="2026-08-01T00:00:00Z",
+        workspace="/home/me/p/atrium",
+        title="t",
+        event_index=0,
+    )
+    connection = open_store(tmp_path / "index.sqlite3")
+    with connection:
+        assert write_conversation(connection, "conv1", [record]) == 1
+        write_vectors(connection, [("r1", "s1")], np.zeros((1, 4), dtype=np.float32))
+    assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 1
+
+    with connection:
+        assert write_conversation(connection, "conv1", [record]) == 0
+    assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 1
+
+    # A real revision still replaces the record, and its stale vector goes.
+    revised = replace(record, source_sha256="s2", text="a corrected episode")
+    with connection:
+        assert write_conversation(connection, "conv1", [revised]) == 1
+    assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 0
+    connection.close()
+
+
+def test_a_locked_database_is_waited_out_not_raised(tmp_path):
+    """An hourly ingest and a drip embed overlap by design; that is not an error."""
+    import sqlite3
+
+    from atrium.store.commit_with_retry import commit_with_retry
+
+    index = tmp_path / "index.sqlite3"
+    connection = open_store(index)
+    attempts = []
+
+    def write():
+        attempts.append(len(attempts))
+        if len(attempts) < 3:
+            raise sqlite3.OperationalError("database is locked")
+
+    commit_with_retry(connection, write)
+    assert len(attempts) == 3
+
+    # Anything that is not a lock is a real fault and must not be slept on.
+    with pytest.raises(sqlite3.OperationalError, match="no such table"):
+        commit_with_retry(
+            connection,
+            lambda: (_ for _ in ()).throw(sqlite3.OperationalError("no such table: nope")),
+        )
+    connection.close()

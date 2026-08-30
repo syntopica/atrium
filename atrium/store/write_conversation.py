@@ -5,12 +5,17 @@ from collections.abc import Iterable
 
 from atrium.record import Record
 
-_INSERT = """
-INSERT INTO records (
-    record_id, event_id, conversation_id, source_sha256, provider, role, text,
-    authored_at, workspace, title, event_index
-) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+_COLUMNS = (
+    "record_id, event_id, conversation_id, source_sha256, provider, role, text, "
+    "authored_at, workspace, title, event_index"
+)
+
+_INSERT = f"""
+INSERT INTO records ({_COLUMNS})
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 """
+
+_STORED = f"SELECT {_COLUMNS} FROM records WHERE conversation_id = ? ORDER BY record_id"
 
 
 def write_conversation(
@@ -28,8 +33,15 @@ def write_conversation(
 
     The caller owns the transaction: reconciliation is only correct if the
     delete and the inserts commit together.
+
+    A conversation whose stored rows already equal ``records`` is left alone
+    rather than rewritten to the same values. That is not a speed
+    optimisation: ``vectors.record_id`` cascades on delete, so rewriting an
+    unchanged conversation destroys its embeddings, and a run that reconciles
+    the whole archive would drop every vector in the index and pay the full
+    re-embed again. Measured on this index: 19,198 vectors, hours of CPU, on
+    every hourly refresh.
     """
-    connection.execute("DELETE FROM records WHERE conversation_id = ?", (conversation_id,))
     rows = [
         (
             record.record_id,
@@ -46,6 +58,10 @@ def write_conversation(
         )
         for record in records
     ]
+    stored = connection.execute(_STORED, (conversation_id,)).fetchall()
+    if stored == sorted(rows):
+        return 0
+    connection.execute("DELETE FROM records WHERE conversation_id = ?", (conversation_id,))
     if rows:
         connection.executemany(_INSERT, rows)
     return len(rows)

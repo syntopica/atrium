@@ -74,3 +74,52 @@ def test_read_notes_excludes_named_directories(tmp_path):
     (tmp_path / "curated.md").write_text("# Curated\n\nnote")
     notes = list(read_notes(tmp_path, exclude=("sources",)))
     assert [n["path"] for n in notes] == ["curated.md"]
+
+
+def test_synthesis_records_inherit_the_source_conversation_workspace(tmp_path):
+    """A synthesis record with no workspace is invisible to project recall."""
+    from atrium.ingest.conversation_workspaces import conversation_workspaces
+    from atrium.ingest.to_synthesis_records import to_synthesis_records
+    from atrium.record import Record
+    from atrium.store.open_store import open_store
+    from atrium.store.write_conversation import write_conversation
+
+    def event(index, conversation_id, workspace):
+        return Record(
+            record_id=f"{conversation_id}-{index}",
+            event_id=f"e{index}",
+            conversation_id=conversation_id,
+            source_sha256=f"s{index}",
+            provider="claude-code",
+            role="user",
+            text=f"turn {index}",
+            authored_at="2026-08-01T00:00:00Z",
+            workspace=workspace,
+            title=None,
+            event_index=index,
+        )
+
+    connection = open_store(tmp_path / "index.sqlite3")
+    with connection:
+        write_conversation(connection, "conv1", [event(0, "conv1", "/home/me/p/atrium")])
+        # A conversation the exporter could not place has no workspace at all;
+        # its synthesis must stay unscoped rather than borrow someone else's.
+        write_conversation(connection, "conv2", [event(0, "conv2", None)])
+    workspaces = conversation_workspaces(connection)
+    connection.close()
+
+    assert workspaces == {"conv1": "/home/me/p/atrium"}
+
+    def record(conversation_id):
+        return {
+            "conversation_id": conversation_id,
+            "episode_id": f"ep-{conversation_id}",
+            "job_key": f"k-{conversation_id}",
+            "authored_at": "2026-08-01T00:00:00Z",
+            "output": {"title": "t", "summary": "s", "facts": ["f"], "open_ends": []},
+        }
+
+    scoped = list(to_synthesis_records(record("conv1"), workspaces.get("conv1")))
+    unscoped = list(to_synthesis_records(record("conv2"), workspaces.get("conv2")))
+    assert [row.workspace for row in scoped] == ["/home/me/p/atrium"]
+    assert [row.workspace for row in unscoped] == [None]

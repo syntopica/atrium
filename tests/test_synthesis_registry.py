@@ -32,7 +32,7 @@ def test_a_record_is_written_once_and_never_overwritten(tmp_path):
 
 
 def test_synthesis_records_are_namespaced_away_from_raw_conversations():
-    rows = list(to_synthesis_records(_record()))
+    rows = list(to_synthesis_records(_record(), None))
     assert len(rows) == 1
     assert rows[0].conversation_id == "synthesis/conv-1"
     assert rows[0].provider == "synthesis"
@@ -44,7 +44,7 @@ def test_synthesis_records_are_namespaced_away_from_raw_conversations():
 def test_an_empty_output_yields_no_index_record():
     empty = _record()
     empty["output"] = {"title": "", "summary": "", "facts": [], "open_ends": []}
-    assert list(to_synthesis_records(empty)) == []
+    assert list(to_synthesis_records(empty, None)) == []
 
 
 def test_concurrent_writers_never_overwrite_a_claimed_key(tmp_path):

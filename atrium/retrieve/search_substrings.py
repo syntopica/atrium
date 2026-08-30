@@ -3,13 +3,14 @@
 import sqlite3
 
 from atrium.retrieve.hit import Hit
+from atrium.retrieve.workspace_scope import workspace_clause
 
 _QUERY = """
 SELECT r.record_id, r.text, -bm25(substrings) AS score, r.conversation_id,
        r.source_sha256, r.authored_at, r.provider
 FROM substrings
 JOIN records r ON r.rowid = substrings.rowid
-WHERE substrings MATCH ?
+WHERE substrings MATCH ?{scope}
 ORDER BY bm25(substrings)
 LIMIT ?
 """
@@ -18,7 +19,12 @@ LIMIT ?
 MIN_FRAGMENT = 3
 
 
-def search_substrings(connection: sqlite3.Connection, query: str, limit: int = 20) -> list[Hit]:
+def search_substrings(
+    connection: sqlite3.Connection,
+    query: str,
+    limit: int = 20,
+    workspace: str | None = None,
+) -> list[Hit]:
     """Return records containing ``query`` as a fragment, inside words included.
 
     This lane answers a different question from ``search_words`` and is exposed
@@ -30,7 +36,10 @@ def search_substrings(connection: sqlite3.Connection, query: str, limit: int = 2
     if len(fragment) < MIN_FRAGMENT:
         return []
     escaped = fragment.replace('"', '""')
-    rows = connection.execute(_QUERY, (f'"{escaped}"', limit)).fetchall()
+    scope, scope_parameters = workspace_clause(workspace)
+    rows = connection.execute(
+        _QUERY.format(scope=scope), (f'"{escaped}"', *scope_parameters, limit)
+    ).fetchall()
     return [
         Hit(
             record_id=row[0],

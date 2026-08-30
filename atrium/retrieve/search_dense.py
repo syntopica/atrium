@@ -5,18 +5,23 @@ import sqlite3
 import numpy as np
 
 from atrium.retrieve.hit import Hit
+from atrium.retrieve.workspace_scope import workspace_clause
 
 _QUERY = """
 SELECT v.record_id, v.vector, r.text, r.conversation_id, r.source_sha256,
        r.authored_at, r.provider
 FROM vectors v
 JOIN records r ON r.record_id = v.record_id
+WHERE 1 = 1{scope}
 ORDER BY v.record_id
 """
 
 
 def search_dense(
-    connection: sqlite3.Connection, query_vector: np.ndarray, limit: int = 20
+    connection: sqlite3.Connection,
+    query_vector: np.ndarray,
+    limit: int = 20,
+    workspace: str | None = None,
 ) -> list[Hit]:
     """Return the records whose vectors are nearest to ``query_vector``.
 
@@ -25,7 +30,8 @@ def search_dense(
     index would buy nothing here and reintroduce the corruption class the
     previous system paid for (HNSW compaction failures, index divergence).
     """
-    rows = connection.execute(_QUERY).fetchall()
+    scope, scope_parameters = workspace_clause(workspace)
+    rows = connection.execute(_QUERY.format(scope=scope), scope_parameters).fetchall()
     if not rows:
         return []
     matrix = np.frombuffer(b"".join(row[1] for row in rows), dtype=np.float32).reshape(

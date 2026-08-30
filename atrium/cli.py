@@ -10,7 +10,7 @@ from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
-from atrium.store.write_conversation import write_conversation
+from atrium.store.write_conversation import UNCHANGED, write_conversation
 
 DEFAULT_INDEX = Path.home() / ".atrium" / "index.sqlite3"
 
@@ -69,6 +69,13 @@ def main(argv: list[str] | None = None) -> int:
     search = subcommands.add_parser("search", help="Search the index")
     search.add_argument("query")
     search.add_argument("--limit", type=_positive_limit, default=10)
+    search.add_argument(
+        "--project",
+        type=Path,
+        default=None,
+        metavar="DIR",
+        help="Restrict the search to the project containing DIR",
+    )
     lanes = search.add_mutually_exclusive_group()
     lanes.add_argument(
         "--substring",
@@ -114,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.dense
             else "auto"
         )
-        return _search(args.index, args.query, args.limit, lane)
+        return _search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "recall":
         return _recall(args.index, args.cwd, args.limit)
     return _status(args.index)
@@ -147,8 +154,8 @@ def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
                 written = write_conversation(
                     connection, conversation["id"], to_records(conversation)
                 )
-                total += written
-                unchanged += written == 0
+                unchanged += written == UNCHANGED
+                total += max(written, 0)
                 provider = conversation.get("source") or "unknown"
                 seen_by_provider.setdefault(provider, set()).add(conversation["id"])
             if sweep:
@@ -385,8 +392,8 @@ def _ingest_synthesis(index: Path) -> int:
         with connection:
             for conversation_id, rows in sorted(by_conversation.items()):
                 written = write_conversation(connection, conversation_id, rows)
-                total += written
-                unchanged += written == 0
+                unchanged += written == UNCHANGED
+                total += max(written, 0)
                 seen.add(conversation_id)
             removed = delete_absent_conversations(connection, "synthesis", seen)
     finally:
@@ -397,11 +404,18 @@ def _ingest_synthesis(index: Path) -> int:
     return 0
 
 
-def _search(index: Path, query: str, limit: int, lane: str) -> int:
+def _search(index: Path, query: str, limit: int, lane: str, project: Path | None = None) -> int:
+    from atrium.recall.project_workspace import project_workspace
     from atrium.retrieve.search import search
 
+    workspace = None
+    if project is not None:
+        workspace = project_workspace(project)
+        if workspace is None:
+            print(f"  {project} is in no repository, so it names no project to search")
+            return 1
     connection = open_store(index, read_only=True)
-    hits = search(connection, query, limit, lane)
+    hits = search(connection, query, limit, lane, workspace=workspace)
     connection.close()
     if not hits:
         print("  no matches")
@@ -417,18 +431,22 @@ def _search(index: Path, query: str, limit: int, lane: str) -> int:
 def _recall(index: Path, cwd: Path, limit: int) -> int:
     """Print the recall block for the project containing ``cwd``.
 
-    Prints nothing and succeeds when the project has no synthesized episodes.
-    A session start calls this, and a hook forced to tell "no memory" from
-    "recall is broken" by reading prose would get it wrong: silence is the
-    correct injection for a project nothing is known about.
+    Exit status separates the two ways of printing nothing. Zero means there is
+    genuinely nothing to recall -- no project here, or no episodes in it -- and
+    silence is the right injection. Non-zero means recall could not answer, and
+    a caller must say so rather than let a broken index read as a project with
+    no history.
     """
     from atrium.recall.project_workspace import project_workspace
     from atrium.recall.recent_episodes import recent_episodes
     from atrium.recall.render_snapshot import render_snapshot
 
     if not index.exists():
-        return 0
+        print(f"no index at {index}; run `atrium ingest` first", file=sys.stderr)
+        return 1
     project = project_workspace(cwd)
+    if project is None:
+        return 0
     connection = open_store(index, read_only=True)
     try:
         hits = recent_episodes(connection, project, limit)

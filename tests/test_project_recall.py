@@ -10,29 +10,50 @@ from atrium.store.write_conversation import write_conversation
 HOME = "/Users/someone"
 
 
-def test_a_live_cwd_is_written_the_way_the_exporter_redacted_it():
-    assert project_workspace(f"{HOME}/p/atrium", HOME) == "[HOME]/p/atrium"
+def _project(tmp_path, *segments):
+    """Make a repository at tmp_path/p/<name> and return (home, path)."""
+    home = tmp_path / "home"
+    root = home.joinpath(*segments)
+    root.mkdir(parents=True, exist_ok=True)
+    return home, root
 
 
-def test_a_subdirectory_recalls_its_project():
-    assert project_workspace(f"{HOME}/p/intelifactu/apps/web", HOME) == (
-        "[HOME]/p/intelifactu/apps/web"
-    )
+def test_a_live_cwd_is_written_the_way_the_exporter_redacted_it(tmp_path):
+    home, root = _project(tmp_path, "p", "atrium")
+    (root / ".git").mkdir()
+    assert project_workspace(root, home) == "[HOME]/p/atrium"
 
 
-def test_both_worktree_layouts_belong_to_their_project():
+def test_a_subdirectory_recalls_its_project_not_itself(tmp_path):
+    """A session in apps/web is working on the project, and needs its memory."""
+    home, root = _project(tmp_path, "p", "intelifactu")
+    (root / ".git").mkdir()
+    deep = root / "apps" / "web"
+    deep.mkdir(parents=True)
+    assert project_workspace(deep, home) == "[HOME]/p/intelifactu"
+
+
+def test_both_worktree_layouts_belong_to_their_project(tmp_path):
     """A branch must not get memory of its own and hide the trunk's."""
-    assert project_workspace(f"{HOME}/p/atc/.claude/worktrees/copilot-mcp", HOME) == "[HOME]/p/atc"
-    assert (
-        project_workspace(f"{HOME}/p/favish-talk.worktrees/gha-build", HOME)
-        == "[HOME]/p/favish-talk"
-    )
+    home, root = _project(tmp_path, "p", "atc")
+    tree = root / ".claude" / "worktrees" / "copilot-mcp"
+    tree.mkdir(parents=True)
+    # A worktree carries a .git *file*, not a directory.
+    (tree / ".git").write_text("gitdir: elsewhere\n")
+    assert project_workspace(tree, home) == "[HOME]/p/atc"
+
+    home2, sibling = _project(tmp_path, "p2", "favish-talk.worktrees", "gha-build")
+    (sibling / ".git").write_text("gitdir: elsewhere\n")
+    assert project_workspace(sibling, home2) == "[HOME]/p2/favish-talk"
 
 
-def test_a_path_outside_home_is_left_alone():
-    assert project_workspace("/var/folders/k2/T/atrium-codex-xo4", HOME) == (
-        "/var/folders/k2/T/atrium-codex-xo4"
-    )
+def test_a_path_in_no_repository_names_no_project(tmp_path):
+    """A bare path would match nothing, and a root path would match everything."""
+    home = tmp_path / "home"
+    loose = tmp_path / "var" / "T" / "atrium-codex-xo4"
+    loose.mkdir(parents=True)
+    assert project_workspace(loose, home) is None
+    assert project_workspace("/", home) is None
 
 
 def _episode(index, conversation_id, workspace, authored_at):

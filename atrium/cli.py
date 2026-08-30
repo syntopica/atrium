@@ -78,6 +78,17 @@ def main(argv: list[str] | None = None) -> int:
     lanes.add_argument("--words", action="store_true", help="Lexical lane only, no fusion")
     lanes.add_argument("--dense", action="store_true", help="Semantic lane only, no fusion")
 
+    recall = subcommands.add_parser(
+        "recall", help="Render this project's session-start recall block"
+    )
+    recall.add_argument(
+        "--cwd",
+        type=Path,
+        default=Path.cwd(),
+        help="Directory whose project to recall (default: the working directory)",
+    )
+    recall.add_argument("--limit", type=_positive_limit, default=12)
+
     subcommands.add_parser("status", help="Show what the index holds")
 
     args = parser.parse_args(argv)
@@ -104,6 +115,8 @@ def main(argv: list[str] | None = None) -> int:
             else "auto"
         )
         return _search(args.index, args.query, args.limit, lane)
+    if args.command == "recall":
+        return _recall(args.index, args.cwd, args.limit)
     return _status(args.index)
 
 
@@ -401,6 +414,32 @@ def _search(index: Path, query: str, limit: int, lane: str) -> int:
         print(f"\n  [{position}] {hit.provider} {stamp}  score={hit.score:.3f} lane={hit.lane}")
         print(f"      {hit.text[:200].strip()}")
         print(f"      source: {hit.source_sha256[:12]} conversation: {hit.conversation_id[:12]}")
+    return 0
+
+
+def _recall(index: Path, cwd: Path, limit: int) -> int:
+    """Print the recall block for the project containing ``cwd``.
+
+    Prints nothing and succeeds when the project has no synthesized episodes.
+    A session start calls this, and a hook forced to tell "no memory" from
+    "recall is broken" by reading prose would get it wrong: silence is the
+    correct injection for a project nothing is known about.
+    """
+    from atrium.recall.project_workspace import project_workspace
+    from atrium.recall.recent_episodes import recent_episodes
+    from atrium.recall.render_snapshot import render_snapshot
+
+    if not index.exists():
+        return 0
+    project = project_workspace(cwd)
+    connection = open_store(index, read_only=True)
+    try:
+        hits = recent_episodes(connection, project, limit)
+    finally:
+        connection.close()
+    block = render_snapshot(project, hits)
+    if block:
+        print(block)
     return 0
 
 

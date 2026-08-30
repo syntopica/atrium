@@ -5,6 +5,7 @@ import threading
 from pathlib import Path
 
 from mcp.server import MCPServer
+from mcp.types import ToolAnnotations
 
 from atrium.recall.project_workspace import project_workspace
 from atrium.recall.recent_episodes import recent_episodes
@@ -23,6 +24,11 @@ INDEX = Path(os.environ.get("ATRIUM_INDEX", Path.home() / ".atrium" / "index.sql
 MAX_LIMIT = 50
 
 mcp = MCPServer("atrium")
+
+# Both tools open the index read-only and neither has anything to undo, which
+# is what lets a host auto-approve them. Declaring it is not decoration: a host
+# that has to assume a tool writes will stop and ask before every recall.
+_READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True)
 
 # Constructing the embedder costs seconds, which is most of what a one-shot
 # `atrium search` spends. This process outlives a request, so it is built once
@@ -70,7 +76,7 @@ def _rendered(hits: list[Hit]) -> list[dict]:
     ]
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY)
 def atrium_search(
     query: str, limit: int = 10, lane: str = "auto", project: str | None = None
 ) -> list[dict]:
@@ -105,7 +111,7 @@ def atrium_search(
         connection.close()
 
 
-@mcp.tool()
+@mcp.tool(annotations=_READ_ONLY)
 def atrium_recall(cwd: str, limit: int = 12) -> list[dict]:
     """Return the newest synthesized episodes for the project containing ``cwd``.
 

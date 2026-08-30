@@ -123,3 +123,24 @@ def test_synthesis_records_inherit_the_source_conversation_workspace(tmp_path):
     unscoped = list(to_synthesis_records(record("conv2"), workspaces.get("conv2")))
     assert [row.workspace for row in scoped] == ["/home/me/p/atrium"]
     assert [row.workspace for row in unscoped] == [None]
+
+
+def test_no_ingest_ever_reports_a_negative_record_count(tmp_path, capsys):
+    """UNCHANGED is a sentinel, not a count: summed as one, a total goes wrong."""
+    from atrium.cli import main
+
+    notes = tmp_path / "notes"
+    notes.mkdir()
+    (notes / "one.md").write_text("# One\n\nA curated note.\n")
+    index = tmp_path / "index.sqlite3"
+
+    assert main(["--index", str(index), "ingest-notes", str(notes)]) == 0
+    first = capsys.readouterr().out
+    assert "1 records written" in first
+
+    # Second pass over identical notes: nothing written, nothing negative.
+    assert main(["--index", str(index), "ingest-notes", str(notes)]) == 0
+    second = capsys.readouterr().out
+    assert "0 records written" in second
+    assert "1 notes unchanged" in second
+    assert "-1" not in second

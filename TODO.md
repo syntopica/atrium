@@ -110,7 +110,48 @@
 
 ## Cutover from memstore
 
-- [ ] **Freshness is the real blocker, not synthesis coverage.**
+- [x] **Freshness automated 2026-08-30.** `~/.local/bin/atrium-refresh` runs
+  export -> import -> ingest -> ingest-synthesis -> embed, under
+  `~/.local/bin/atrium-lock` (a real `fcntl.flock` held across `execvp`; macOS
+  has no `flock(1)`, and the `mkdir` + stale-pid pattern it replaced let two
+  contenders both judge one lock stale). Two triggers, per operator directive:
+  the hourly `com.cristian.atrium-refresh` LaunchAgent and the `Stop` hook
+  `~/.claude/hooks/atrium-refresh-on-stop.sh`. The first live run showed the
+  gap was far worse than three days: **the archive went from 11,164 to 23,449
+  conversations** (`added: 12285`), and the index from 553,083 to 614,359
+  records -- `codex` alone 21,219 -> 57,603. Only the newest archive backup is
+  kept; the importer writes a full 2.6 GB copy on every apply.
+- [x] **Read-side adapters shipped 2026-08-30** (`d917a35`). `atrium recall`
+  renders the project's newest synthesized episodes in ~1.2 s with no embedder;
+  `~/.claude/hooks/atrium-recall.sh` replaced the memstore recall hook in
+  `SessionStart` and was verified to load in *both* profiles by asking the
+  the work organization profile to quote the injected block back. The MCP server
+  (`atrium.adapters.mcp_server`, optional `mcp` extra, registered as `atrium` in
+  both `.claude.json`) keeps one resident `Embedder`: measured over the
+  protocol, the first search costs 20.7 s and the next 2.7 s.
+  Deliberate divergence from the frozen-snapshot design: `atrium recall` is
+  deterministic given the index and cheap enough to run live, so a snapshot
+  file would add a staleness window and a writer for no measured gain.
+  Revisit if recall ever needs the dense lane.
+- [x] **Synthesis records carry their conversation's workspace** (`28e2c7b`).
+  14,630 of 14,653 now do; the 23 without are conversations the exporter could
+  not place, and they stay unscoped rather than borrow a neighbour's.
+- [ ] Retire memstore. Everything that blocked it is done; what remains is the
+  operator's call and the reversible steps: unload
+  `com.memstore.daemon/.watchdog/.retention/.codex-mine`, remove the plugin's
+  MCP registration and skills, then reclaim `~/.memstore`. Two things to
+  settle first:
+  * `~/.memstore/palace/knowledge_graph.sqlite3` (untouched since 2026-06-09)
+    holds 2,897 entities and 1,912 triples -- the only memstore content not
+    reconstructible from the archive. The *live* KG is empty (0/0), as are the
+    active artifact and event stores, so nothing else there is load-bearing.
+    Decide whether any of those 2,897 belong in brain before deleting.
+  * Keep `~/.memstore` read-only until a few sessions have run on atrium
+    recall. 118 GB, of which ~87 GB is dead rebuild snapshots and a 14 GB
+    `chroma.sqlite3.pre-wal-20260825`; the live palace is 31 GB against
+    atrium's 3.3 GB index.
+
+- [-] Freshness blocker as originally filed:
   `~/.local/share/rocket-agents/conversations/archive.jsonl` was last written
   2026-08-27 23:47 and *nothing* refreshes it: no LaunchAgent, no crontab
   entry runs `run-conversations-export`. The only scheduled rocket-agents job
@@ -122,7 +163,7 @@
   `run-conversations-import --input <slice> --archive <archive> --apply` ->
   `atrium ingest` -> `atrium embed`. Operator directive 2026-08-30: build
   *both* a periodic LaunchAgent and a session-Stop hook.
-- [ ] Read-side adapters (supersedes the generic "thin adapters" item below
+- [-] Superseded by the entries above. Read-side adapters (supersedes the generic "thin adapters" item below
   for the cutover). Two pieces, per the 2026-08-30 two-agent consult:
   * A long-lived stdio MCP server exposing `atrium_search(query, limit, lane,
     workspace?)` that calls the retrieval functions directly and keeps one
@@ -135,14 +176,14 @@
     only reads a file and the prefix cache survives.
   Then rewire `~/.claude/hooks/recall.sh`, the MCP registration and the
   recall skill, and verify in a fresh session before disabling memstore.
-- [ ] **Synthesis records carry no workspace, so project-scoped recall cannot
+- [-] Superseded by the entries above. **Synthesis records carry no workspace, so project-scoped recall cannot
   reach them.** `to_synthesis_records.py:38` sets `workspace=None`; 0 of the
   indexed synthesis records have one, against 466k of 550k raw records that
   do. The memstore hook being replaced is wing-scoped (project folder name),
   so this blocks parity on the read side. No re-synthesis needed: the registry
   record carries `conversation_id` and that conversation is already indexed
   with its workspace -- resolve it at ingest.
-- [ ] memstore write side, measured 2026-08-30 -- smaller than assumed:
+- [-] Folded into the retirement entry above. memstore write side, measured 2026-08-30 -- smaller than assumed:
   knowledge graph, artifacts and events are **not** load-bearing. The live
   `~/.memstore/knowledge_graph.sqlite3` holds 0 entities and 0 triples, and
   the active logstream holds 0 artifacts and 0 events. Only checkpoints and
@@ -152,7 +193,7 @@
   (untouched since 2026-06-09) holds 2,897 entities and 1,912 triples -- the
   only memstore content not reconstructible from the archive. Decide whether
   any of it belongs in brain before retiring the store.
-- [ ] Reclaim: `~/.memstore` is 118 GB, of which ~87 GB is dead rebuild
+- [-] Folded into the retirement entry above. Reclaim: `~/.memstore` is 118 GB, of which ~87 GB is dead rebuild
   snapshots (`palace.pre-rebuild-20260804/-20260820/-20260824`,
   `palace.backup-20260825-purge`, `palace.pre-codeprune`, `palace.pre-mdprune`)
   plus a 14 GB `chroma.sqlite3.pre-wal-20260825`. The live palace is 31 GB;

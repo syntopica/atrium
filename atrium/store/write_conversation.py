@@ -18,10 +18,20 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 _STORED = f"SELECT {_COLUMNS} FROM records WHERE conversation_id = ? ORDER BY record_id"
 
 
+# A conversation reduced to no records writes zero rows, exactly as an
+# unchanged one does. Callers count the two differently -- one is work not done,
+# the other is a conversation that just disappeared from the index -- so the
+# no-op says so rather than hiding behind a shared zero.
+UNCHANGED = -1
+
+
 def write_conversation(
     connection: sqlite3.Connection, conversation_id: str, records: Iterable[Record]
 ) -> int:
     """Replace every record of ``conversation_id`` with ``records``.
+
+    Returns the number of records written, or ``UNCHANGED`` when the stored rows
+    already equal ``records``.
 
     Replace rather than upsert, because the archive is canonical and this index
     is not allowed to disagree with it. An UPSERT-only path leaves superseded
@@ -60,7 +70,7 @@ def write_conversation(
     ]
     stored = connection.execute(_STORED, (conversation_id,)).fetchall()
     if stored == sorted(rows):
-        return 0
+        return UNCHANGED
     connection.execute("DELETE FROM records WHERE conversation_id = ?", (conversation_id,))
     if rows:
         connection.executemany(_INSERT, rows)

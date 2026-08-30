@@ -5,6 +5,7 @@ import sqlite3
 import unicodedata
 
 from atrium.retrieve.hit import Hit
+from atrium.retrieve.workspace_scope import workspace_clause
 
 # FTS5 bm25() returns MORE NEGATIVE values for better matches. Negating it here
 # means every lane in this package reports "higher is better", so fusion does not
@@ -14,7 +15,7 @@ SELECT r.record_id, r.text, -bm25(words) AS score, r.conversation_id,
        r.source_sha256, r.authored_at, r.provider
 FROM words
 JOIN records r ON r.rowid = words.rowid
-WHERE words MATCH ?
+WHERE words MATCH ?{scope}
 ORDER BY bm25(words), r.record_id
 LIMIT ? OFFSET ?
 """
@@ -22,14 +23,22 @@ LIMIT ? OFFSET ?
 _PAGE = 200
 
 
-def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) -> list[Hit]:
-    """Return records matching ``query`` on word boundaries."""
+def search_words(
+    connection: sqlite3.Connection,
+    query: str,
+    limit: int = 20,
+    workspace: str | None = None,
+) -> list[Hit]:
+    """Return records matching ``query`` on word boundaries, optionally scoped."""
     match = _match_expression(query)
     if not match:
         return []
+    scope, scope_parameters = workspace_clause(workspace)
+    statement = _QUERY.format(scope=scope)
     verifiers, has_plain_term = _verifiers(query)
     if has_plain_term or not verifiers:
-        return _hits(connection.execute(_QUERY, (match, limit, 0)).fetchall())[:limit]
+        parameters = (match, *scope_parameters, limit, 0)
+        return _hits(connection.execute(statement, parameters).fetchall())[:limit]
     # Every term is punctuated, so every candidate must pass an adjacency
     # check. Paginate until enough verified hits or the candidates run out: a
     # fixed oversample cannot guarantee recall -- with 60 spaced `3 7 0` rows
@@ -38,7 +47,7 @@ def search_words(connection: sqlite3.Connection, query: str, limit: int = 20) ->
     verified: list[Hit] = []
     offset = 0
     while len(verified) < limit:
-        rows = connection.execute(_QUERY, (match, _PAGE, offset)).fetchall()
+        rows = connection.execute(statement, (match, *scope_parameters, _PAGE, offset)).fetchall()
         if not rows:
             break
         verified.extend(

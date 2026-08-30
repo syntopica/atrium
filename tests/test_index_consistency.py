@@ -123,7 +123,7 @@ def test_rewriting_an_unchanged_conversation_keeps_its_vectors(tmp_path):
 
     from atrium.record import Record
     from atrium.store.open_store import open_store
-    from atrium.store.write_conversation import write_conversation
+    from atrium.store.write_conversation import UNCHANGED, write_conversation
     from atrium.store.write_vectors import write_vectors
 
     record = Record(
@@ -146,7 +146,7 @@ def test_rewriting_an_unchanged_conversation_keeps_its_vectors(tmp_path):
     assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 1
 
     with connection:
-        assert write_conversation(connection, "conv1", [record]) == 0
+        assert write_conversation(connection, "conv1", [record]) == UNCHANGED
     assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 1
 
     # A real revision still replaces the record, and its stale vector goes.
@@ -190,7 +190,7 @@ def test_a_locked_database_is_waited_out_not_raised(tmp_path):
 def test_an_unchanged_comparison_never_hides_a_real_change(tmp_path):
     """Deciding "unchanged" wrongly means the index disagreeing with the archive."""
     from atrium.record import Record
-    from atrium.store.write_conversation import write_conversation
+    from atrium.store.write_conversation import UNCHANGED, write_conversation
 
     def record(record_id, **overrides):
         fields = {
@@ -218,7 +218,7 @@ def test_an_unchanged_comparison_never_hides_a_real_change(tmp_path):
         assert write_conversation(connection, "conv", [record("a"), record("b")]) == 2
     with connection:
         # Same rows, opposite order: the comparison sorts, so this is unchanged.
-        assert write_conversation(connection, "conv", [record("b"), record("a")]) == 0
+        assert write_conversation(connection, "conv", [record("b"), record("a")]) == UNCHANGED
     with connection:
         # Losing a record is a change even though the survivor is identical.
         assert write_conversation(connection, "conv", [record("a")]) == 1
@@ -232,7 +232,9 @@ def test_an_unchanged_comparison_never_hides_a_real_change(tmp_path):
             write_conversation(connection, "conv", [record("a", workspace="/w"), record("c")]) == 2
         )
     with connection:
-        # Emptying the conversation deletes it rather than reading as unchanged.
+        # Emptying the conversation deletes it. That writes zero rows, exactly
+        # as an unchanged conversation does, so the two must not share a value:
+        # a conversation vanishing from the index is not work skipped.
         assert write_conversation(connection, "conv", []) == 0
     assert stored()[0] == 0
     connection.close()

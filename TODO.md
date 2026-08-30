@@ -136,11 +136,28 @@
 - [x] **Synthesis records carry their conversation's workspace** (`28e2c7b`).
   14,630 of 14,653 now do; the 23 without are conversations the exporter could
   not place, and they stay unscoped rather than borrow a neighbour's.
-- [ ] Retire mempalace. Everything that blocked it is done; what remains is the
-  operator's call and the reversible steps: unload
-  `com.mempalace.daemon/.watchdog/.retention/.codex-mine`, remove the plugin's
-  MCP registration and skills, then reclaim `~/.mempalace`. Two things to
-  settle first:
+- [x] **mempalace retired 2026-08-30**, reversibly -- every switch flipped, no
+  data touched. The Claude plugin is disabled (`claude plugin disable
+  mempalace@mempalace`), `atrium` replaced it as an MCP server in both Claude
+  profiles and in `~/.codex/config.toml`, and the four LaunchAgents
+  (`daemon`, `watchdog`, `retention`, `codex-mine`) are unloaded. Global
+  guidance in `~/.claude/CLAUDE.md` now points at Atrium; leaving it pointing
+  at mempalace would have sent every future session to a tool that is gone.
+  Verified by asking each client, not by assuming: Claude answers NO to a
+  mempalace tool and YES to `atrium_recall`, and Codex returns a real episode
+  through `atrium_recall`.
+  Two things a *host* config still needs, both pre-existing and neither caused
+  by this work:
+  * The `~/.claude` profile loads no stdio MCP server at all -- `atrium`,
+    `chrome-devtools`, `codegraph` and `serena` are all absent from its tool
+    list, while `~/.claude-second-profile` loads them. Only plugin-provided servers
+    reach it. Worth diagnosing; it means that profile has no Atrium MCP.
+  * An MCP command must be an absolute path. `uv` is not on the minimal PATH a
+    host spawns with, and `command = "uv"` failed silently in Codex -- the
+    server was listed as enabled and its tools simply never appeared.
+- [ ] Reclaim `~/.mempalace` (118 GB). Deliberately not done: stopping the
+  system does not require deleting it, and deletion is not reversible. Two
+  things to settle first:
   * `~/.mempalace/palace/knowledge_graph.sqlite3` (untouched since 2026-06-09)
     holds 2,897 entities and 1,912 triples -- the only mempalace content not
     reconstructible from the archive. The *live* KG is empty (0/0), as are the

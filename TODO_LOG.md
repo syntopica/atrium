@@ -6,6 +6,41 @@
 
 ### 2026-08
 
+- [x] 2026-08-30 — **Cutover:** MemPalace retired; Atrium serves Claude and
+  Codex.
+  - Result: The blocker was never synthesis coverage — it was freshness.
+    Nothing refreshed the canonical archive, so the index was frozen. The first
+    automated refresh took the archive from 11,164 to **23,449 conversations**
+    and the index from 553,083 to **616,365 records** (`codex` alone
+    21,219 → 57,712). `atrium-refresh` now runs hourly and at session end under
+    a real `flock`. Read side: `atrium recall` (project-scoped, ~1.2 s, no
+    embedder) replaced the mempalace SessionStart hook, and an MCP server with
+    a resident `Embedder` serves both clients — first search 20.7 s, next
+    2.7 s. The dense lane is complete for the first time: 19,198 of 19,198.
+  - Evidence: commits `d37ed44`..`243f299`; 77 tests pass, ruff clean; the
+    Favish profile and Codex were each asked to quote back a real episode
+    through the new path, and Claude answers NO to a mempalace tool; a full
+    `atrium-refresh` logged `2609 conversations -> 0 synthesis records
+    written, 2609 unchanged` / `nothing to embed`, which is the vector-cascade
+    fix proven on the live index.
+
+- [x] 2026-08-30 — **Bugs:** Nine defects found auditing the stalled synthesis
+  and the new cutover code, four rounds with Codex as adversarial reviewer.
+  - Result: The drip loop had produced nothing for 30 h behind three of them —
+    a manifest dropping a whole producer population from the index (3,686
+    episodes, 580 conversations), a quota probe reading the 5-hour window while
+    the weekly one sat at 100%, and a dead loop nothing restarted. The rest
+    came out of review: `write_conversation` destroyed every vector it touched
+    on reconciliation; the synthesis registry claimed keys with
+    `os.rename`, which replaces; `recent_episodes` matched a project prefix
+    with `LIKE`, where `_` is a wildcard and 2,585 workspaces contain one;
+    `project_workspace` returned the cwd instead of the project and matched
+    nothing for `--project .`; and `verify_build_stamp` answered any
+    operational fault with "delete it and re-ingest", which the session-start
+    hook forwarded into an agent's context as an instruction.
+  - Evidence: commits `d37ed44`, `28e2c7b`, `6c4de9c`, `3403b5d`, `38efc71`,
+    `243f299`; each defect pinned by a test.
+
 - [x] 2026-08-27 — **Backend:** First slice: ingest the canonical
   rocket-agents archive into a two-lane lexical index with a CLI
   (`ingest` / `search` / `--substring` / `status`).

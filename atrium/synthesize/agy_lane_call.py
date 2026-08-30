@@ -66,9 +66,7 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
             # typed error lets the pass abort instead of failing every
             # remaining episode one by one through the whole backoff ladder.
             if "quota reached" in (completed.stderr + completed.stdout).lower():
-                raise QuotaExhausted(
-                    completed.stderr.strip() or completed.stdout.strip()
-                )
+                raise QuotaExhausted(completed.stderr.strip() or completed.stdout.strip())
             # stderr's tail is often only a benign warning; the real error
             # (503s, eligibility checks) rides stdout. Keep both.
             last_error = (

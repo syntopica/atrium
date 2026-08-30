@@ -51,9 +51,31 @@
   at the Gemini quota wall instead of grinding failures (commit `cf9a320`).
   2026-08-28 22:50: 13,309 records in registry, 11,835 embedded; a stale
   duplicate run (workers 6, pre-drip orphan) was killed -- it was doubling
-  quota burn. Remaining: let the drip finish (~35,794 episodes total),
-  re-run `ingest-synthesis` + `embed` periodically, and spot-check quality
-  with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
+  quota burn. **2026-08-30 audit found the drip had produced nothing for a
+  day and a quarter, and three defects behind it, all fixed the same day:**
+  * The on-disk `active-recipe.json` listed only
+    `["codex-cli-default","claude-sonnet-5"]`, so the whole
+    `gemini-3.7-flash-medium` population -- 3,686 episodes across 580
+    conversations, a quarter of everything synthesized -- was produced and
+    then dropped at ingest. Adding it took served coverage from 2,029 to
+    **2,609 conversations** and 11,835 to **14,653 records**, with no calls.
+  * `drip-quota.py` read only the `Gemini 5-hour` window. That window reports
+    `usedPercent 0` with `usageKnown: false` while `Gemini weekly` sits at
+    100%, so the probe answered "go now", every pass aborted on its first
+    call, and the loop ground for ~18 h logging `failed=10790` with zero
+    output. It now reads every Gemini window, treats `usageKnown: false` as
+    no evidence of headroom rather than as headroom, and sleeps to the
+    furthest reset (cap raised 4 h -> 24 h, since the weekly wall is ~14 h out).
+  * The loop had died outright (no process since 08:12) and nothing restarted
+    it. It now takes a `mkdir` lock with a stale-pid check -- macOS has no
+    `flock(1)` -- so a second start exits instead of doubling the quota burn
+    the way the 2026-08-28 orphan did.
+  Measured coverage after the fixes: **2,609 of 11,028 archived conversations
+  (23.7%)**; 8,419 conversations still unsynthesized. One day of agy work on
+  2026-08-28 (13,966 records) spent an entire Google AI Pro *weekly* quota,
+  so the remaining corpus is several weekly cycles on that lane alone.
+  Remaining: let the drip finish, re-run `ingest-synthesis` + `embed`
+  periodically, and spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**
   * Producer, second amendment (operator, 2026-08-28): the Codex CLI's own
     quota (`--producer codex`, default) after the Max lane measured 4.7M
@@ -85,6 +107,56 @@
   ~170-900 tokens — the mechanism users remember as valuable from mempalace;
   the synthesis behind it never existed there (checkpoints were literal
   message tails).
+
+## Cutover from mempalace
+
+- [ ] **Freshness is the real blocker, not synthesis coverage.**
+  `~/.local/share/rocket-agents/conversations/archive.jsonl` was last written
+  2026-08-27 23:47 and *nothing* refreshes it: no LaunchAgent, no crontab
+  entry runs `run-conversations-export`. The only scheduled rocket-agents job
+  is `com.cristian.library-loop` (a learning report, and it has been logging
+  `skipped: a report younger than 7 day(s) exists` for weeks). mempalace
+  captures live on Stop; atrium's corpus is frozen until a human exports.
+  Until this is automated, switching mempalace off loses memory. Chain is
+  `run-conversations-export --output <slice>` ->
+  `run-conversations-import --input <slice> --archive <archive> --apply` ->
+  `atrium ingest` -> `atrium embed`. Operator directive 2026-08-30: build
+  *both* a periodic LaunchAgent and a session-Stop hook.
+- [ ] Read-side adapters (supersedes the generic "thin adapters" item below
+  for the cutover). Two pieces, per the 2026-08-30 two-agent consult:
+  * A long-lived stdio MCP server exposing `atrium_search(query, limit, lane,
+    workspace?)` that calls the retrieval functions directly and keeps one
+    lazy `Embedder`. The measured 7 s of `atrium search` is model load, paid
+    per subprocess; a resident server pays it once. It must **not** parse CLI
+    output -- `cli.py:393` truncates text to 200 chars for humans. Extract a
+    shared function returning whole `Hit` objects.
+  * Session-start injection as a frozen snapshot written at session close and
+    injected at the *next* start (see the Synthesis section), so the hook
+    only reads a file and the prefix cache survives.
+  Then rewire `~/.claude/hooks/recall.sh`, the MCP registration and the
+  recall skill, and verify in a fresh session before disabling mempalace.
+- [ ] **Synthesis records carry no workspace, so project-scoped recall cannot
+  reach them.** `to_synthesis_records.py:38` sets `workspace=None`; 0 of the
+  indexed synthesis records have one, against 466k of 550k raw records that
+  do. The mempalace hook being replaced is wing-scoped (project folder name),
+  so this blocks parity on the read side. No re-synthesis needed: the registry
+  record carries `conversation_id` and that conversation is already indexed
+  with its workspace -- resolve it at ingest.
+- [ ] mempalace write side, measured 2026-08-30 -- smaller than assumed:
+  knowledge graph, artifacts and events are **not** load-bearing. The live
+  `~/.mempalace/knowledge_graph.sqlite3` holds 0 entities and 0 triples, and
+  the active logstream holds 0 artifacts and 0 events. Only checkpoints and
+  the diary are in use (3,269 diary drawers), and those are literal message
+  tails, which the frozen snapshot replaces properly rather than ports.
+  One exception before any deletion: `~/.mempalace/palace/knowledge_graph.sqlite3`
+  (untouched since 2026-06-09) holds 2,897 entities and 1,912 triples -- the
+  only mempalace content not reconstructible from the archive. Decide whether
+  any of it belongs in brain before retiring the store.
+- [ ] Reclaim: `~/.mempalace` is 118 GB, of which ~87 GB is dead rebuild
+  snapshots (`palace.pre-rebuild-20260804/-20260820/-20260824`,
+  `palace.backup-20260825-purge`, `palace.pre-codeprune`, `palace.pre-mdprune`)
+  plus a 14 GB `chroma.sqlite3.pre-wal-20260825`. The live palace is 31 GB;
+  atrium's whole index is 3.3 GB. Do not delete until the cutover is verified.
 
 ## Measurement
 

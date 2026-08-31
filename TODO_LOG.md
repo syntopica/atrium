@@ -6,6 +6,43 @@
 
 ### 2026-08
 
+- [x] 2026-08-31 — **Recovery:** Conversations that survived only inside
+  memstore, rescued before the store is deleted.
+  - Result: 7,638 Claude Code session files had been mined into memstore and
+    then deleted from disk before any canonical export saw them; grouped by
+    session that is **3,008 conversations**, and they existed in exactly one
+    place. Rebuilt in rocket-agents' export format and imported into the
+    canonical archive (`added: 3008, duplicates: 0, updated: 0` — nothing
+    overwritten), taking it from 23,518 to **26,526 conversations**. Atrium
+    picks them up on ingest; they carry their real workspace, so project-scoped
+    recall reaches them.
+  - The honest number is **19,705 prose messages**, not the 181,930 the first
+    pass produced. memstore stored a whole turn as one blob with the role as a
+    `USER: ` prefix and tool calls, tool results and thinking serialized inside
+    the message text, so taking it at face value filed 89% of every recovered
+    session as conversation — exactly the serialized tool output the admission
+    rule in `to_records.py` exists to keep out. Decoded back into real kinds:
+    65,186 tool-call, 65,129 tool-result, 31,623 reasoning, 19,705 message. The
+    machinery stays in the archive with an honest kind and out of the index.
+  - **2,692 redactions applied** on the way through, using rocket-agents'
+    `redactSensitiveText` rather than a reimplementation. memstore did not
+    redact; this content would otherwise have carried secrets straight into the
+    canonical archive, which is the failure `AGENTS.md` cites as the reason the
+    ingest may never read provider paths directly.
+  - Two traps worth keeping: `JSON.stringify` leaves U+2028 and U+2029 raw, and
+    they are JavaScript line terminators, so 5,596 records first arrived at
+    rocket-agents' line parser split in half and failed schema validation --
+    a latent hazard in its own exporter, not only in this recovery. And the
+    same session appears under several project directories, so 7,638 source
+    paths carry only 3,008 sessions; a record per path collapses to one at
+    import and silently drops the rest.
+  - Nothing else in memstore is worth keeping: the knowledge graph is exported
+    to brain's inbox, the purge export holds base64 blobs and dirty checkpoints
+    that were discarded on purpose, and the five palace backups are subsets --
+    the largest divergence, 784 sources in `pre-rebuild-20260824` absent from
+    the live palace, yields **zero** sessions not already in the archive or
+    this recovery.
+
 - [x] 2026-08-31 — **Config:** Two Claude Code profiles, and only two.
   - Result: A third configuration existed at `~/.claude/.claude.json` — one
     project, one MCP server, and its own `oauthAccount` binding

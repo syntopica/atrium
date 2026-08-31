@@ -113,19 +113,19 @@
 > Done 2026-08-30; the record is in `TODO_LOG.md`. What is left here is the
 > disk, and two host-config faults the cutover surfaced.
 
-- [ ] Reclaim `~/.memstore` (118 GB). Unblocked, and deliberately left to the
-  operator: stopping memstore never required deleting it, and deleting is the
-  one step that cannot be undone.
-  * Nothing irreplaceable remains inside. The only store holding content the
-    archive cannot rebuild was `palace/knowledge_graph.sqlite3` (untouched
-    since 2026-06-09), and it is exported to
-    `~/p/brain/inbox/memstore-knowledge-graph-export-2026-08-31.md` -- 151
-    judgement triples worth reading (closed audit findings, blockers,
-    institutional partners, enforced rules) and 1,761 code-structure triples
-    CodeGraph re-derives from repositories that have moved on since June. Every
-    entity there is typed `unknown` with empty properties, so the entities add
-    nothing the triples do not already name. Run `brain ingest` on that file
-    when you want it folded in; it is a proposal in the tray, not a commit.
+- [ ] Reclaim `~/.memstore` (118 GB). Everything worth keeping is out, so what
+  remains is only the deletion, which is the one step that cannot be undone.
+  Operator directive 2026-08-31: the store is not wanted for anything else.
+  * Nothing irreplaceable remains inside, and that was checked rather than
+    assumed. The 3,008 conversations that existed only here are in the
+    canonical archive (see the recovery entry in `TODO_LOG.md`); the knowledge
+    graph is exported to
+    `~/p/brain/inbox/memstore-knowledge-graph-export-2026-08-31.md` -- run
+    `brain ingest` on it when you want it folded in, it is a proposal in the
+    tray, not a commit; the purge export holds base64 blobs and dirty
+    checkpoints discarded on purpose; and the five palace backups are subsets
+    of the live palace, yielding zero sessions the archive does not already
+    hold.
   * The live KG is empty (0/0), as are the active artifact and event stores.
   * Suggested order once a few sessions have run on Atrium recall: the ~87 GB
     of dead rebuild snapshots and the 14 GB `chroma.sqlite3.pre-wal-20260825`

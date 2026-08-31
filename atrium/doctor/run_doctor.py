@@ -1,0 +1,34 @@
+"""Run every coherence check and report what the memory would answer from."""
+
+from pathlib import Path
+
+from atrium.doctor.archive_freshness import archive_freshness
+from atrium.doctor.archive_schema_coherence import archive_schema_coherence
+from atrium.doctor.finding import Finding
+from atrium.doctor.index_coverage import index_coverage
+from atrium.doctor.read_archive_ids import read_archive_ids
+from atrium.doctor.refresh_health import refresh_health
+from atrium.doctor.synthesis_coherence import synthesis_coherence
+from atrium.store.open_store import open_store
+
+
+def run_doctor(index: Path, archive: Path, stamp: Path, registry: Path) -> list[Finding]:
+    """Check the whole chain, cheapest first.
+
+    Order matters. A dead refresh or an unwritten archive explains every
+    downstream number, so those are answered before anything reads four
+    gigabytes to compare identifier sets.
+    """
+    findings = [archive_freshness(archive), refresh_health(stamp)]
+    if not archive.exists():
+        return findings
+    findings.append(archive_schema_coherence(archive))
+
+    archive_ids = read_archive_ids(archive)
+    connection = open_store(index, read_only=True)
+    try:
+        findings.append(index_coverage(connection, archive_ids))
+    finally:
+        connection.close()
+    findings.append(synthesis_coherence(registry, archive_ids))
+    return findings

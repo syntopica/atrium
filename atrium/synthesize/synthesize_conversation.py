@@ -6,12 +6,12 @@ from collections.abc import Callable
 from pathlib import Path
 
 from atrium.synthesize.episode_identity import episode_identity
+from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
+from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
 from atrium.synthesize.segment_episodes import SEGMENTATION_FINGERPRINT, segment_episodes
 from atrium.synthesize.synthesis_prompt import PROMPT_SHA256, SYNTHESIS_SYSTEM_TEXT
 from atrium.synthesize.synthesis_registry import has_record, write_record
 from atrium.synthesize.synthesis_schema import OUTPUT_SCHEMA_VERSION, SYNTHESIS_TOOL
-
-GENERATOR_VERSION = "atrium-synthesize-2"
 
 # A producer is (system_text, user_text, tool) -> {"input", "model", "usage"},
 # plus the deterministic model string that enters the job key. Two exist: the
@@ -40,7 +40,7 @@ def synthesize_conversation(
     for episode in segment_episodes(events):
         event_ids = [events[i].get("id") or str(i) for i in episode["event_indexes"]]
         episode_id = episode_identity(conversation["id"], event_ids)
-        job_key = _job_key(conversation["id"], revision, episode_id, model_id)
+        job_key = job_identity(conversation["id"], revision, episode_id, model_id)
         # An episode any population already holds is not re-synthesized: recipe
         # coexistence is for deliberate re-runs, never for a producer switch
         # silently paying the whole corpus again.
@@ -70,18 +70,14 @@ def synthesize_conversation(
                 "authored_at": conversation.get("updatedAt") or conversation.get("startedAt"),
                 "output": result["input"],
                 "output_sha256": hashlib.sha256(output_json.encode()).hexdigest(),
+                # States which event id rule the member ids follow, so a
+                # re-key can tell a migrated record from one it must still
+                # migrate. Records written before schema 2 carry no such field.
+                "event_id_schema": EVENT_ID_SCHEMA,
             },
         )
         made += 1
     return {"synthesized": made, "skipped": skipped}
-
-
-def _job_key(conversation_id: str, revision: str, episode_id: str, model_id: str) -> str:
-    payload = (
-        f"{conversation_id}\x00{revision}\x00{episode_id}\x00{SEGMENTATION_FINGERPRINT}"
-        f"\x00{model_id}\x00{PROMPT_SHA256}\x00{OUTPUT_SCHEMA_VERSION}\x00{GENERATOR_VERSION}"
-    )
-    return hashlib.sha256(payload.encode()).hexdigest()[:32]
 
 
 def _synthesize_episode(episode: dict, events: list[dict], producer: Producer) -> dict:

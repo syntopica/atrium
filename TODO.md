@@ -113,20 +113,6 @@
 > Done 2026-08-30; the record is in `TODO_LOG.md`. What is left here is the
 > disk, and two host-config faults the cutover surfaced.
 
-- [ ] A third, stray Claude config exists: `~/.claude/.claude.json`. Both real
-  profiles are fine -- `~/.claude.json` (me@cristiandeluxe.dev, personal org, 84
-  projects) and `~/.claude-second-profile/.claude.json` (<work-account>, the work organization
-  org, 35 projects) each serve Atrium over MCP, verified with `claude mcp get
-  atrium`. The stray one holds 1 project and only `gateway-example`, and it is reached
-  by setting `CLAUDE_CONFIG_DIR=~/.claude`, which the profile documentation
-  invites -- doing so silently loads a near-empty configuration with no Atrium.
-  It also carries its own `oauthAccount`, binding **me@cristiandeluxe.dev to
-  <work-account>'s Organization**, which crosses the email-separation rule
-  in the global guidance. Decide whether to delete it or repair it; it holds
-  auth, so it is not safe to remove blindly. Corrects an earlier entry here
-  that reported the main profile as loading no stdio servers: that was an
-  artifact of testing it through `CLAUDE_CONFIG_DIR=~/.claude`, which reads
-  this file rather than `~/.claude.json`.
 - [ ] Reclaim `~/.memstore` (118 GB). Unblocked, and deliberately left to the
   operator: stopping memstore never required deleting it, and deleting is the
   one step that cannot be undone.

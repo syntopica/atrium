@@ -6,6 +6,29 @@
 
 ### 2026-08
 
+- [x] 2026-08-31 — **Config:** Two Claude Code profiles, and only two.
+  - Result: A third configuration existed at `~/.claude/.claude.json` — one
+    project, one MCP server, and its own `oauthAccount` binding
+    `me@cristiandeluxe.dev` to *the work organization's* organization, crossing the
+    email-separation rule in the global guidance. It is reached by setting
+    `CLAUDE_CONFIG_DIR=~/.claude`, which looks like the way to name the
+    personal profile and is not: Claude Code keeps its config at
+    `$HOME/.claude.json` when the variable is unset and at
+    `$CLAUDE_CONFIG_DIR/.claude.json` when it is set, so pointing it at
+    `~/.claude` starts a fresh empty profile and every MCP server silently
+    disappears. Parked at a retired-profile directory rather than deleted, because it
+    carries auth. The two real profiles are **busirocket**
+    (`me@cristiandeluxe.dev`, plain `claude`) and **work**
+    (`<work-account>`, `CLAUDE_CONFIG_DIR=~/.claude-second-profile`).
+  - `~/.claude/rules/claude-profiles.md` rewritten to name both profiles, their
+    accounts, how each is started and which file each uses; to forbid
+    `CLAUDE_CONFIG_DIR=~/.claude` with the reason; to record that an MCP
+    `command` must be an absolute path; and to mark `gateway-example` as a deliberate
+    per-profile difference rather than drift, since it is a BusiRocket service.
+  - Evidence: both profiles answer with their own account and connect Atrium
+    over MCP after the removal; asked in each profile, both quote the new rule
+    back.
+
 - [x] 2026-08-31 — **Cutover:** The last two things the retirement left open.
   - Result: The dotfiles guidance is committed (`ff7e3b4`), which required
     finishing a real in-progress merge between the two machines — resolved as a

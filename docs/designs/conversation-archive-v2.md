@@ -21,6 +21,15 @@ incremental capture (section 4.3) and not only the append path.
 The three review rounds and what each changed are recorded in section 11; the
 open risks the design does not close are in "Round 3: closure status".
 
+**Superseded as the plan, kept as the reasoning.** After three review rounds
+this design was re-examined adversarially and rejected as disproportionate: its
+own section 9 names 108 new files against 145 in the whole conversations
+directory. The shape actually being built is in
+`conversation-archive-alternatives-verdict.md` (why) and
+`conversation-archive-decision.md` (what, and the staged plan). Read those two
+first; this file is where the mechanisms and their justifications are worked
+out in full, and the verdict says which of them survive.
+
 ---
 
 # Canonical conversation archive v2

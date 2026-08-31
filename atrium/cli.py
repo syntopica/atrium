@@ -80,6 +80,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Re-key the synthesis registry onto the schema 2 event id rule",
     )
     rekey.add_argument("--apply", action="store_true", help="Write; otherwise only report the plan")
+    rekey.add_argument(
+        "--repair",
+        action="store_true",
+        help="Ask the archive which rule each record's ids follow, rather than trusting its stamp",
+    )
+    rekey.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
 
     search = subcommands.add_parser("search", help="Search the index")
     search.add_argument("query")
@@ -127,7 +133,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
     if args.command == "rekey-synthesis":
-        return _rekey_synthesis(apply=args.apply)
+        return _rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
         return _doctor(args.index, args.archive)
     if args.command == "search":
@@ -398,7 +404,7 @@ def _doctor(index: Path, archive: Path) -> int:
     return 0
 
 
-def _rekey_synthesis(*, apply: bool) -> int:
+def _rekey_synthesis(*, apply: bool, repair: bool = False, archive: Path | None = None) -> int:
     """Move every pre-schema-2 record onto the identity the archive now implies.
 
     Reports before it writes, because the registry holds model output that was
@@ -406,6 +412,19 @@ def _rekey_synthesis(*, apply: bool) -> int:
     """
     from atrium.synthesize.rekey_synthesis_registry import rekey_synthesis_registry
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
+
+    if repair:
+        from atrium.synthesize.repair_mis_stamped_records import repair_mis_stamped_records
+
+        found = repair_mis_stamped_records(DEFAULT_REGISTRY, archive, apply=apply)
+        verb = "repaired" if apply else "would repair"
+        print(
+            f"  {verb} {found['repaired']} mis-stamped records, "
+            f"{found['intact']} already agree with the archive"
+        )
+        if found["unexplained"]:
+            print(f"  {found['unexplained']} cite events absent under either rule; left alone")
+        return 0
 
     report = rekey_synthesis_registry(DEFAULT_REGISTRY, apply=apply)
     verb = "re-keyed" if apply else "would re-key"

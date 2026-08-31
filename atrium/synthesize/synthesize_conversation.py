@@ -6,7 +6,6 @@ from collections.abc import Callable
 from pathlib import Path
 
 from atrium.synthesize.episode_identity import episode_identity
-from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
 from atrium.synthesize.segment_episodes import SEGMENTATION_FINGERPRINT, segment_episodes
 from atrium.synthesize.synthesis_prompt import PROMPT_SHA256, SYNTHESIS_SYSTEM_TEXT
@@ -70,10 +69,13 @@ def synthesize_conversation(
                 "authored_at": conversation.get("updatedAt") or conversation.get("startedAt"),
                 "output": result["input"],
                 "output_sha256": hashlib.sha256(output_json.encode()).hexdigest(),
-                # States which event id rule the member ids follow, so a
-                # re-key can tell a migrated record from one it must still
-                # migrate. Records written before schema 2 carry no such field.
-                "event_id_schema": EVENT_ID_SCHEMA,
+                # The rule the member ids actually follow, taken from the
+                # conversation they were read from -- not from this code's
+                # own version. Stamping the constant recorded which build
+                # wrote the record, so a pass run against a not-yet-upgraded
+                # archive stamped 2 onto schema 1 ids, and the re-key then
+                # skipped exactly those records as already current.
+                "event_id_schema": conversation.get("schemaVersion", 1),
             },
         )
         made += 1

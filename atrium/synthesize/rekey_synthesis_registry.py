@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 
+from atrium.synthesize.backup_synthesis_records import backup_synthesis_records
 from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
 from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
 from atrium.synthesize.synthesis_registry import record_path
@@ -25,9 +26,17 @@ def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict:
     that. A record whose new name is already taken by different content is left
     alone and reported: the registry surfaces divergence rather than resolving
     it by arrival order.
+
+    A write pass copies `records/` aside before its first write, and only if it
+    has one to make. Renaming is one-way -- a job key is a hash and the old
+    identity cannot be recovered from the new one -- and a pass run before the
+    archive is upgraded renames every record onto ids the archive does not
+    carry yet. The backup is what makes that mistake survivable; a re-run with
+    nothing left to do writes neither records nor a second copy of them.
     """
     moved = already = collided = 0
     collisions: list[str] = []
+    backup: str | None = None
     for path in sorted((registry / "records").glob("*.json")):
         record = json.loads(path.read_text())
         if record.get("event_id_schema") == EVENT_ID_SCHEMA:
@@ -43,6 +52,8 @@ def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict:
         moved += 1
         if not apply:
             continue
+        if backup is None:
+            backup = str(backup_synthesis_records(registry))
         temporary = destination.with_suffix(f".tmp-{os.getpid()}")
         temporary.write_text(json.dumps(rekeyed, ensure_ascii=False, sort_keys=True, indent=1))
         temporary.chmod(0o600)
@@ -55,4 +66,5 @@ def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict:
         "collided": collided,
         "collisions": collisions[:10],
         "applied": apply,
+        "backup": backup,
     }

@@ -377,6 +377,8 @@ def _rekey_synthesis(*, apply: bool) -> int:
     report = rekey_synthesis_registry(DEFAULT_REGISTRY, apply=apply)
     verb = "re-keyed" if apply else "would re-key"
     print(f"  {verb} {report['moved']} records, {report['already']} already current")
+    if report["backup"]:
+        print(f"  records copied to {report['backup']} before rewriting")
     if report["collided"]:
         print(f"  {report['collided']} collided and were left alone: {report['collisions']}")
         return 1

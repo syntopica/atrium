@@ -127,18 +127,24 @@
   that reported the main profile as loading no stdio servers: that was an
   artifact of testing it through `CLAUDE_CONFIG_DIR=~/.claude`, which reads
   this file rather than `~/.claude.json`.
-- [ ] Reclaim `~/.mempalace` (118 GB). Deliberately not done: stopping the
-  system does not require deleting it, and deletion is not reversible. Two
-  things to settle first:
-  * `~/.mempalace/palace/knowledge_graph.sqlite3` (untouched since 2026-06-09)
-    holds 2,897 entities and 1,912 triples -- the only mempalace content not
-    reconstructible from the archive. The *live* KG is empty (0/0), as are the
-    active artifact and event stores, so nothing else there is load-bearing.
-    Decide whether any of those 2,897 belong in brain before deleting.
-  * Keep `~/.mempalace` read-only until a few sessions have run on atrium
-    recall. 118 GB, of which ~87 GB is dead rebuild snapshots and a 14 GB
-    `chroma.sqlite3.pre-wal-20260825`; the live palace is 31 GB against
-    atrium's 3.3 GB index.
+- [ ] Reclaim `~/.mempalace` (118 GB). Unblocked, and deliberately left to the
+  operator: stopping MemPalace never required deleting it, and deleting is the
+  one step that cannot be undone.
+  * Nothing irreplaceable remains inside. The only store holding content the
+    archive cannot rebuild was `palace/knowledge_graph.sqlite3` (untouched
+    since 2026-06-09), and it is exported to
+    `~/p/brain/inbox/mempalace-knowledge-graph-export-2026-08-31.md` -- 151
+    judgement triples worth reading (closed audit findings, blockers,
+    institutional partners, enforced rules) and 1,761 code-structure triples
+    CodeGraph re-derives from repositories that have moved on since June. Every
+    entity there is typed `unknown` with empty properties, so the entities add
+    nothing the triples do not already name. Run `brain ingest` on that file
+    when you want it folded in; it is a proposal in the tray, not a commit.
+  * The live KG is empty (0/0), as are the active artifact and event stores.
+  * Suggested order once a few sessions have run on Atrium recall: the ~87 GB
+    of dead rebuild snapshots and the 14 GB `chroma.sqlite3.pre-wal-20260825`
+    first, since nothing has read them since August; the 31 GB live palace
+    last. Atrium's whole index is 7.1 GB.
 
 ## Measurement
 

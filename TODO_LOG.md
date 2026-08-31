@@ -25,9 +25,20 @@
     `CLAUDE_CONFIG_DIR=~/.claude` with the reason; to record that an MCP
     `command` must be an absolute path; and to mark `openseo` as a deliberate
     per-profile difference rather than drift, since it is a BusiRocket service.
+  - `.zshrc` gained `claudeb` beside the existing `claudef`, so both profiles
+    are named rather than one being "the default". It runs
+    `env -u CLAUDE_CONFIG_DIR claude`: a shell that already ran `claudef`, or
+    any nested agent session, would otherwise send a bare `claude` to the
+    Favish profile without saying so. Nothing in the shell ever set
+    `CLAUDE_CONFIG_DIR=~/.claude`, so the stray profile came from an ad-hoc
+    invocation about a month earlier — plausibly an agent following the old
+    rule text, which called `~/.claude` "canonical" without saying it is the
+    canonical *shared tree*, not a profile.
   - Evidence: both profiles answer with their own account and connect Atrium
     over MCP after the removal; asked in each profile, both quote the new rule
-    back.
+    back. `.zshrc` needs a real pty to verify — it returns early for agent
+    shells and again for an interactive shell with no TTY — and under one both
+    functions resolve.
 
 - [x] 2026-08-31 — **Cutover:** The last two things the retirement left open.
   - Result: The dotfiles guidance is committed (`ff7e3b4`), which required

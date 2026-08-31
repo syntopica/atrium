@@ -108,6 +108,48 @@
   the synthesis behind it never existed there (checkpoints were literal
   message tails).
 
+## Observability
+
+> Filed 2026-08-31, from the memstore retirement. Every defect that session
+> found had been running silently for days, and none of them were subtle --
+> they were invisible because nothing reported the right number.
+
+- [ ] **The canonical archive is only canonical while capture outruns
+  deletion.** `AGENTS.md` says anything Atrium cannot rebuild from layer 1 or 3
+  is a design defect; layer 1 holds only what was on disk when the exporter
+  ran. 7,638 Claude Code sessions were deleted from `~/.claude/projects`
+  between exports and were lost from the archive permanently -- they survived
+  only inside memstore, the store being retired, and were recovered from it
+  hours before deletion. The hourly refresh narrows the window to an hour but
+  does not close the class. Either capture becomes event-driven, or the window
+  has to be provably shorter than the shortest deletion cycle any provider
+  uses, and that number has to be known rather than assumed.
+- [ ] **`atrium status` should say how stale it is, and complain.** The archive
+  sat frozen from 2026-08-27 while the index answered queries as if current,
+  and it was missing more than half the corpus -- 11,164 conversations against
+  the 23,449 the first automated refresh produced. Nothing surfaced that.
+  Report the archive's mtime, the last successful refresh, and the gap between
+  the newest archived conversation and now; make a stale index say so in every
+  `status`, and in the session-start recall block.
+- [ ] **Both ingests should report what they admitted, not just how many.**
+  `atrium ingest` prints a row count, which is exactly the number that looked
+  healthy while 162,225 tool-call, tool-result and thinking records were being
+  filed as conversation during the memstore recovery. A breakdown by role and
+  event kind, and the count rejected by each admission rule, turns that from a
+  post-hoc audit into the first line of output.
+- [ ] **Nothing compares what synthesis produced against what the index
+  serves.** The active-recipe manifest silently excluded an entire producer
+  population -- 3,686 episodes across 580 conversations, already paid for in
+  quota -- and it took an audit to notice. `atrium status` should name every
+  population in the registry and how many episodes of each the index serves,
+  so a manifest that drops one is visible immediately.
+- [ ] **The cost of a no-op pass is an invariant worth measuring.** Rewriting
+  unchanged conversations cascaded away every vector it touched, so an hourly
+  refresh paid a full re-embed -- 19,198 vectors, hours of CPU -- every hour.
+  `test_rewriting_an_unchanged_conversation_keeps_its_vectors` pins that one
+  case; the general property is that a refresh over an unchanged archive writes
+  nothing and embeds nothing, and it belongs in the test suite as such.
+
 ## Measurement
 
 - [!] Hand-labeled acceptance set — blocks the measurement phase. The 365/389
@@ -115,6 +157,13 @@
   production decisions ("better than memstore" needs a number). Smallest
   unblock: the user labels a stratified question set over the corpus, or
   approves a labeling protocol.
+  This is the project's ceiling, and the 2026-08-31 retirement made it
+  concrete: every decision that day — which population to serve, which events
+  to admit, whether the recovery was worth importing — was settled by counting
+  rows, comparing sets and measuring bytes. Not one was settled by whether the
+  answers got better. memstore is now switched off on structural evidence
+  alone, which is enough to call it an operational replacement and not enough
+  to call it an improvement.
 
 ## Integrations
 

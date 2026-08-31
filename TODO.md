@@ -27,36 +27,6 @@
   `complete:false` with the two >64 MiB rollouts listed. Remaining here: once
   rocket-agents ships the streaming exporter (its TODO), re-export codex
   complete and re-ingest so those two rollouts join the index.
-- [~] **The canonical archive exists on exactly one disk.** Being fixed
-  2026-08-31; see the closed entries below for what already landed.
-  Done: an immutable verified snapshot on the Mac mini
-  (`snapshots/2026-08-31-post-memstore-recovery/`, sha256 matched on both
-  hosts, and that host runs Backblaze, so the archive now exists in three
-  places); the importer no longer loses conversations to concurrent writers
-  (`rocket-agents 9e4d1f5`); the transport replicates the archive from where
-  it actually lives (`dotfiles 3f3737d`). Remaining: capture the Mac mini's
-  own 3,072 sessions, then run and prove one real convergence.
-  Original finding:
-- [-] **The canonical archive exists on exactly one disk.** Reclassified
-  2026-08-31 from plumbing to the project's single point of failure. The
-  durable archive is `~/.local/share/rocket-agents/conversations/archive.jsonl`
-  (decided in the 2026-08-27 consult; XDG data, 0600/0700, import-verified),
-  but dotfiles' `sync-conversations` still targets
-  `~/.local/state/rocket-agents/conversations/` (`bin/sync-conversations:159`),
-  a directory that is empty and has been since it was created on 2026-08-20.
-  The cross-machine replica does not exist.
-  This now matters more than it did: that file is the only copy in the world of
-  the 3,008 conversations recovered from memstore before it was deleted, and
-  of every session deleted from a provider directory between exports. Redundancy
-  also went *down* on 2026-08-31 -- `atrium-refresh` prunes archive backups to
-  the newest, which was right (the importer writes a full 2.6 GB copy on every
-  apply and would fill the disk in days) but leaves one file and one previous
-  version on the same disk. Whether Backblaze covers `~/.local/share` is
-  unverified; reading its file list needs sudo, and it is not the designed
-  mechanism anyway.
-  Smallest fix: point the transport at `.local/share` and prove convergence on
-  the second machine with the dry-run-reports-no-changes check. Cross-project:
-  dotfiles.
 - [ ] **The archive's shape will not scale.** One JSONL rewritten in full on
   every import: 2.6 GB -> 3.36 GB in a day, and the 2026-08-31 recovery import
   took roughly 45 minutes to add 3,008 conversations. With an hourly refresh

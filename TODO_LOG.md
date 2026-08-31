@@ -6,6 +6,47 @@
 
 ### 2026-08
 
+- [x] 2026-08-31 — **Durability:** The archive stopped being one copy on one
+  disk, and stopped being able to lose conversations quietly.
+  - Result: `sync-conversations` had driven both the archive and its own
+    scratch state from one path under XDG state, so it had been replicating an
+    empty directory since the archive moved to XDG data on 2026-08-27. The two
+    namespaces are separate now — durable data under `.local/share`, ephemeral
+    locks and transfers under `.local/state` — and the orchestration test
+    asserts the archive is not under state, so the defect cannot return
+    quietly (`dotfiles 3f3737d`).
+  - Two P0s in the importer, both silent (`rocket-agents 9e4d1f5`). It had no
+    claim on the archive: two writers each read a revision, each renamed their
+    own result over it, and the later one won. It now records the revision it
+    merged from and refuses to publish if the archive moved, inside a lock held
+    only for the verify-and-rename; correctness rests on the revision check,
+    which has no staleness to adjudicate. And the merge was last-writer-wins,
+    which between two archives is simply wrong — neither supersedes the other.
+    It now uses the union merge that already existed for capture fragments,
+    made commutative so both hosts converge on the same record either way.
+  - **The merge fix earned itself the same day.** Capturing the Mac mini's
+    corpus produced three conversations present on both hosts with differing
+    revisions. One of them, `f35e12570c48`, had 353 events on the mini and 356
+    on the laptop: importing it under the old `replace` would have destroyed
+    the three events only this machine held. After the import it has 356.
+  - The Mac mini's own history is captured: 7,697 conversations exported
+    (`complete:true`, nothing skipped), of which **437 existed nowhere else**.
+    Its 3,072 Claude session files were never 3,072 conversations, as the
+    review warned — the export spans every source on that host, and the two
+    machines' corpora overlap heavily because `~/.claude/projects` is synced.
+    Archive: 26,598 -> 27,036 conversations, integrity verified against its own
+    manifest.
+  - An immutable snapshot lives on the Mac mini at
+    `~/.local/share/rocket-agents/conversations/snapshots/2026-08-31-post-memstore-recovery/`,
+    mode 0400, sha256 matched on both hosts, and that machine runs Backblaze —
+    so the archive now exists in three places rather than one. Its disk has
+    FileVault off, which Backblaze does not change: that protects against loss,
+    not against physical theft. Operator informed and accepted.
+  - Evidence: `rocket-agents 9e4d1f5` (26 tests), `dotfiles 3f3737d`
+    (`./scripts/check` green, no leaks), both hosts on the same commits via
+    git bundle without touching GitHub, and the Mac mini runs the new
+    concurrency tests green.
+
 - [x] 2026-08-31 — **Cutover:** `~/.memstore` deleted; 118 GB reclaimed.
   - Result: free space went from 272 Gi to 343 Gi. Deleted only after every
     part of it was accounted for: the 3,008 conversations that existed nowhere

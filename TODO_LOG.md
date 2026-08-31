@@ -6,6 +6,23 @@
 
 ### 2026-08
 
+- [x] 2026-08-31 — **Cutover:** The last two things the retirement left open.
+  - Result: The dotfiles guidance is committed (`ff7e3b4`), which required
+    finishing a real in-progress merge between the two machines — resolved as a
+    union of `autoMode.soft_deny` so no machine lost a confirmation prompt. And
+    memstore's knowledge graph is exported to
+    `~/p/brain/inbox/memstore-knowledge-graph-export-2026-08-31.md`, split into
+    151 judgement triples worth keeping (closed audit findings, blockers,
+    partners, enforced rules) and 1,761 code-structure triples CodeGraph can
+    re-derive. That was the only memstore content not reconstructible from the
+    archive, so its 118 GB is now free to reclaim whenever the operator wants.
+  - Also corrected a wrong finding from 2026-08-30: the `~/.claude` profile was
+    reported as loading no stdio MCP server. It loads all of them. The test had
+    used `CLAUDE_CONFIG_DIR=~/.claude`, which reads a third, near-empty
+    `~/.claude/.claude.json` rather than `~/.claude.json`.
+  - Evidence: `git -C ~/p/dotfiles log -1` shows a two-parent merge commit;
+    `claude mcp get atrium` connects under both real profiles.
+
 - [x] 2026-08-30 — **Cutover:** memstore retired; Atrium serves Claude and
   Codex.
   - Result: The blocker was never synthesis coverage — it was freshness.

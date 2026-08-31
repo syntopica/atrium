@@ -1,5 +1,7 @@
 """Curated notes become records with the same convergence guarantees."""
 
+import re
+
 from atrium.ingest.read_notes import read_notes
 from atrium.ingest.to_note_records import to_note_records
 from atrium.retrieve.search_words import search_words
@@ -143,4 +145,8 @@ def test_no_ingest_ever_reports_a_negative_record_count(tmp_path, capsys):
     second = capsys.readouterr().out
     assert "0 records written" in second
     assert "1 notes unchanged" in second
-    assert "-1" not in second
+    # Not a bare `"-1" not in second`: the line carries the index path, and a
+    # pytest temporary directory numbered 115 puts "-1" in it, so the check
+    # failed on the run counter rather than on anything the code did. Assert
+    # against the reported numbers themselves.
+    assert re.search(r"-\d+ (records written|notes)", second) is None

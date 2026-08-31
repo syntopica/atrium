@@ -27,7 +27,21 @@
   `complete:false` with the two >64 MiB rollouts listed. Remaining here: once
   rocket-agents ships the streaming exporter (its TODO), re-export codex
   complete and re-ingest so those two rollouts join the index.
-- [ ] **The archive's shape will not scale.** One JSONL rewritten in full on
+- [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
+  with codex over three review rounds and kept at
+  `docs/designs/conversation-archive-v2.md`: append-only journal of immutable
+  content-addressed batches, observed-remove tombstones, set-reducer
+  materialization, threshold compaction publishing a snapshot behind a
+  compare-and-swapped `current.json`, a disposable per-writer cursor for
+  incremental Atrium ingest, and an incremental capture cache. Measured
+  baseline it has to beat, on this machine: one conversation costs 132.36 s and
+  ~10.3 GB of archive I/O to publish, while a full capture costs 226.91 s and
+  2.78 GB -- capture is the larger term, which the first design missed.
+  Implementation is not started; it collides with an in-flight
+  `CONVERSATION_SCHEMA_VERSION` 1 -> 2 change in rocket-agents that alters event
+  id derivation, and the two migrations should be one verified pass over the
+  archive rather than two. Original entry below.
+- [ ] One JSONL rewritten in full on
   every import: 2.6 GB -> 3.36 GB in a day, and the 2026-08-31 recovery import
   took roughly 45 minutes to add 3,008 conversations. With an hourly refresh
   that is O(corpus) write amplification per hour to append a handful of

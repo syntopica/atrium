@@ -179,6 +179,17 @@
   case; the general property is that a refresh over an unchanged archive writes
   nothing and embeds nothing, and it belongs in the test suite as such.
 
+- [ ] **The dotfiles auto-sync manufactures conflicts and leaves them.**
+  `com.cristian.sync-all-safe` merges the two machines and commits, but a
+  conflict stops it mid-merge and nothing resolves or reports it. One sat
+  unresolved from 2026-08-29 until it was found by accident on 2026-08-30, and
+  a second appeared within a day of that -- both in `agent-guidance/shared.md`
+  and `claude/settings.json`, which are exactly the files that carry agent
+  guidance and confirmation rules. A repo left with `UU` paths also blocks
+  every later commit, so an unnoticed conflict silently stops the sync
+  entirely. It needs to either resolve deterministically, or fail loudly
+  enough that someone looks. Cross-project: dotfiles.
+
 ## Measurement
 
 - [!] Hand-labeled acceptance set — blocks the measurement phase. The 365/389

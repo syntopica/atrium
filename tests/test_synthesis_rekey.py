@@ -68,7 +68,14 @@ def test_registry_pass_moves_the_file_and_leaves_no_second_generation(tmp_path):
     write_record(tmp_path, legacy["job_key"], legacy)
 
     planned = rekey_synthesis_registry(tmp_path)
-    assert planned == {"moved": 1, "already": 0, "collided": 0, "collisions": [], "applied": False}
+    assert planned == {
+        "moved": 1,
+        "already": 0,
+        "collided": 0,
+        "collisions": [],
+        "applied": False,
+        "backup": None,
+    }
     assert record_path(tmp_path, legacy["job_key"]).exists(), "a plan must not touch the registry"
 
     applied = rekey_synthesis_registry(tmp_path, apply=True)
@@ -115,3 +122,35 @@ def test_qualified_id_matches_the_rocket_agents_implementation():
     assert qualify_event_id("c" * 64, "0" * 64) == (
         "38372940b32004f4b41fe623dd47998c34b93322338039e30e699aea6264c064"
     )
+
+
+def test_a_write_pass_copies_the_records_aside_first(tmp_path):
+    # Renaming is one-way: a job key is a hash, so the identity a record had
+    # before the pass cannot be recovered from the one it has after. The pass
+    # is also only correct once the archive is upgraded -- run early, it renames
+    # every record onto ids the archive does not carry. The backup is the only
+    # thing that makes either mistake survivable, and the registry holds model
+    # output that was paid for once.
+    legacy = _legacy_record(["e1", "e2"])
+    write_record(tmp_path, legacy["job_key"], legacy)
+    original = json.loads(record_path(tmp_path, legacy["job_key"]).read_text())
+
+    report = rekey_synthesis_registry(tmp_path, apply=True)
+
+    assert report["backup"] is not None
+    backup = record_path(tmp_path, legacy["job_key"])
+    backup = tmp_path / report["backup"].rsplit("/", 1)[-1] / f"{legacy['job_key']}.json"
+    assert json.loads(backup.read_text()) == original
+    # And the live record really did move, so the backup is the only copy of
+    # the old identity.
+    assert not record_path(tmp_path, legacy["job_key"]).exists()
+
+
+def test_a_plan_pass_writes_no_backup(tmp_path):
+    legacy = _legacy_record(["e1", "e2"])
+    write_record(tmp_path, legacy["job_key"], legacy)
+
+    report = rekey_synthesis_registry(tmp_path, apply=False)
+
+    assert report["backup"] is None
+    assert list(tmp_path.glob("records.bak-*")) == []

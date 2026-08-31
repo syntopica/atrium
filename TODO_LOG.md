@@ -6,6 +6,18 @@
 
 ### 2026-08
 
+- [x] 2026-08-31 — **Cutover:** `~/.mempalace` deleted; 118 GB reclaimed.
+  - Result: free space went from 272 Gi to 343 Gi. Deleted only after every
+    part of it was accounted for: the 3,008 conversations that existed nowhere
+    else are in the canonical archive, the knowledge graph is a file in brain's
+    inbox, the purge export held base64 blobs and dirty checkpoints discarded
+    on purpose, and the five palace backups were subsets — the largest
+    divergence yielded zero sessions the archive does not already hold.
+  - Checked before deleting rather than after: no process held the directory,
+    no LaunchAgent referenced it, and the plugin was already disabled.
+  - Operator directive: the store was not wanted for anything except what could
+    be exported and reused.
+
 - [x] 2026-08-31 — **Recovery:** Conversations that survived only inside
   MemPalace, rescued before the store is deleted.
   - Result: 7,638 Claude Code session files had been mined into MemPalace and

@@ -66,6 +66,12 @@ def main(argv: list[str] | None = None) -> int:
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
 
+    rekey = subcommands.add_parser(
+        "rekey-synthesis",
+        help="Re-key the synthesis registry onto the schema 2 event id rule",
+    )
+    rekey.add_argument("--apply", action="store_true", help="Write; otherwise only report the plan")
+
     search = subcommands.add_parser("search", help="Search the index")
     search.add_argument("query")
     search.add_argument("--limit", type=_positive_limit, default=10)
@@ -111,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:
         return _synthesize(args.archive, args.limit, args.dry_run, args.producer, args.workers)
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
+    if args.command == "rekey-synthesis":
+        return _rekey_synthesis(apply=args.apply)
     if args.command == "search":
         lane = (
             "substring"
@@ -355,6 +363,26 @@ def _synthesize(
         f"registry {DEFAULT_REGISTRY}"
     )
     return 0 if failed == 0 else 1
+
+
+def _rekey_synthesis(*, apply: bool) -> int:
+    """Move every pre-schema-2 record onto the identity the archive now implies.
+
+    Reports before it writes, because the registry holds model output that was
+    paid for once and cannot be regenerated for free.
+    """
+    from atrium.synthesize.rekey_synthesis_registry import rekey_synthesis_registry
+    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
+
+    report = rekey_synthesis_registry(DEFAULT_REGISTRY, apply=apply)
+    verb = "re-keyed" if apply else "would re-key"
+    print(f"  {verb} {report['moved']} records, {report['already']} already current")
+    if report["collided"]:
+        print(f"  {report['collided']} collided and were left alone: {report['collisions']}")
+        return 1
+    if not apply:
+        print("  nothing written; pass --apply to write")
+    return 0
 
 
 def _ingest_synthesis(index: Path) -> int:

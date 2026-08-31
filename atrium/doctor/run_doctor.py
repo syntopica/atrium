@@ -9,6 +9,7 @@ from atrium.doctor.index_coverage import index_coverage
 from atrium.doctor.read_archive_ids import read_archive_ids
 from atrium.doctor.refresh_health import refresh_health
 from atrium.doctor.synthesis_coherence import synthesis_coherence
+from atrium.doctor.synthesis_event_membership import synthesis_event_membership
 from atrium.store.open_store import open_store
 
 
@@ -31,4 +32,5 @@ def run_doctor(index: Path, archive: Path, stamp: Path, registry: Path) -> list[
     finally:
         connection.close()
     findings.append(synthesis_coherence(registry, archive_ids))
+    findings.append(synthesis_event_membership(archive, registry))
     return findings

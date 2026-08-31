@@ -13,6 +13,10 @@ from atrium.store.open_store import open_store
 from atrium.store.write_conversation import UNCHANGED, write_conversation
 
 DEFAULT_INDEX = Path.home() / ".atrium" / "index.sqlite3"
+DEFAULT_ARCHIVE = (
+    Path.home() / ".local" / "share" / "rocket-agents" / "conversations" / "archive.jsonl"
+)
+REFRESH_STAMP = Path.home() / ".local" / "state" / "atrium" / "last-refresh"
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -65,6 +69,11 @@ def main(argv: list[str] | None = None) -> int:
     synthesize.add_argument("--workers", type=_positive_limit, default=3)
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
+
+    doctor = subcommands.add_parser(
+        "doctor", help="Check whether the memory would answer from a world that still exists"
+    )
+    doctor.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
 
     rekey = subcommands.add_parser(
         "rekey-synthesis",
@@ -119,6 +128,8 @@ def main(argv: list[str] | None = None) -> int:
         return _ingest_synthesis(args.index)
     if args.command == "rekey-synthesis":
         return _rekey_synthesis(apply=args.apply)
+    if args.command == "doctor":
+        return _doctor(args.index, args.archive)
     if args.command == "search":
         lane = (
             "substring"
@@ -363,6 +374,28 @@ def _synthesize(
         f"registry {DEFAULT_REGISTRY}"
     )
     return 0 if failed == 0 else 1
+
+
+def _doctor(index: Path, archive: Path) -> int:
+    """Report every coherence check, and fail when the memory is answering wrongly.
+
+    Everything this looks at had already gone wrong silently: a sync eleven days
+    dead behind a stale lock, a manifest outranking the records under it, a
+    refresh that reports "done" whatever happened. None of those were subtle --
+    they were invisible because nothing printed the right number.
+    """
+    from atrium.doctor.run_doctor import run_doctor
+    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
+
+    findings = run_doctor(index, archive, REFRESH_STAMP, DEFAULT_REGISTRY)
+    mark = {"ok": "ok  ", "warn": "warn", "broken": "FAIL"}
+    for finding in findings:
+        print(f"  {mark[finding.severity]} {finding.check:<16} {finding.summary}")
+    broken = [finding for finding in findings if finding.severity == "broken"]
+    if broken:
+        print(f"  {len(broken)} check(s) say this index answers from a world that moved on")
+        return 1
+    return 0
 
 
 def _rekey_synthesis(*, apply: bool) -> int:

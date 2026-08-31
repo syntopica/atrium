@@ -27,7 +27,17 @@
   `complete:false` with the two >64 MiB rollouts listed. Remaining here: once
   rocket-agents ships the streaming exporter (its TODO), re-export codex
   complete and re-ingest so those two rollouts join the index.
-- [!] **The canonical archive exists on exactly one disk.** Reclassified
+- [~] **The canonical archive exists on exactly one disk.** Being fixed
+  2026-08-31; see the closed entries below for what already landed.
+  Done: an immutable verified snapshot on the Mac mini
+  (`snapshots/2026-08-31-post-mempalace-recovery/`, sha256 matched on both
+  hosts, and that host runs Backblaze, so the archive now exists in three
+  places); the importer no longer loses conversations to concurrent writers
+  (`rocket-agents 9e4d1f5`); the transport replicates the archive from where
+  it actually lives (`dotfiles 3f3737d`). Remaining: capture the Mac mini's
+  own 3,072 sessions, then run and prove one real convergence.
+  Original finding:
+- [-] **The canonical archive exists on exactly one disk.** Reclassified
   2026-08-31 from plumbing to the project's single point of failure. The
   durable archive is `~/.local/share/rocket-agents/conversations/archive.jsonl`
   (decided in the 2026-08-27 consult; XDG data, 0600/0700, import-verified),

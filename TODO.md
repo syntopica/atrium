@@ -27,12 +27,41 @@
   `complete:false` with the two >64 MiB rollouts listed. Remaining here: once
   rocket-agents ships the streaming exporter (its TODO), re-export codex
   complete and re-ingest so those two rollouts join the index.
-- [ ] Multi-machine archive sync: the durable archive now lives at
-  `~/.local/share/rocket-agents/conversations/archive.jsonl` (decided in the
-  2026-08-27 consult; XDG data, 0600/0700, import-verified). Remaining:
-  point the dotfiles `sync-conversations` transport at `.local/share`
-  (it currently syncs `.local/state`) and prove convergence on the second
-  machine with the dry-run-reports-no-changes check. Cross-project: dotfiles.
+- [!] **The canonical archive exists on exactly one disk.** Reclassified
+  2026-08-31 from plumbing to the project's single point of failure. The
+  durable archive is `~/.local/share/rocket-agents/conversations/archive.jsonl`
+  (decided in the 2026-08-27 consult; XDG data, 0600/0700, import-verified),
+  but dotfiles' `sync-conversations` still targets
+  `~/.local/state/rocket-agents/conversations/` (`bin/sync-conversations:159`),
+  a directory that is empty and has been since it was created on 2026-08-20.
+  The cross-machine replica does not exist.
+  This now matters more than it did: that file is the only copy in the world of
+  the 3,008 conversations recovered from mempalace before it was deleted, and
+  of every session deleted from a provider directory between exports. Redundancy
+  also went *down* on 2026-08-31 -- `atrium-refresh` prunes archive backups to
+  the newest, which was right (the importer writes a full 2.6 GB copy on every
+  apply and would fill the disk in days) but leaves one file and one previous
+  version on the same disk. Whether Backblaze covers `~/.local/share` is
+  unverified; reading its file list needs sudo, and it is not the designed
+  mechanism anyway.
+  Smallest fix: point the transport at `.local/share` and prove convergence on
+  the second machine with the dry-run-reports-no-changes check. Cross-project:
+  dotfiles.
+- [ ] **The archive's shape will not scale.** One JSONL rewritten in full on
+  every import: 2.6 GB -> 3.36 GB in a day, and the 2026-08-31 recovery import
+  took roughly 45 minutes to add 3,008 conversations. With an hourly refresh
+  that is O(corpus) write amplification per hour to append a handful of
+  conversations, and it gets worse monotonically. The archive is meant to hold
+  everything forever, so the format has to stop being rewritten whole --
+  segment by period or by source, or make append the normal path and the full
+  rewrite a compaction. Cross-project: rocket-agents.
+- [ ] **Whole conversations that have never entered the archive at all.** The
+  codex export declares `complete:false` and skips two rollouts over 64 MiB
+  outright; the Windsurf and Trae exporters emit zero conversations; ChatGPT
+  and Grok leave no local transcript, so nothing has ever been captured from
+  them. Each is filed separately below and in `~/p/rocket-agents/TODO.md`, but
+  together they are the answer to "is the archive complete", and today the
+  answer is no.
 
 ## Synthesis
 

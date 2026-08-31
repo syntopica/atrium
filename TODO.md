@@ -108,30 +108,6 @@
   the synthesis behind it never existed there (checkpoints were literal
   message tails).
 
-## Cutover from memstore
-
-> Done 2026-08-30; the record is in `TODO_LOG.md`. What is left here is the
-> disk, and two host-config faults the cutover surfaced.
-
-- [ ] Reclaim `~/.memstore` (118 GB). Everything worth keeping is out, so what
-  remains is only the deletion, which is the one step that cannot be undone.
-  Operator directive 2026-08-31: the store is not wanted for anything else.
-  * Nothing irreplaceable remains inside, and that was checked rather than
-    assumed. The 3,008 conversations that existed only here are in the
-    canonical archive (see the recovery entry in `TODO_LOG.md`); the knowledge
-    graph is exported to
-    `~/p/brain/inbox/memstore-knowledge-graph-export-2026-08-31.md` -- run
-    `brain ingest` on it when you want it folded in, it is a proposal in the
-    tray, not a commit; the purge export holds base64 blobs and dirty
-    checkpoints discarded on purpose; and the five palace backups are subsets
-    of the live palace, yielding zero sessions the archive does not already
-    hold.
-  * The live KG is empty (0/0), as are the active artifact and event stores.
-  * Suggested order once a few sessions have run on Atrium recall: the ~87 GB
-    of dead rebuild snapshots and the 14 GB `chroma.sqlite3.pre-wal-20260825`
-    first, since nothing has read them since August; the 31 GB live palace
-    last. Atrium's whole index is 7.1 GB.
-
 ## Measurement
 
 - [!] Hand-labeled acceptance set — blocks the measurement phase. The 365/389

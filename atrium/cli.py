@@ -116,8 +116,12 @@ def main(argv: list[str] | None = None) -> int:
         help="Directory whose project to recall (default: the working directory)",
     )
     recall.add_argument("--limit", type=_positive_limit, default=12)
+    recall.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
+    recall.add_argument("--refresh-stamp", type=Path, default=REFRESH_STAMP)
 
-    subcommands.add_parser("status", help="Show what the index holds")
+    status = subcommands.add_parser("status", help="Show what the index holds, and how stale")
+    status.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
+    status.add_argument("--refresh-stamp", type=Path, default=REFRESH_STAMP)
 
     args = parser.parse_args(argv)
     if args.command == "ingest":
@@ -148,8 +152,8 @@ def main(argv: list[str] | None = None) -> int:
         )
         return _search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "recall":
-        return _recall(args.index, args.cwd, args.limit)
-    return _status(args.index)
+        return _recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
+    return _status(args.index, args.archive, args.refresh_stamp)
 
 
 def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
@@ -514,7 +518,9 @@ def _search(index: Path, query: str, limit: int, lane: str, project: Path | None
     return 0
 
 
-def _recall(index: Path, cwd: Path, limit: int) -> int:
+def _recall(
+    index: Path, cwd: Path, limit: int, archive: Path, stamp: Path = REFRESH_STAMP
+) -> int:
     """Print the recall block for the project containing ``cwd``.
 
     Exit status separates the two ways of printing nothing. Zero means there is
@@ -522,7 +528,13 @@ def _recall(index: Path, cwd: Path, limit: int) -> int:
     silence is the right injection. Non-zero means recall could not answer, and
     a caller must say so rather than let a broken index read as a project with
     no history.
+
+    A stale index breaks the silence: the session about to trust this memory is
+    exactly the reader that must hear the archive stopped moving, and the empty
+    block is the case where nothing else would say so.
     """
+    from atrium.doctor.archive_freshness import archive_freshness
+    from atrium.doctor.refresh_health import refresh_health
     from atrium.recall.project_workspace import project_workspace
     from atrium.recall.recent_episodes import recent_episodes
     from atrium.recall.render_snapshot import render_snapshot
@@ -538,25 +550,52 @@ def _recall(index: Path, cwd: Path, limit: int) -> int:
         hits = recent_episodes(connection, project, limit)
     finally:
         connection.close()
+    stale = [
+        finding
+        for finding in (archive_freshness(archive), refresh_health(stamp))
+        if finding.severity != "ok"
+    ]
+    if stale:
+        details = "; ".join(finding.summary for finding in stale)
+        print(f"# atrium recall warning: memory may be stale -- {details}")
     block = render_snapshot(project, hits)
     if block:
         print(block)
     return 0
 
 
-def _status(index: Path) -> int:
+def _status(index: Path, archive: Path, stamp: Path = REFRESH_STAMP) -> int:
+    """Show what the index holds -- and say loudly when it is answering stale.
+
+    The archive sat frozen from 2026-08-27 while status printed healthy row
+    counts and the index answered every query as if current. Row counts cannot
+    show that; the ages below can, so they print on every status, not only in
+    `doctor`.
+    """
+    from atrium.doctor.archive_freshness import archive_freshness
+    from atrium.doctor.newest_content_gap import newest_content_gap
+    from atrium.doctor.refresh_health import refresh_health
+
     connection = open_store(index, read_only=True)
     records = connection.execute("SELECT count(*) FROM records").fetchone()[0]
     providers = connection.execute(
         "SELECT provider, count(*) FROM records GROUP BY provider ORDER BY 2 DESC"
     ).fetchall()
     build = dict(connection.execute("SELECT key, value FROM build_metadata"))
+    freshness = [
+        archive_freshness(archive),
+        refresh_health(stamp),
+        newest_content_gap(connection),
+    ]
     connection.close()
     print(f"  index: {index}")
     print(f"  built by: schema {build.get('schema')}, pipeline {build.get('pipeline')}")
     print(f"  records: {records:,}")
     for provider, count in providers:
         print(f"    {provider:<14} {count:>8,}")
+    for finding in freshness:
+        loud = {"ok": "", "warn": "  <- STALE", "broken": "  <- BROKEN"}[finding.severity]
+        print(f"  {finding.summary}{loud}")
     return 0
 
 

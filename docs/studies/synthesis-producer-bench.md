@@ -83,12 +83,16 @@ nothing.
 
 ## The cheapest model does not make the corpus affordable
 
-Worth stating plainly, because the bench invites the opposite conclusion. The
-Codex weekly window read 11% before the production pass and 11% after it, with
-114 synthesis calls in between — so one percentage point is worth more than 114
-calls, and the whole weekly window is on the order of twelve thousand. Against
-~150,000 remaining episodes that is roughly a dozen weekly cycles on this lane,
-the same order of magnitude as the Gemini lane it replaces.
+Worth stating plainly, because the bench invites the opposite conclusion.
+
+Measured against the needle rather than estimated: the Codex weekly window went
+**11% -> 13% while the registry grew by 375 episodes**, so one percentage point
+buys roughly **187 episodes** and the whole weekly window is about **18,700**.
+At 4 workers the pass runs ~15 episodes a minute, which is **~4.8% of the
+weekly window per hour** — a number worth knowing before leaving one running.
+
+Against ~150,000 remaining episodes that is about **eight weekly cycles** on
+this lane, the same order of magnitude as the Gemini lane it replaces.
 
 What the cheaper model buys is real but bounded: 2.2x less wall-clock per
 episode, and a lane that actually produces (0 failed conversations against

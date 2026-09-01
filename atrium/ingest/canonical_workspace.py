@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from atrium.ingest.apply_workspace_aliases import apply_workspace_aliases
+
 # The exporter redacts the user's home directory to this before archiving, and
 # `project_workspace` resolves a live cwd to the same form. Anything still
 # carrying a real home path is a redaction the exporter missed.
@@ -40,21 +42,4 @@ def canonical_workspace(
     prefix = root.rstrip("/") + "/"
     if workspace.startswith(prefix):
         workspace = _HOME + "/" + workspace[len(prefix) :]
-    return _apply_aliases(workspace, aliases or {})
-
-
-def _apply_aliases(workspace: str, aliases: dict[str, str]) -> str:
-    """Fold a renamed project onto the name it has now, subdirectories included.
-
-    A rename splits memory the same way a missed redaction does: `p/consumer-pv`
-    runs to 2026-07-10 and `p/consumer-g` starts 2026-07-12, so the project's
-    first month answered nothing from inside the project. Longest alias first,
-    so a nested rename cannot be shadowed by a shorter one that also matches.
-    """
-    for old in sorted(aliases, key=len, reverse=True):
-        new = aliases[old]
-        if workspace == old:
-            return new
-        if workspace.startswith(old.rstrip("/") + "/"):
-            return new.rstrip("/") + workspace[len(old.rstrip("/")) :]
-    return workspace
+    return apply_workspace_aliases(workspace, aliases or {})

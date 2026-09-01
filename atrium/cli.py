@@ -78,6 +78,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         "CLI's quota; max: the Claude Max OAuth lane",
     )
     synthesize.add_argument("--workers", type=_positive_limit, default=3)
+    synthesize.add_argument(
+        "--model",
+        default=None,
+        help="Codex lane only: pin the model instead of the account default. It "
+        "enters the job key, so a different model is a different population",
+    )
+    synthesize.add_argument(
+        "--effort",
+        default=None,
+        choices=("low", "medium", "high", "xhigh"),
+        help="Codex lane only: reasoning effort. Synthesis is extraction, not "
+        "judgement, so the account default is usually the wrong price",
+    )
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
 
@@ -150,7 +163,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     if args.command == "embed":
         return _embed(args.index)
     if args.command == "synthesize":
-        return _synthesize(args.archive, args.limit, args.dry_run, args.producer, args.workers)
+        return _synthesize(
+            args.archive,
+            args.limit,
+            args.dry_run,
+            args.producer,
+            args.workers,
+            args.model,
+            args.effort,
+        )
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
     if args.command == "rekey-synthesis":
@@ -331,8 +352,14 @@ def _embed(index: Path) -> int:
     return 0
 
 
-def _synthesize(
-    archive: Path, limit: int | None, dry_run: bool, producer: str, workers: int
+def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each argument is one flag
+    archive: Path,
+    limit: int | None,
+    dry_run: bool,
+    producer: str,
+    workers: int,
+    model: str | None = None,
+    effort: str | None = None,
 ) -> int:
     """Synthesize episodes newest-first; resumable, so interruption is cheap.
 
@@ -369,10 +396,13 @@ def _synthesize(
 
         model_id = MODEL
     elif producer == "codex":
-        from atrium.synthesize.codex_lane_call import CODEX_MODEL_ID, codex_lane_call
+        from atrium.synthesize.codex_lane_call import codex_lane_call
+        from atrium.synthesize.codex_lane_model_id import codex_lane_model_id
 
-        call = codex_lane_call
-        model_id = CODEX_MODEL_ID
+        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+            return codex_lane_call(system_text, user_text, tool, model, effort)
+
+        model_id = codex_lane_model_id(model, effort)
     else:
         from atrium.synthesize.agy_lane_call import AGY_MODEL_ID, agy_lane_call
 

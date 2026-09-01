@@ -6,6 +6,22 @@
 
 ### 2026-09
 
+- [x] 2026-09-01 — **Observability:** Fixed the staleness warning that the
+  staleness reporting itself created.
+  - Adding the refresh age to `atrium status` made every hourly `refresh done`
+    line in `~/.local/state/atrium/refresh.log` report the run as
+    `<- STALE`: `~/.local/bin/atrium-refresh` ran `atrium status` *before*
+    writing its completion stamp, so status always read the previous run's,
+    one whole interval old. A warning on every single run is one nobody reads
+    — the exact failure the observability group exists to prevent, introduced
+    by the fix for it.
+  - The stamp now precedes the status call. The pipeline's work is finished at
+    that line; status only describes it, and a failing status no longer erases
+    the record of ingest and embed having succeeded. The script is untracked
+    local tooling, so a timestamped copy was kept beside it before editing.
+  - Evidence: `sh -n` clean; the next scheduled run's log line will carry the
+    ages without the marker.
+
 - [x] 2026-09-01 — **Observability:** `atrium doctor`'s coverage check stopped
   warning about a permanent, expected class.
   - It warned "528 missing" on every run. Measured against the live archive:

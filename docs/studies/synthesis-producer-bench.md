@@ -81,6 +81,22 @@ Reliability is the second argument for this lane, independent of price: the
 walled lane does not merely go slowly, it spends its wall-clock producing
 nothing.
 
+## The cheapest model does not make the corpus affordable
+
+Worth stating plainly, because the bench invites the opposite conclusion. The
+Codex weekly window read 11% before the production pass and 11% after it, with
+114 synthesis calls in between — so one percentage point is worth more than 114
+calls, and the whole weekly window is on the order of twelve thousand. Against
+~150,000 remaining episodes that is roughly a dozen weekly cycles on this lane,
+the same order of magnitude as the Gemini lane it replaces.
+
+What the cheaper model buys is real but bounded: 2.2x less wall-clock per
+episode, and a lane that actually produces (0 failed conversations against
+`failed=30620`). What it does not buy is a corpus-complete backfill. The
+remaining lever is not price per call, it is deciding that full coverage is not
+the goal — synthesize newest-first, continuously, and accept a coverage
+frontier that moves forward rather than a corpus that is ever finished.
+
 ## What this does not settle
 
 Whether the answers actually get *better* — that still needs the hand-labeled

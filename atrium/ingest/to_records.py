@@ -2,6 +2,7 @@
 
 import re
 from collections.abc import Iterator
+from typing import Any
 
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.record_identity import record_identity
@@ -28,7 +29,9 @@ _ACKNOWLEDGEMENT = re.compile(
 )
 
 
-def to_records(conversation: dict, tally: AdmissionTally | None = None) -> Iterator[Record]:
+def to_records(
+    conversation: dict[str, Any], tally: AdmissionTally | None = None
+) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
     Skips non-conversational events and bare acknowledgements. Nothing is

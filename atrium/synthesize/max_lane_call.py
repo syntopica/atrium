@@ -4,6 +4,7 @@ import json
 import time
 import urllib.error
 import urllib.request
+from typing import Any
 
 MODEL = "claude-sonnet-5"
 _ENDPOINT = "https://api.anthropic.com/v1/messages"
@@ -15,7 +16,9 @@ _MAX_ATTEMPTS_PER_TOKEN = 2
 _BACKOFF_SECONDS = 20.0
 
 
-def max_lane_call(tokens: list[str], system_text: str, user_text: str, tool: dict) -> dict:
+def max_lane_call(
+    tokens: list[str], system_text: str, user_text: str, tool: dict[str, Any]
+) -> dict[str, Any]:
     """Return {"input": <tool_use input>, "model": <resolved id>, "usage": ...}.
 
     Rotates through the account tokens on 429/5xx -- one rate-limited Max

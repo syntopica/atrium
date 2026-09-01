@@ -40,7 +40,7 @@ def commit_with_retry(connection: sqlite3.Connection, write: Callable[[], T]) ->
         try:
             with connection:
                 result = write()
-            return result
+            return result  # noqa: RET504 -- the commit happens on `with` exit, between these lines
         except sqlite3.OperationalError as error:
             if "locked" not in str(error) or delay is None:
                 raise

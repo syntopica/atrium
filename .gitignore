@@ -6,3 +6,4 @@ __pycache__/
 .pytest_cache/
 atrium.egg-info/
 *.egg-info/
+.coverage

@@ -3,11 +3,14 @@
 import json
 import random
 from pathlib import Path
+from typing import Any
 
 from atrium.doctor.finding import Finding
 
 
-def synthesis_event_membership(archive: Path, registry: Path, sample: int = 60, seed: int = 0):
+def synthesis_event_membership(
+    archive: Path, registry: Path, sample: int = 60, seed: int = 0
+) -> Finding:
     """Check that a sample of synthesis records cite events that still exist.
 
     Stronger than asking whether the conversation exists. A synthesis whose
@@ -36,7 +39,7 @@ def synthesis_event_membership(archive: Path, registry: Path, sample: int = 60, 
             detail={},
         )
     chosen = random.Random(seed).sample(paths, min(sample, len(paths)))
-    wanted: dict[str, list[dict]] = {}
+    wanted: dict[str, list[dict[str, Any]]] = {}
     for path in chosen:
         record = json.loads(path.read_text())
         wanted.setdefault(record["conversation_id"], []).append(record)

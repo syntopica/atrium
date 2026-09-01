@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 LANES = ("auto", "words", "substring", "dense")
 
 
-def search(
+def search(  # noqa: PLR0913 -- the one shared retrieval surface; every knob is a real caller need
     connection: sqlite3.Connection,
     query: str,
     limit: int,

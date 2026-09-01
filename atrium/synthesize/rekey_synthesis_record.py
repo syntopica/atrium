@@ -1,12 +1,14 @@
 """Re-key one synthesis record onto the schema 2 event id rule."""
 
+from typing import Any
+
 from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
 from atrium.synthesize.job_identity import job_identity
 from atrium.synthesize.qualify_event_id import qualify_event_id
 
 
-def rekey_synthesis_record(record: dict) -> dict:
+def rekey_synthesis_record(record: dict[str, Any]) -> dict[str, Any]:
     """Return the record as it would have been written under the current rule.
 
     Only the identities move. The output, its hash, the usage and every recipe

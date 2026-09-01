@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 from atrium.synthesize.backup_synthesis_records import backup_synthesis_records
 from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
@@ -10,7 +11,7 @@ from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
 from atrium.synthesize.synthesis_registry import record_path
 
 
-def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict:
+def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict[str, Any]:
     """Rewrite every record whose member event ids predate schema 2.
 
     Rocket Agents re-keyed archive event ids, and an episode's identity is a
@@ -57,7 +58,7 @@ def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict:
         temporary = destination.with_suffix(f".tmp-{os.getpid()}")
         temporary.write_text(json.dumps(rekeyed, ensure_ascii=False, sort_keys=True, indent=1))
         temporary.chmod(0o600)
-        os.replace(temporary, destination)
+        temporary.replace(destination)
         if destination != path:
             path.unlink()
     return {

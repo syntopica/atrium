@@ -6,6 +6,29 @@
 
 ### 2026-09
 
+- [x] 2026-09-01 — **Synthesis:** The producer moved to the Codex lane, and the
+  unit of work moved from "the corpus" to "a project".
+  - **Lane**: `gpt-5.6-terra` at low effort, chosen by measurement and a blind
+    judge (`docs/studies/synthesis-producer-bench.md`). Production evidence:
+    1,819 episodes synthesized across three passes with **0 failed
+    conversations**, against `failed=30620` on the walled agy lane's last pass.
+  - **Cost, measured off the quota needle**: one weekly percentage point buys
+    ~187 episodes, so the window is ~18,700 and the ~150,000 remaining episodes
+    are about eight weekly cycles. The cheaper model buys speed and reliability,
+    not a finished corpus.
+  - **So the goal changed.** Coverage by conversation (9.9%) was the wrong
+    denominator: 13,162 of 13,269 workspaces hold under five conversations.
+    Against projects with >=20 it is 71%, and the projects genuinely missing
+    memory are about fifteen. `synthesize --project/--workspace` fills one at a
+    time; `status --coverage` names them.
+  - **Demonstrated**: `contracts-app` went from no memory at all to a real
+    session-start recall block (six episodes, correct language, specific
+    titles) inside one bounded pass.
+  - **Supervision that earned itself**: a time guard stopped the pass at
+    08:15:01, ahead of the agy drip waking at 08:22. Two producers overlapping
+    both claim the same pending episodes and pay for each twice — which the
+    registry audit shows already happened once, to all 383 Max-lane episodes.
+
 - [x] 2026-09-01 — **Retrieval:** A project's memory was split across two
   spellings, and half of it was unreachable from inside the project.
   - Found while measuring which projects actually gained memory: 29 projects

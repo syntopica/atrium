@@ -4,6 +4,7 @@ import hashlib
 import json
 from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
@@ -16,16 +17,16 @@ from atrium.synthesize.synthesis_schema import OUTPUT_SCHEMA_VERSION, SYNTHESIS_
 # plus the deterministic model string that enters the job key. Two exist: the
 # Max OAuth lane and the Codex CLI. Their records carry different recipe
 # fingerprints and coexist in the registry without mixing.
-Producer = Callable[[str, str, dict], dict]
+Producer = Callable[[str, str, dict[str, Any]], dict[str, Any]]
 
 
 def synthesize_conversation(
-    conversation: dict,
+    conversation: dict[str, Any],
     producer: Producer,
     model_id: str,
     registry: Path,
     done_episodes: set[str] | None = None,
-) -> dict:
+) -> dict[str, Any]:
     """Synthesize each episode not already in the registry. Returns counts.
 
     The job key hashes every input and recipe field except the output, so a
@@ -82,7 +83,9 @@ def synthesize_conversation(
     return {"synthesized": made, "skipped": skipped}
 
 
-def _synthesize_episode(episode: dict, events: list[dict], producer: Producer) -> dict:
+def _synthesize_episode(
+    episode: dict[str, Any], events: list[dict[str, Any]], producer: Producer
+) -> dict[str, Any]:
     chunks = episode["chunks"]
     if len(chunks) == 1:
         return producer(SYNTHESIS_SYSTEM_TEXT, _transcript(chunks[0], events), SYNTHESIS_TOOL)
@@ -116,7 +119,7 @@ def _synthesize_episode(episode: dict, events: list[dict], producer: Producer) -
 _EVENT_CHAR_CAP = 60_000
 
 
-def _transcript(event_indexes: list[int], events: list[dict]) -> str:
+def _transcript(event_indexes: list[int], events: list[dict[str, Any]]) -> str:
     lines = []
     for index in event_indexes:
         event = events[index]

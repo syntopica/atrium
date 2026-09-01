@@ -3,6 +3,7 @@
 import os
 import threading
 from pathlib import Path
+from typing import TYPE_CHECKING, Any
 
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
@@ -12,6 +13,9 @@ from atrium.recall.recent_episodes import recent_episodes
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.search import LANES, search
 from atrium.store.open_store import open_store
+
+if TYPE_CHECKING:
+    from atrium.embed.embedder import Embedder
 
 # Configurable, because this server and the CLI must be able to disagree about
 # which index they serve on purpose rather than by accident -- a second index at
@@ -28,19 +32,21 @@ mcp = MCPServer("atrium")
 # Both tools open the index read-only and neither has anything to undo, which
 # is what lets a host auto-approve them. Declaring it is not decoration: a host
 # that has to assume a tool writes will stop and ask before every recall.
-_READ_ONLY = ToolAnnotations(readOnlyHint=True, destructiveHint=False, idempotentHint=True)
+_READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True)
 
 # Constructing the embedder costs seconds, which is most of what a one-shot
 # `atrium search` spends. This process outlives a request, so it is built once
 # on the first query that needs it and reused for the life of the server. Tools
-# run in worker threads, so the first two concurrent searches would otherwise
-# each build one and one would be thrown away after paying for it.
+# run in worker threads, so the build is serialized under a lock -- the first
+# two concurrent searches would otherwise each build one and one would be
+# thrown away after paying for it. (Not lru_cache: it does not lock the miss
+# path, so both threads would still construct.)
 _embedder = None
 _embedder_lock = threading.Lock()
 
 
-def _resident_embedder():
-    global _embedder
+def _resident_embedder() -> "Embedder":
+    global _embedder  # noqa: PLW0603 -- module singleton; the lock is the point
     with _embedder_lock:
         if _embedder is None:
             from atrium.embed.embedder import Embedder
@@ -55,7 +61,7 @@ def _checked_limit(limit: int) -> int:
     return min(limit, MAX_LIMIT)
 
 
-def _rendered(hits: list[Hit]) -> list[dict]:
+def _rendered(hits: list[Hit]) -> list[dict[str, Any]]:
     """Return whole hits.
 
     Never the CLI's printed form: that truncates text to fit a terminal, and an
@@ -79,7 +85,7 @@ def _rendered(hits: list[Hit]) -> list[dict]:
 @mcp.tool(annotations=_READ_ONLY)
 def atrium_search(
     query: str, limit: int = 10, lane: str = "auto", project: str | None = None
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     """Search the conversation archive, curated notes and synthesized episodes.
 
     Lanes: "auto" fuses lexical and semantic and is the right default; "words"
@@ -112,7 +118,7 @@ def atrium_search(
 
 
 @mcp.tool(annotations=_READ_ONLY)
-def atrium_recall(cwd: str, limit: int = 12) -> list[dict]:
+def atrium_recall(cwd: str, limit: int = 12) -> list[dict[str, Any]]:
     """Return the newest synthesized episodes for the project containing ``cwd``.
 
     This is not a search: it takes no query. It answers "what has already been
@@ -135,6 +141,7 @@ def atrium_recall(cwd: str, limit: int = 12) -> list[dict]:
 
 
 def main() -> None:
+    """Serve over stdio until the host closes the pipe."""
     mcp.run()
 
 

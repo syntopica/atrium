@@ -10,12 +10,13 @@ _COLUMNS = (
     "authored_at, workspace, title, event_index"
 )
 
+# S608: the only interpolation is _COLUMNS, a literal above; values are bound.
 _INSERT = f"""
 INSERT INTO records ({_COLUMNS})
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-"""
+"""  # noqa: S608
 
-_STORED = f"SELECT {_COLUMNS} FROM records WHERE conversation_id = ? ORDER BY record_id"
+_STORED = f"SELECT {_COLUMNS} FROM records WHERE conversation_id = ? ORDER BY record_id"  # noqa: S608
 
 
 # A conversation reduced to no records writes zero rows, exactly as an

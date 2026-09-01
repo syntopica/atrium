@@ -3,9 +3,10 @@
 import json
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 
-def read_archive(path: Path) -> Iterator[dict]:
+def read_archive(path: Path) -> Iterator[dict[str, Any]]:
     """Yield every conversation object in a canonical export or archive file.
 
     The file is JSONL whose first line is a manifest (``kind`` =

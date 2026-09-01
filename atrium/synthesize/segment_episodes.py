@@ -3,6 +3,7 @@
 import math
 import re
 from collections import Counter
+from typing import Any
 
 from atrium.synthesize.stopwords import SPANISH_ENGLISH_STOPWORDS
 from atrium.synthesize.turn_blocks import turn_blocks
@@ -20,7 +21,7 @@ _CHARS_PER_TOKEN = 4
 _WORD = re.compile(r"[^\W_]{2,}", re.UNICODE)
 
 
-def segment_episodes(events: list[dict]) -> list[dict]:
+def segment_episodes(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Return episodes covering all events, each with its map chunks.
 
     An episode is `{"event_indexes": [...], "chunks": [[...], ...]}`. For
@@ -47,11 +48,11 @@ def segment_episodes(events: list[dict]) -> list[dict]:
     ]
 
 
-def _reset_cuts(blocks: list[dict]) -> set[int]:
+def _reset_cuts(blocks: list[dict[str, Any]]) -> set[int]:
     return {index for index, block in enumerate(blocks) if block["resets"] and index > 0}
 
 
-def _valley_cuts(blocks: list[dict]) -> set[int]:
+def _valley_cuts(blocks: list[dict[str, Any]]) -> set[int]:
     vectors = [_tf_vector(block["human_text"]) for block in blocks]
     idf = _idf(vectors)
     depths: dict[int, float] = {}
@@ -74,7 +75,7 @@ def _valley_cuts(blocks: list[dict]) -> set[int]:
     return cuts
 
 
-def _split_at(blocks: list[dict], cuts: set[int]) -> list[list[int]]:
+def _split_at(blocks: list[dict[str, Any]], cuts: set[int]) -> list[list[int]]:
     episodes: list[list[int]] = [[]]
     for index, block in enumerate(blocks):
         if index in cuts and episodes[-1]:
@@ -83,7 +84,9 @@ def _split_at(blocks: list[dict], cuts: set[int]) -> list[list[int]]:
     return [episode for episode in episodes if episode]
 
 
-def _enforce_ceiling(episode: list[int], blocks: list[dict], events: list[dict]) -> list[list[int]]:
+def _enforce_ceiling(
+    episode: list[int], blocks: list[dict[str, Any]], events: list[dict[str, Any]]
+) -> list[list[int]]:
     if _tokens(episode, events) <= _TOKEN_CEILING:
         return [episode]
     boundaries = {block["event_indexes"][0] for block in blocks}
@@ -99,7 +102,7 @@ def _enforce_ceiling(episode: list[int], blocks: list[dict], events: list[dict])
     return [chunk for chunk in chunks if chunk]
 
 
-def _tokens(event_indexes: list[int], events: list[dict]) -> int:
+def _tokens(event_indexes: list[int], events: list[dict[str, Any]]) -> int:
     total = 0
     for index in event_indexes:
         text = events[index].get("text") or ""
@@ -107,7 +110,7 @@ def _tokens(event_indexes: list[int], events: list[dict]) -> int:
     return total
 
 
-def _tf_vector(text: str) -> Counter:
+def _tf_vector(text: str) -> Counter[str]:
     words = [
         word.lower()
         for word in _WORD.findall(text)
@@ -116,22 +119,22 @@ def _tf_vector(text: str) -> Counter:
     return Counter(words)
 
 
-def _idf(vectors: list[Counter]) -> dict[str, float]:
+def _idf(vectors: list[Counter[str]]) -> dict[str, float]:
     documents = max(len(vectors), 1)
-    frequency: Counter = Counter()
+    frequency: Counter[str] = Counter()
     for vector in vectors:
         frequency.update(set(vector))
     return {word: math.log(documents / (1 + count)) + 1.0 for word, count in frequency.items()}
 
 
-def _merge(vectors: list[Counter]) -> Counter:
-    merged: Counter = Counter()
+def _merge(vectors: list[Counter[str]]) -> Counter[str]:
+    merged: Counter[str] = Counter()
     for vector in vectors:
         merged.update(vector)
     return merged
 
 
-def _cosine(left: Counter, right: Counter, idf: dict[str, float]) -> float:
+def _cosine(left: Counter[str], right: Counter[str], idf: dict[str, float]) -> float:
     if not left or not right:
         return 0.0
     dot = sum(count * right[word] * idf.get(word, 1.0) ** 2 for word, count in left.items())

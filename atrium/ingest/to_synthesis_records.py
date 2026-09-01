@@ -1,12 +1,13 @@
 """Turn one synthesis-registry record into retrievable index records."""
 
 from collections.abc import Iterator
+from typing import Any
 
 from atrium.ingest.record_identity import record_identity
 from atrium.record import Record
 
 
-def to_synthesis_records(record: dict, workspace: str | None) -> Iterator[Record]:
+def to_synthesis_records(record: dict[str, Any], workspace: str | None) -> Iterator[Record]:
     """Yield one index record per synthesized episode.
 
     The index-side conversation id is namespaced (`synthesis/<source id>`):

@@ -3,6 +3,7 @@
 import re
 import sqlite3
 import unicodedata
+from typing import Any
 
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.workspace_scope import workspace_clause
@@ -57,7 +58,7 @@ def search_words(
     return verified[:limit]
 
 
-def _hits(rows: list) -> list[Hit]:
+def _hits(rows: list[Any]) -> list[Hit]:
     return [
         Hit(
             record_id=row[0],
@@ -104,7 +105,7 @@ def _match_expression(query: str) -> str:
     return " OR ".join(expressions)
 
 
-def _verifiers(query: str) -> tuple[list[re.Pattern], bool]:
+def _verifiers(query: str) -> tuple[list[re.Pattern[str]], bool]:
     """Build adjacency checks for punctuated terms, and note plain ones.
 
     An FTS5 phrase preserves token order but not the punctuation between tokens,

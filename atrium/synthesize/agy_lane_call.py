@@ -4,8 +4,9 @@ import json
 import re
 import subprocess
 import time
+from typing import Any, cast
 
-from atrium.synthesize.quota_exhausted import QuotaExhausted
+from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 
 # The brain's routing rule: whole-corpus bulk goes to Gemini via agy -- its
 # quota is the one that survives it. Newest Flash at medium effort; synthesis
@@ -16,9 +17,12 @@ AGY_MODEL_ID = "gemini-3.7-flash-medium"
 _JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
 _ATTEMPTS = 3
 _BACKOFF_SECONDS = 20.0
+# Comfortably under macOS ARG_MAX (~1 MiB): the prompt rides on the --print
+# flag itself, so an oversized episode must fail here, not as an opaque E2BIG.
+_ARGV_CEILING = 700_000
 
 
-def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
+def agy_lane_call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
     """Return {"input": ..., "model": ..., "usage": ...} from one agy print run.
 
     Gemini prompting inverts the usual order: the transcript goes FIRST and
@@ -41,7 +45,7 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
     # agy does not read the prompt from stdin: it must be attached to the
     # flag itself (`--print='...'`). Episodes are ceiling-bounded well under
     # ARG_MAX, but guard anyway rather than fail with an opaque E2BIG.
-    if len(prompt) > 700_000:
+    if len(prompt) > _ARGV_CEILING:
         raise RuntimeError(f"prompt too large for argv ({len(prompt)} chars)")
     last_error = "no attempt"
     for attempt in range(_ATTEMPTS):
@@ -66,7 +70,7 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
             # typed error lets the pass abort instead of failing every
             # remaining episode one by one through the whole backoff ladder.
             if "quota reached" in (completed.stderr + completed.stdout).lower():
-                raise QuotaExhausted(completed.stderr.strip() or completed.stdout.strip())
+                raise QuotaExhaustedError(completed.stderr.strip() or completed.stdout.strip())
             # stderr's tail is often only a benign warning; the real error
             # (503s, eligibility checks) rides stdout. Keep both.
             last_error = (
@@ -91,7 +95,7 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
     raise RuntimeError(last_error)
 
 
-def _parse_loose_json(text: str) -> dict:
+def _parse_loose_json(text: str) -> dict[str, Any]:
     """Parse Gemini's JSON, tolerating its two observed sloppinesses.
 
     Raw control characters inside strings (strict=False accepts them) and
@@ -99,7 +103,7 @@ def _parse_loose_json(text: str) -> dict:
     still broken raises and the retry loop takes another attempt.
     """
     try:
-        return json.loads(text, strict=False)
+        return cast("dict[str, Any]", json.loads(text, strict=False))
     except json.JSONDecodeError:
         repaired = re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", text)
-        return json.loads(repaired, strict=False)
+        return cast("dict[str, Any]", json.loads(repaired, strict=False))

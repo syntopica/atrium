@@ -13,7 +13,9 @@ _HEADING = re.compile(r"^#{1,6}\s", re.MULTILINE)
 _MAX_CHUNK_CHARS = 2000
 
 
-def to_note_records(note: dict, provider: str = "brain", role: str = "note") -> Iterator[Record]:
+def to_note_records(
+    note: dict[str, str], provider: str = "brain", role: str = "note"
+) -> Iterator[Record]:
     """Yield one record per chunk of a note, split on headings then paragraphs.
 
     ``conversation_id`` is the note's relative path and ``event_id`` the chunk's

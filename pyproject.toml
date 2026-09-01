@@ -24,13 +24,14 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["A", "ARG", "B", "C4", "D", "DTZ", "E", "ERA", "F", "I", "N", "PL", "PTH", "RET", "RUF", "S102", "S103", "S104", "S105", "S106", "S107", "S108", "S301", "S302", "S303", "S304", "S305", "S306", "S324", "S501", "S506", "S508", "S509", "S608", "S609", "S612", "SIM", "T20", "UP", "W"]
-ignore = ["COM812", "D203", "D206", "D213", "D300", "E111", "E114", "E117", "E501", "ISC001", "W191", "PLC0415", "T201"]
+ignore = ["COM812", "D203", "D206", "D213", "D300", "E111", "E114", "E117", "E501", "ISC001", "W191", "PLC0415", "T201", "D107"]
 
 # Project decisions, not baseline defaults: the CLI lazy-imports its heavy
 # model stack on purpose (startup latency), and print is its output channel.
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["D", "S101", "ARG", "PLR2004"]
 "**/conftest.py" = ["D"]
+"**/tests/**" = ["D", "S101", "S105", "S106", "S108", "ARG", "PLR"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"

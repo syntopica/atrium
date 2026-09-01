@@ -6,7 +6,7 @@ from atrium.doctor.archive_freshness import archive_freshness
 from atrium.doctor.archive_schema_coherence import archive_schema_coherence
 from atrium.doctor.finding import Finding
 from atrium.doctor.index_coverage import index_coverage
-from atrium.doctor.read_archive_ids import read_archive_ids
+from atrium.doctor.read_archive_admissions import read_archive_admissions
 from atrium.doctor.refresh_health import refresh_health
 from atrium.doctor.synthesis_coherence import synthesis_coherence
 from atrium.doctor.synthesis_event_membership import synthesis_event_membership
@@ -25,12 +25,12 @@ def run_doctor(index: Path, archive: Path, stamp: Path, registry: Path) -> list[
         return findings
     findings.append(archive_schema_coherence(archive))
 
-    archive_ids = read_archive_ids(archive)
+    admissions = read_archive_admissions(archive)
     connection = open_store(index, read_only=True)
     try:
-        findings.append(index_coverage(connection, archive_ids))
+        findings.append(index_coverage(connection, admissions))
     finally:
         connection.close()
-    findings.append(synthesis_coherence(registry, archive_ids))
+    findings.append(synthesis_coherence(registry, admissions.all_ids))
     findings.append(synthesis_event_membership(archive, registry))
     return findings

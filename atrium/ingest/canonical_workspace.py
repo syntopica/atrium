@@ -8,8 +8,16 @@ from pathlib import Path
 _HOME = "[HOME]"
 
 
-def canonical_workspace(workspace: str | None, home: str | Path | None = None) -> str | None:
-    """Return ``workspace`` with a real home directory folded back to ``[HOME]``.
+def canonical_workspace(
+    workspace: str | None,
+    home: str | Path | None = None,
+    aliases: dict[str, str] | None = None,
+) -> str | None:
+    """Return ``workspace`` in the one spelling this project answers to.
+
+    Two things split a project's memory, and both are folded here: a home
+    directory the exporter failed to redact, and a rename. ``aliases`` maps an
+    old workspace to the current one.
 
     Measured 2026-09-01: 29 projects were present in the index under *both*
     spellings, and 4,053 conversations sat under the unredacted one. Since
@@ -31,5 +39,22 @@ def canonical_workspace(workspace: str | None, home: str | Path | None = None) -
         return _HOME
     prefix = root.rstrip("/") + "/"
     if workspace.startswith(prefix):
-        return _HOME + "/" + workspace[len(prefix) :]
+        workspace = _HOME + "/" + workspace[len(prefix) :]
+    return _apply_aliases(workspace, aliases or {})
+
+
+def _apply_aliases(workspace: str, aliases: dict[str, str]) -> str:
+    """Fold a renamed project onto the name it has now, subdirectories included.
+
+    A rename splits memory the same way a missed redaction does: `p/consumer-pv`
+    runs to 2026-07-10 and `p/consumer-g` starts 2026-07-12, so the project's
+    first month answered nothing from inside the project. Longest alias first,
+    so a nested rename cannot be shadowed by a shorter one that also matches.
+    """
+    for old in sorted(aliases, key=len, reverse=True):
+        new = aliases[old]
+        if workspace == old:
+            return new
+        if workspace.startswith(old.rstrip("/") + "/"):
+            return new.rstrip("/") + workspace[len(old.rstrip("/")) :]
     return workspace

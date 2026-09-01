@@ -10,6 +10,7 @@ from atrium.ingest.read_archive import read_archive
 from atrium.ingest.read_notes import read_notes
 from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
+from atrium.ingest.workspace_aliases import workspace_aliases
 from atrium.record import Record
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
@@ -246,13 +247,16 @@ def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     unchanged = 0
     removed = 0
     tally = AdmissionTally()
+    # Read once per pass, not once per conversation: it is a file on disk and
+    # this loop runs 30,000 times.
+    aliases = workspace_aliases()
     seen_by_provider: dict[str, set[str]] = {}
     try:
         with connection:
             for conversation in read_archive(archive):
                 conversations += 1
                 written = write_conversation(
-                    connection, conversation["id"], to_records(conversation, tally)
+                    connection, conversation["id"], to_records(conversation, tally, aliases)
                 )
                 unchanged += written == UNCHANGED
                 total += max(written, 0)

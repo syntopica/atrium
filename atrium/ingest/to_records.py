@@ -31,7 +31,9 @@ _ACKNOWLEDGEMENT = re.compile(
 
 
 def to_records(
-    conversation: dict[str, Any], tally: AdmissionTally | None = None
+    conversation: dict[str, Any],
+    tally: AdmissionTally | None = None,
+    aliases: dict[str, str] | None = None,
 ) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
@@ -49,7 +51,7 @@ def to_records(
         raise ValueError("conversation lacks id or provenance.contentSha256")
 
     provider = conversation.get("source") or "unknown"
-    workspace = canonical_workspace(conversation.get("workspace"))
+    workspace = canonical_workspace(conversation.get("workspace"), aliases=aliases)
     title = conversation.get("title")
 
     for index, event in enumerate(conversation.get("events") or []):

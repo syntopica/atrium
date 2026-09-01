@@ -4,6 +4,35 @@
 
 ## 2026
 
+### 2026-09
+
+- [x] 2026-09-01 — **Observability:** `atrium status` says how stale it is, and
+  recall complains instead of staying silent over a dead archive.
+  - Result: every `status` now prints the archive's age, the last finished
+    refresh, and the gap between the newest indexed content and now, with a
+    loud `<- STALE` / `<- BROKEN` marker past the doctor's thresholds; the
+    session-start recall block prints a `memory may be stale` warning when the
+    archive or refresh is unhealthy — including when the block itself would be
+    empty, which is exactly the case nothing else reports. New
+    `atrium/doctor/newest_content_gap.py`; stamp and archive paths injectable
+    for tests.
+  - Evidence: `tests/test_status_staleness.py` (6 tests), suite 102 passed;
+    live `atrium status` prints `archive last written 459s ago / last refresh
+    finished 253s ago / newest indexed content authored 726s ago`.
+
+- [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
+  resolution unsatisfiable, taking the MCP server and hourly refresh down;
+  fixed at the source by the baseline rollout session.
+  - Result: `busirocket-baseline-py` needed Python >=3.12 against this
+    project's >=3.11; every plain `uv run` failed, so `atrium-mcp` died at
+    connect and `atrium-refresh` failed after its export step. baseline-py
+    0.1.3 published with >=3.11, lock updated (`1e55c25`). Coordinated live
+    with session baseline-5a: config files stay with the rollout;
+    code-level ruff/mypy findings belong to this backlog. Never hand-edit
+    `.baseline-py-baseline.json`; `uv run baseline-py baseline update`.
+  - Evidence: `uv sync` clean; `uv run atrium status` works; refresh log shows
+    a completed pass minutes after the fix.
+
 ### 2026-08
 
 - [x] 2026-08-31 — **Durability:** The archive stopped being one copy on one

@@ -125,6 +125,15 @@
   there is no cheap prioritization escape — the recent work *is* the bulk.
   Decide the budget: run it down over days, raise worker count, or accept
   partial coverage as policy.
+  **The double-payment already happened once, and it is measurable.** Audited
+  2026-09-01 over all 17,159 episodes in the registry: 383 of them hold records
+  from two populations, and the pair is always `claude-sonnet-5` +
+  `codex-cli-default` — that is the entire Max-lane tranche, 4.7M input tokens,
+  re-synthesized by codex after the 2026-08-28 producer switch. It is also
+  exactly why `claude-sonnet-5` serves nothing today: codex outranks it on
+  every episode it holds. The new `gpt-5.6-terra-low` population contributed
+  **zero** duplicates, so the `done_episodes` guard does hold within a single
+  producer at a time.
   **Two producers must not run at once.** The agy drip loop is still installed
   and alive, sleeping to its next Gemini reset (observed 2026-09-01 04:05,
   sleeping 15,355 s). `done_episodes` is read once at pass start, so a codex

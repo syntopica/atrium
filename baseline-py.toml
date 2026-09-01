@@ -18,3 +18,8 @@ registry = []
 entrypoint = []
 generated = []
 namespace-init = []
+
+[[overrides]]
+paths = ["atrium/**", "tests/**"]
+disable = ["BPY006"]
+reason = "atrium is a SQLite index engine; inline SQL in its store and retrieve lanes and their tests is the deliberate style (AGENTS.md, measured decisions)"

@@ -147,12 +147,6 @@
   does not close the class. Either capture becomes event-driven, or the window
   has to be provably shorter than the shortest deletion cycle any provider
   uses, and that number has to be known rather than assumed.
-- [ ] **The cost of a no-op pass is an invariant worth measuring.** Rewriting
-  unchanged conversations cascaded away every vector it touched, so an hourly
-  refresh paid a full re-embed -- 19,198 vectors, hours of CPU -- every hour.
-  `test_rewriting_an_unchanged_conversation_keeps_its_vectors` pins that one
-  case; the general property is that a refresh over an unchanged archive writes
-  nothing and embeds nothing, and it belongs in the test suite as such.
 
 - [ ] **The dotfiles auto-sync manufactures conflicts and leaves them.**
   `com.cristian.sync-all-safe` merges the two machines and commits, but a

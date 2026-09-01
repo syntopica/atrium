@@ -47,6 +47,16 @@
     (one registry pass, ~16k records).
   - Evidence: `tests/test_population_report.py` (4 tests); suite 109 passed.
 
+- [x] 2026-09-01 — **Observability:** The no-op refresh invariant is in the
+  suite as the general property, not just the pinned vector case.
+  - Result: `tests/test_noop_refresh.py` runs the ingest + ingest-notes chain
+    twice over byte-identical inputs with the semantic layer fully embedded,
+    and asserts the second pass leaves no trace: identical rowids (a rewrite
+    would bump them), identical revisions, no lost vectors, nothing pending
+    to re-embed. The hourly re-embed regression (19,198 vectors/hour of CPU)
+    cannot return without this failing.
+  - Evidence: suite 110 passed.
+
 - [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
   resolution unsatisfiable, taking the MCP server and hourly refresh down;
   fixed at the source by the baseline rollout session.

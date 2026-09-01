@@ -3,12 +3,14 @@
 import argparse
 import sys
 from pathlib import Path
+from typing import Any
 
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.read_archive import read_archive
 from atrium.ingest.read_notes import read_notes
 from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
+from atrium.record import Record
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
 from atrium.store.write_conversation import UNCHANGED, write_conversation
@@ -20,7 +22,8 @@ DEFAULT_ARCHIVE = (
 REFRESH_STAMP = Path.home() / ".local" / "state" / "atrium" / "last-refresh"
 
 
-def main(argv: list[str] | None = None) -> int:
+def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one flat parser and one return per subcommand; a dispatch table would hide the arg wiring this makes greppable
+    """Parse one subcommand and run it; the adapters wrap this, never each other."""
     parser = argparse.ArgumentParser(prog="atrium", description=__doc__)
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -229,7 +232,7 @@ def _positive_limit(raw: str) -> int:
     return value
 
 
-def _ingest_notes(
+def _ingest_notes(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     index: Path,
     root: Path,
     provider: str,
@@ -249,11 +252,13 @@ def _ingest_notes(
     files = 0
     unchanged = 0
     removed = 0
+    tally = AdmissionTally()
     seen: set[str] = set()
     try:
         with connection:
-            for note in read_notes(root, exclude):
+            for note in read_notes(root, exclude, tally):
                 files += 1
+                tally.admit(role)
                 written = write_conversation(
                     connection, note["path"], to_note_records(note, provider, role)
                 )
@@ -267,6 +272,11 @@ def _ingest_notes(
     swept = f", {removed} absent removed" if removed else ""
     skipped = f", {unchanged} notes unchanged" if unchanged else ""
     print(f"  {files} notes -> {total} records written at {index}{skipped}{swept}")
+    for label, counts in (("admitted", tally.admitted), ("rejected", tally.rejected)):
+        if counts:
+            ranked = sorted(counts.items(), key=lambda item: -item[1])
+            plural = " files" if label == "rejected" else ""
+            print(f"  {label}: " + ", ".join(f"{count:,} {name}{plural}" for name, count in ranked))
     return 0
 
 
@@ -277,6 +287,8 @@ def _embed(index: Path) -> int:
     what it finished (each vector is valid alone), and the next run resumes
     from the missing ones.
     """
+    from functools import partial
+
     from atrium.embed.embedder import Embedder
     from atrium.embed.semantic_roles import SEMANTIC_ROLES
     from atrium.store.commit_with_retry import commit_with_retry
@@ -289,7 +301,8 @@ def _embed(index: Path) -> int:
     # and one long chunk in a batch of short ones prices the whole batch at
     # the long one's padding.
     pending = connection.execute(
-        f"SELECT record_id, source_sha256, text FROM records WHERE role IN ({placeholders}) "
+        # S608: interpolation is `?` placeholders only; the values are bound.
+        f"SELECT record_id, source_sha256, text FROM records WHERE role IN ({placeholders}) "  # noqa: S608
         "AND record_id NOT IN (SELECT record_id FROM vectors) "
         "ORDER BY length(text), record_id",
         SEMANTIC_ROLES,
@@ -307,7 +320,7 @@ def _embed(index: Path) -> int:
             matrix = embedder.embed([text for _, _, text in batch])
             rows = [(rid, sha) for rid, sha, _ in batch]
             written += commit_with_retry(
-                connection, lambda rows=rows, matrix=matrix: write_vectors(connection, rows, matrix)
+                connection, partial(write_vectors, connection, rows, matrix)
             )
             processed += len(batch)
             print(f"  embedded {written}/{len(pending)}", flush=True)
@@ -329,7 +342,7 @@ def _synthesize(
     import threading
     from concurrent.futures import ThreadPoolExecutor
 
-    from atrium.synthesize.quota_exhausted import QuotaExhausted
+    from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
     from atrium.synthesize.segment_episodes import segment_episodes
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
@@ -351,7 +364,7 @@ def _synthesize(
 
         tokens = max_lane_tokens()
 
-        def call(system_text, user_text, tool):
+        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
             return max_lane_call(tokens, system_text, user_text, tool)
 
         model_id = MODEL
@@ -376,7 +389,7 @@ def _synthesize(
     # outer drip loop sleep until the reset instead of grinding failures.
     quota_wall = threading.Event()
 
-    def run_one(item):
+    def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
         position, conversation = item
         if quota_wall.is_set():
             return {"synthesized": 0, "skipped": 0, "failed": 1}
@@ -384,12 +397,12 @@ def _synthesize(
             result = synthesize_conversation(
                 conversation, call, model_id, DEFAULT_REGISTRY, done_episodes
             )
-        except QuotaExhausted as error:
+        except QuotaExhaustedError as error:
             if not quota_wall.is_set():
                 quota_wall.set()
                 print(f"  [{position}/{total}] quota wall, aborting pass: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}
-        except Exception as error:  # noqa: BLE001 -- keep the run alive; the episode stays pending
+        except Exception as error:
             print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}
         print(
@@ -445,6 +458,7 @@ def _rekey_synthesis(*, apply: bool, repair: bool = False, archive: Path | None 
     if repair:
         from atrium.synthesize.repair_mis_stamped_records import repair_mis_stamped_records
 
+        assert archive is not None
         found = repair_mis_stamped_records(DEFAULT_REGISTRY, archive, apply=apply)
         verb = "repaired" if apply else "would repair"
         print(
@@ -494,7 +508,7 @@ def _ingest_synthesis(index: Path) -> int:
         # Read the workspaces before writing anything: the map comes from the
         # raw conversations, which this pass never touches.
         workspaces = conversation_workspaces(connection)
-        by_conversation: dict[str, list] = {}
+        by_conversation: dict[str, list[Record]] = {}
         for record in chosen.values():
             workspace = workspaces.get(record["conversation_id"])
             for row in to_synthesis_records(record, workspace):
@@ -542,9 +556,7 @@ def _search(index: Path, query: str, limit: int, lane: str, project: Path | None
     return 0
 
 
-def _recall(
-    index: Path, cwd: Path, limit: int, archive: Path, stamp: Path = REFRESH_STAMP
-) -> int:
+def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path = REFRESH_STAMP) -> int:
     """Print the recall block for the project containing ``cwd``.
 
     Exit status separates the two ways of printing nothing. Zero means there is
@@ -613,6 +625,10 @@ def _status(
         refresh_health(stamp),
         newest_content_gap(connection),
     ]
+    indexed_episodes = {
+        row[0]
+        for row in connection.execute("SELECT event_id FROM records WHERE provider = 'synthesis'")
+    }
     connection.close()
     print(f"  index: {index}")
     print(f"  built by: schema {build.get('schema')}, pipeline {build.get('pipeline')}")
@@ -622,30 +638,37 @@ def _status(
     for finding in freshness:
         loud = {"ok": "", "warn": "  <- STALE", "broken": "  <- BROKEN"}[finding.severity]
         print(f"  {finding.summary}{loud}")
-    _print_populations(registry)
+    _print_populations(registry, indexed_episodes)
     return 0
 
 
-def _print_populations(registry: Path | None) -> None:
+def _print_populations(registry: Path | None, indexed_episodes: set[str]) -> None:
     """Name every synthesis population and how much of it the index serves.
 
     The active-recipe manifest silently excluded an entire producer population
-    on 2026-08-30, and it took an audit to notice. A population serving zero
-    episodes is the drop made visible.
+    on 2026-08-30, and it took an audit to notice. Two numbers per population:
+    what the manifest intends to serve, and how many of those episodes the
+    index actually holds -- they disagree exactly when an ingest never ran or a
+    record's output produced no index row, which is the drift worth catching.
     """
     from atrium.synthesize.population_report import population_report
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
 
-    rows = population_report(registry if registry is not None else DEFAULT_REGISTRY)
+    rows = population_report(
+        registry if registry is not None else DEFAULT_REGISTRY, indexed_episodes
+    )
     if not rows:
         return
-    print("  synthesis populations (registry -> served):")
+    print("  synthesis populations (registry -> intended -> in index):")
     for row in rows:
         unlisted = "" if row["listed"] else "  (not in active recipe)"
-        dropped = "  <- SERVES NOTHING" if row["served"] == 0 else ""
+        missing = row["intended"] - row["indexed"]
+        drift = f"  <- {missing:,} NOT IN INDEX" if missing else ""
+        dropped = "  <- SERVES NOTHING" if row["intended"] == 0 else ""
         print(
             f"    {row['model']:<26} {row['records']:>7,} records "
-            f"{row['episodes']:>7,} episodes {row['served']:>7,} served{unlisted}{dropped}"
+            f"{row['episodes']:>7,} episodes {row['intended']:>7,} intended "
+            f"{row['indexed']:>7,} indexed{unlisted}{dropped}{drift}"
         )
 
 

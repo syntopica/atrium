@@ -58,6 +58,22 @@ def test_without_a_tally_admission_still_behaves_identically():
     assert len(list(to_records(conversation))) == 1
 
 
+def test_notes_ingest_prints_the_breakdown_too(tmp_path, capsys):
+    root = tmp_path / "notes"
+    (root / ".obsidian").mkdir(parents=True)
+    (root / "keep.md").write_text("# Keep\n\na body worth keeping")
+    (root / ".obsidian" / "hidden.md").write_text("# Hidden\n\nnever read")
+    (root / "drafts").mkdir()
+    (root / "drafts" / "draft.md").write_text("# Draft\n\nexcluded by name")
+    index = tmp_path / "index.sqlite3"
+    code = main(["--index", str(index), "ingest-notes", str(root), "--exclude", "drafts"])
+    out = capsys.readouterr().out
+    assert code == 0
+    assert "admitted: 1 note" in out
+    assert "1 hidden directory files" in out
+    assert "1 excluded drafts files" in out
+
+
 def test_ingest_prints_the_breakdown(tmp_path, capsys):
     archive = tmp_path / "archive.jsonl"
     archive.write_text(

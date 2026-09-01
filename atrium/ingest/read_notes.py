@@ -4,8 +4,12 @@ import hashlib
 from collections.abc import Iterator
 from pathlib import Path
 
+from atrium.ingest.admission_tally import AdmissionTally
 
-def read_notes(root: Path, exclude: tuple[str, ...] = ()) -> Iterator[dict]:
+
+def read_notes(
+    root: Path, exclude: tuple[str, ...] = (), tally: AdmissionTally | None = None
+) -> Iterator[dict[str, str]]:
     """Yield one dict per markdown file under ``root``, in a deterministic order.
 
     Reads only ``*.md``, skipping hidden directories and ``node_modules``
@@ -20,7 +24,11 @@ def read_notes(root: Path, exclude: tuple[str, ...] = ()) -> Iterator[dict]:
     skipped = {"node_modules", *exclude}
     for path in sorted(root.rglob("*.md")):
         parts = path.relative_to(root).parts
-        if any(part.startswith(".") or part in skipped for part in parts):
+        offender = next((part for part in parts if part.startswith(".") or part in skipped), None)
+        if offender is not None:
+            if tally:
+                rule = "hidden directory" if offender.startswith(".") else f"excluded {offender}"
+                tally.reject(rule)
             continue
         raw = path.read_bytes()
         yield {

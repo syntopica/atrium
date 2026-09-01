@@ -68,6 +68,19 @@ The population is named `gpt-5.6-terra-low` and appended **last** in
 `active-recipe.json`, so it never outranks output already paid for — it serves
 only episodes no other population covers.
 
+## Confirmed in production the same day
+
+A bounded pass over the newest 150 conversations, `--producer codex --model
+gpt-5.6-terra --effort low --workers 4`: **114 episodes synthesized, 760
+already present, 0 failed conversations.** Compare the agy lane's last logged
+pass on the same corpus: `failed=30620`. Spot-checked records reproduce file
+paths, flag names and field lists exactly, and record `model_resolved:
+gpt-5.6-terra` with `event_id_schema: 2`.
+
+Reliability is the second argument for this lane, independent of price: the
+walled lane does not merely go slowly, it spends its wall-clock producing
+nothing.
+
 ## What this does not settle
 
 Whether the answers actually get *better* — that still needs the hand-labeled

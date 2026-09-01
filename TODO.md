@@ -147,13 +147,6 @@
   does not close the class. Either capture becomes event-driven, or the window
   has to be provably shorter than the shortest deletion cycle any provider
   uses, and that number has to be known rather than assumed.
-- [ ] **`atrium status` should say how stale it is, and complain.** The archive
-  sat frozen from 2026-08-27 while the index answered queries as if current,
-  and it was missing more than half the corpus -- 11,164 conversations against
-  the 23,449 the first automated refresh produced. Nothing surfaced that.
-  Report the archive's mtime, the last successful refresh, and the gap between
-  the newest archived conversation and now; make a stale index say so in every
-  `status`, and in the session-start recall block.
 - [ ] **Both ingests should report what they admitted, not just how many.**
   `atrium ingest` prints a row count, which is exactly the number that looked
   healthy while 162,225 tool-call, tool-result and thinking records were being

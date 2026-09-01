@@ -5,6 +5,7 @@ from collections.abc import Iterator
 from typing import Any
 
 from atrium.ingest.admission_tally import AdmissionTally
+from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.record_identity import record_identity
 from atrium.record import Record
 
@@ -48,7 +49,7 @@ def to_records(
         raise ValueError("conversation lacks id or provenance.contentSha256")
 
     provider = conversation.get("source") or "unknown"
-    workspace = conversation.get("workspace")
+    workspace = canonical_workspace(conversation.get("workspace"))
     title = conversation.get("title")
 
     for index, event in enumerate(conversation.get("events") or []):

@@ -6,6 +6,24 @@
 
 ### 2026-09
 
+- [x] 2026-09-01 — **Retrieval:** A project's memory was split across two
+  spellings, and half of it was unreachable from inside the project.
+  - Found while measuring which projects actually gained memory: 29 projects
+    existed in the index under both `[HOME]/p/x` and `/Users/<name>/p/x`, with
+    **4,053 conversations under the unredacted spelling**. `project_workspace`
+    resolves a live cwd to the `[HOME]` form and every lane prefix-matches on
+    it, so that half answered nothing — 1,331 of consumer-y's conversations,
+    a third of the project, invisible from inside consumer-y.
+  - Cause is upstream: the exporter's `[HOME]` redaction missed those
+    conversations, which also put the real username into a field the redaction
+    existed to clear. The archive is canonical and is not rewritten, so the fix
+    belongs in the derived index: `canonical_workspace` folds a real home path
+    back to the marker at ingest. The next full ingest rewrites the affected
+    conversations, because the stored workspace now differs from the new one.
+  - Evidence: `tests/test_canonical_workspace.py` (7 tests, including the
+    `/Users/someone-else` prefix trap); suite 133 passed. Filed upstream in
+    `~/p/rocket-agents/TODO.md`.
+
 - [x] 2026-09-01 — **Observability:** Fixed the staleness warning that the
   staleness reporting itself created.
   - Adding the refresh age to `atrium status` made every hourly `refresh done`

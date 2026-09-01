@@ -173,6 +173,18 @@
 
 ## Observability
 
+- [~] **Coverage was being measured against the wrong denominator.** "9.9% of
+  conversations synthesized" is true and misleading. Measured 2026-09-01 by
+  project instead: of 13,269 distinct workspaces only 284 have memory (2.1%),
+  but 13,162 of those workspaces hold fewer than five conversations — they are
+  directories someone opened once, not projects. Against projects with >=20
+  conversations coverage is **53.8%**, and against those with >=100 it is
+  **64%**. The memory already covers most of the work that matters, which is
+  the number that should decide whether a whole-corpus backfill is worth
+  buying. Remaining: make `status` report coverage by project above a size
+  floor, so the useful number is the one on screen rather than the alarming
+  one.
+
 - [~] **`atrium embed` sat at 0% CPU for twelve minutes printing nothing.** The
   network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):
   the model load made three `hf_hub_download` calls that each revalidate the

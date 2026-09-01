@@ -80,12 +80,13 @@ class Embedder:
             if self._session is not None:
                 return  # type: ignore[unreachable]
             import onnxruntime
-            from huggingface_hub import hf_hub_download
             from tokenizers import Tokenizer
 
-            model_path = hf_hub_download(_REPO, subfolder="onnx", filename=_ONNX_FILE)
-            hf_hub_download(_REPO, subfolder="onnx", filename=_ONNX_FILE + "_data")
-            tokenizer_path = hf_hub_download(_REPO, filename="tokenizer.json")
+            from atrium.embed.cached_model_file import cached_model_file
+
+            model_path = cached_model_file(_REPO, _ONNX_FILE, subfolder="onnx")
+            cached_model_file(_REPO, _ONNX_FILE + "_data", subfolder="onnx")
+            tokenizer_path = cached_model_file(_REPO, "tokenizer.json")
 
             session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
             output_names = [output.name for output in session.get_outputs()]

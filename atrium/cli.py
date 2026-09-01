@@ -91,6 +91,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         help="Codex lane only: reasoning effort. Synthesis is extraction, not "
         "judgement, so the account default is usually the wrong price",
     )
+    synthesize.add_argument(
+        "--project",
+        type=Path,
+        default=None,
+        metavar="DIR",
+        help="Synthesize only the project containing DIR. Whole-corpus coverage "
+        "costs about a dozen weekly quota cycles; the projects actually missing "
+        "memory are a handful, and `status --coverage` names them",
+    )
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
 
@@ -177,6 +186,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
             args.workers,
             args.model,
             args.effort,
+            args.project,
         )
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
@@ -378,25 +388,48 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
     workers: int,
     model: str | None = None,
     effort: str | None = None,
+    project: Path | None = None,
 ) -> int:
     """Synthesize episodes newest-first; resumable, so interruption is cheap.
 
     Conversations run in a small worker pool: registry writes are atomic and
     never overwrite, so the worst a race costs is one duplicate call.
+
+    ``project`` narrows the pass to one project. Whole-corpus coverage costs
+    about a dozen weekly quota cycles, while the projects that actually lack
+    memory are a handful -- `status --coverage` names them, and this is how one
+    gets filled without paying for the other 145,000 episodes.
     """
     import threading
     from concurrent.futures import ThreadPoolExecutor
 
+    from atrium.ingest.canonical_workspace import canonical_workspace
+    from atrium.recall.project_workspace import project_workspace
+    from atrium.recall.workspace_matches import workspace_matches
     from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
     from atrium.synthesize.segment_episodes import segment_episodes
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
+
+    target = None
+    if project is not None:
+        target = project_workspace(project)
+        if target is None:
+            print(f"  {project} is in no repository, so it names no project")
+            return 1
 
     conversations = sorted(
         read_archive(archive),
         key=lambda c: c.get("updatedAt") or c.get("startedAt") or "",
         reverse=True,
     )
+    if target is not None:
+        conversations = [
+            conversation
+            for conversation in conversations
+            if workspace_matches(canonical_workspace(conversation.get("workspace")), target)
+        ]
+        print(f"  {len(conversations)} conversations in {target}")
     if limit is not None:
         conversations = conversations[:limit]
     if dry_run:

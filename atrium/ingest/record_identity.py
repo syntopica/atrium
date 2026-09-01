@@ -20,5 +20,4 @@ def record_identity(conversation_id: str, event_id: str) -> str:
     """
     if not conversation_id or not event_id:
         raise ValueError("record identity needs both a conversation id and an event id")
-    digest = hashlib.sha256(f"{conversation_id}\x00{event_id}".encode()).hexdigest()
-    return digest
+    return hashlib.sha256(f"{conversation_id}\x00{event_id}".encode()).hexdigest()

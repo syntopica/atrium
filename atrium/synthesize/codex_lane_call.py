@@ -5,6 +5,7 @@ import re
 import subprocess
 import tempfile
 from pathlib import Path
+from typing import Any
 
 # The job key needs a deterministic model string BEFORE the call; the account
 # default is what actually runs, and the resolved id is recorded per record.
@@ -14,7 +15,7 @@ _MODEL_LINE = re.compile(r"^model:\s*(\S+)", re.MULTILINE)
 _TOKENS_LINE = re.compile(r"^tokens used\s*\n(\d+)", re.MULTILINE)
 
 
-def codex_lane_call(system_text: str, user_text: str, tool: dict) -> dict:
+def codex_lane_call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
     """Return {"input": ..., "model": ..., "usage": ...} from one codex exec run.
 
     Read-only sandbox, prompt over stdin (transcripts exceed argv comfort),

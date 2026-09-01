@@ -5,6 +5,7 @@ import os
 import threading
 from collections.abc import Iterator
 from pathlib import Path
+from typing import Any
 
 DEFAULT_REGISTRY = (
     Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "atrium" / "synthesis"
@@ -12,14 +13,16 @@ DEFAULT_REGISTRY = (
 
 
 def record_path(registry: Path, job_key: str) -> Path:
+    """Where ``job_key``'s record lives; the key is the filename."""
     return registry / "records" / f"{job_key}.json"
 
 
 def has_record(registry: Path, job_key: str) -> bool:
+    """Whether ``job_key`` already produced a record; existence is the ledger."""
     return record_path(registry, job_key).exists()
 
 
-def write_record(registry: Path, job_key: str, record: dict) -> Path:
+def write_record(registry: Path, job_key: str, record: dict[str, Any]) -> Path:
     """Write one record, atomically, never overwriting.
 
     Records are immutable: the job key hashes every input and recipe field,
@@ -50,7 +53,8 @@ def write_record(registry: Path, job_key: str, record: dict) -> Path:
     return path
 
 
-def read_records(registry: Path) -> Iterator[dict]:
+def read_records(registry: Path) -> Iterator[dict[str, Any]]:
+    """Yield every record in the registry, in deterministic filename order."""
     directory = registry / "records"
     if not directory.is_dir():
         return

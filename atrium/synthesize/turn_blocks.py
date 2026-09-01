@@ -1,12 +1,13 @@
 """Group a conversation's events into human-anchored turn blocks."""
 
 import re
+from typing import Any
 
 # A human message that resets context ends an episode unconditionally.
 _RESET = re.compile(r"^\s*(?:/clear|/reset|/compact)\b", re.IGNORECASE)
 
 
-def turn_blocks(events: list[dict]) -> list[dict]:
+def turn_blocks(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Return turn blocks: each human message plus everything until the next.
 
     The block is the segmentation unit of `episode-texttiling-v1`: topic
@@ -15,7 +16,7 @@ def turn_blocks(events: list[dict]) -> list[dict]:
     one block and therefore to exactly one episode. Events before the first
     human message ride with the first block.
     """
-    blocks: list[dict] = []
+    blocks: list[dict[str, Any]] = []
     for index, event in enumerate(events):
         if event.get("kind") != "message":
             continue

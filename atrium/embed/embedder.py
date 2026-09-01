@@ -1,8 +1,13 @@
 """Embed text with embeddinggemma-300m (ONNX, q8) on CPU, validating every vector."""
 
 import threading
+from typing import TYPE_CHECKING
 
 import numpy as np
+
+if TYPE_CHECKING:
+    import onnxruntime  # type: ignore[import-untyped]
+    from tokenizers import Tokenizer
 
 # The model choice is measured, not preferred: the English-only default the
 # previous system ran scored dense R@10 40.8% on a 365-pair set from this corpus
@@ -26,9 +31,10 @@ class Embedder:
     """Lazy-loading CPU embedder returning L2-normalized float32 vectors."""
 
     def __init__(self) -> None:
-        self._session = None
-        self._tokenizer = None
-        self._output_index = None
+        """Defer every heavy load; construction must stay cheap."""
+        self._session: "onnxruntime.InferenceSession | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
+        self._tokenizer: "Tokenizer | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
+        self._output_index: int | None = None
         self._load_lock = threading.Lock()
 
     def embed(self, texts: list[str]) -> np.ndarray:
@@ -56,20 +62,23 @@ class Embedder:
         return matrix / norms[:, np.newaxis]
 
     def _forward(self, texts: list[str]) -> np.ndarray:
+        assert self._tokenizer is not None
+        assert self._session is not None
         encodings = self._tokenizer.encode_batch([_PREFIX + text for text in texts])
         input_ids = np.asarray([e.ids for e in encodings], dtype=np.int64)
         attention_mask = np.asarray([e.attention_mask for e in encodings], dtype=np.int64)
         outputs = self._session.run(
             None, {"input_ids": input_ids, "attention_mask": attention_mask}
         )
-        return outputs[self._output_index][:, :_DIM]
+        result: np.ndarray = outputs[self._output_index][:, :_DIM]
+        return result
 
     def _lazy_load(self) -> None:
         if self._session is not None:
             return
         with self._load_lock:
             if self._session is not None:
-                return
+                return  # type: ignore[unreachable]
             import onnxruntime
             from huggingface_hub import hf_hub_download
             from tokenizers import Tokenizer

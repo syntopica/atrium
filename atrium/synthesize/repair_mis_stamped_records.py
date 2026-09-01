@@ -3,6 +3,7 @@
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 from atrium.synthesize.backup_synthesis_records import backup_synthesis_records
 from atrium.synthesize.qualify_event_id import qualify_event_id
@@ -10,7 +11,9 @@ from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
 from atrium.synthesize.synthesis_registry import record_path
 
 
-def repair_mis_stamped_records(registry: Path, archive: Path, *, apply: bool = False) -> dict:
+def repair_mis_stamped_records(
+    registry: Path, archive: Path, *, apply: bool = False
+) -> dict[str, Any]:
     """Find records the stamp calls current whose ids the archive does not hold.
 
     `event_id_schema` used to be written from the code's own constant, so a
@@ -26,7 +29,7 @@ def repair_mis_stamped_records(registry: Path, archive: Path, *, apply: bool = F
     fault, and guessing at it would destroy the evidence.
     """
     directory = registry / "records"
-    by_conversation: dict[str, list[tuple[Path, dict]]] = {}
+    by_conversation: dict[str, list[tuple[Path, dict[str, Any]]]] = {}
     for path in sorted(directory.glob("*.json")):
         record = json.loads(path.read_text())
         by_conversation.setdefault(record["conversation_id"], []).append((path, record))
@@ -67,7 +70,7 @@ def repair_mis_stamped_records(registry: Path, archive: Path, *, apply: bool = F
                     json.dumps(rekeyed, ensure_ascii=False, sort_keys=True, indent=1)
                 )
                 temporary.chmod(0o600)
-                os.replace(temporary, destination)
+                temporary.replace(destination)
                 if destination != path:
                     path.unlink()
     return {

@@ -5,7 +5,7 @@ import sqlite3
 from atrium.retrieve.hit import Hit
 
 _QUERY = """
-SELECT record_id, text, conversation_id, source_sha256, authored_at, provider
+SELECT record_id, text, conversation_id, source_sha256, authored_at, provider, role
 FROM records
 WHERE provider = 'synthesis'
   AND (workspace = ? OR substr(workspace, 1, length(?) + 1) = ? || '/')
@@ -47,6 +47,7 @@ def recent_episodes(connection: sqlite3.Connection, workspace: str, limit: int) 
             source_sha256=row[3],
             authored_at=row[4],
             provider=row[5],
+            role=row[6],
         )
         for position, row in enumerate(rows)
     ]

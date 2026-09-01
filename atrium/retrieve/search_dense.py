@@ -9,7 +9,7 @@ from atrium.retrieve.workspace_scope import workspace_clause
 
 _QUERY = """
 SELECT v.record_id, v.vector, r.text, r.conversation_id, r.source_sha256,
-       r.authored_at, r.provider
+       r.authored_at, r.provider, r.role
 FROM vectors v
 JOIN records r ON r.record_id = v.record_id
 WHERE 1 = 1{scope}
@@ -53,6 +53,7 @@ def search_dense(
             source_sha256=rows[i][4],
             authored_at=rows[i][5],
             provider=rows[i][6],
+            role=rows[i][7],
         )
         for i in order
     ]

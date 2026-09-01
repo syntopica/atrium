@@ -12,7 +12,7 @@ from atrium.retrieve.workspace_scope import workspace_clause
 # have to special-case one lane's sign.
 _QUERY = """
 SELECT r.record_id, r.text, -bm25(words) AS score, r.conversation_id,
-       r.source_sha256, r.authored_at, r.provider
+       r.source_sha256, r.authored_at, r.provider, r.role
 FROM words
 JOIN records r ON r.rowid = words.rowid
 WHERE words MATCH ?{scope}
@@ -68,6 +68,7 @@ def _hits(rows: list) -> list[Hit]:
             source_sha256=row[4],
             authored_at=row[5],
             provider=row[6],
+            role=row[7],
         )
         for row in rows
     ]

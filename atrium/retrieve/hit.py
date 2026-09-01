@@ -22,3 +22,7 @@ class Hit:
     source_sha256: str
     authored_at: str | None
     provider: str
+    # The origin mark. Role "source" is third-party text (saved web articles):
+    # searchable when the user asks, never embedded, never injected at session
+    # start, and a consuming agent must treat it as data, not instructions.
+    role: str = ""

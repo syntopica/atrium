@@ -14,10 +14,14 @@
 
 ## Retrieval
 
-- [ ] Dense-over-raw stays an explicit reserve lane: even with an oracle
+- [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
-  corpus scale.
+  corpus scale. Blocked by the same condition as the Measurement item below
+  (2026-09-01): the only question set is machine-extracted, and this item
+  exists precisely to justify a production decision ("no ANN"), which that set
+  cannot do. Smallest unblock: the hand-labeled set, then the measurement is
+  hours of embed CPU plus the existing eval harness.
 
 ## Ingest / Store
 
@@ -125,11 +129,6 @@
     inputs minus output; same job key with different output hashes is a hard
     divergence error, never resolved by timestamps.
   Only user-approved notes are proposed to brain (a tray, not a dump).
-- [ ] Session-start injection: frozen-snapshot discipline (write at session
-  close, inject at the *next* session start to preserve prefix cache), budget
-  ~170-900 tokens — the mechanism users remember as valuable from mempalace;
-  the synthesis behind it never existed there (checkpoints were literal
-  message tails).
 
 ## Observability
 
@@ -175,12 +174,6 @@
   to call it an improvement.
 
 ## Integrations
-
-- [ ] Thin adapters over the CLI core: MCP server and per-agent hooks.
-  Integrating a future agent must be an adapter, never an engine change.
-- [ ] Early spike (deliberately promoted from phase 3): ChatGPT and Grok have
-  no local transcript — design the remote-export adapter family before the
-  local-file assumption hardens.
 - [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
   emits 0 conversations from its 4 database artifacts, and the Trae exporter
   emits VS Code workspace metadata instead of dialogue. Both filed in

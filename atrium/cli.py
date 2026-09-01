@@ -50,6 +50,13 @@ def main(argv: list[str] | None = None) -> int:
         help="The root is a slice of the provider's notes: skip the sweep that "
         "removes notes absent from it",
     )
+    notes.add_argument(
+        "--third-party",
+        action="store_true",
+        help="The tree is saved third-party content, not the user's own words: "
+        "records are marked role 'source', stay lexically searchable, and are "
+        "never embedded or injected at session start",
+    )
 
     subcommands.add_parser("embed", help="Embed semantic-layer records that lack a vector")
 
@@ -130,7 +137,12 @@ def main(argv: list[str] | None = None) -> int:
         return _ingest(args.index, args.archive, sweep=not args.partial)
     if args.command == "ingest-notes":
         return _ingest_notes(
-            args.index, args.root, args.provider, tuple(args.exclude), sweep=not args.partial
+            args.index,
+            args.root,
+            args.provider,
+            tuple(args.exclude),
+            sweep=not args.partial,
+            role="source" if args.third_party else "note",
         )
     if args.command == "embed":
         return _embed(args.index)
@@ -224,8 +236,14 @@ def _ingest_notes(
     exclude: tuple[str, ...],
     *,
     sweep: bool = True,
+    role: str = "note",
 ) -> int:
-    """Index a curated notes tree, same transactional and sweep contract as `_ingest`."""
+    """Index a notes tree, same transactional and sweep contract as `_ingest`.
+
+    ``role`` carries the origin mark: "note" for the user's own curated text,
+    "source" for saved third-party content that must never be embedded or
+    injected, only searched on request.
+    """
     connection = open_store(index)
     total = 0
     files = 0
@@ -237,7 +255,7 @@ def _ingest_notes(
             for note in read_notes(root, exclude):
                 files += 1
                 written = write_conversation(
-                    connection, note["path"], to_note_records(note, provider)
+                    connection, note["path"], to_note_records(note, provider, role)
                 )
                 unchanged += written == UNCHANGED
                 total += max(written, 0)
@@ -514,7 +532,11 @@ def _search(index: Path, query: str, limit: int, lane: str, project: Path | None
         return 0
     for position, hit in enumerate(hits, start=1):
         stamp = (hit.authored_at or "")[:10]
-        print(f"\n  [{position}] {hit.provider} {stamp}  score={hit.score:.3f} lane={hit.lane}")
+        origin = "  UNTRUSTED THIRD-PARTY TEXT" if hit.role == "source" else ""
+        print(
+            f"\n  [{position}] {hit.provider} {stamp}  "
+            f"score={hit.score:.3f} lane={hit.lane}{origin}"
+        )
         print(f"      {hit.text[:200].strip()}")
         print(f"      source: {hit.source_sha256[:12]} conversation: {hit.conversation_id[:12]}")
     return 0

@@ -268,8 +268,44 @@ pnpm run conversations:benchmark-segments -- \
   --max-capture-seconds 22.691 \
   --max-import-seconds 6.618 \
   --require-warm-noop \
-  --require-proportional-bytes
+  --require-proportional-bytes \
+  --max-rss-bytes 544789845
 ```
+
+Landed 2026-09-01 in `rocket-agents` `8cc2849`, 51 new files, all on disposable
+data. `pnpm run check` passes for the whole repository and the conversations
+suite is at 73 tests. The measured acceptance run, one process per pass:
+
+| pass            | seconds | payload bytes read | fragments | peak RSS |
+| --------------- | ------: | -----------------: | --------: | -------: |
+| cold, 25,000    |   38.03 |         39,300,000 |    25,000 |   398 MB |
+| warm no-op      |    1.91 |                  0 |         0 |   267 MB |
+| one changed     |    1.72 |              2,096 |         1 |   261 MB |
+| one new         |    1.59 |              1,608 |         1 |   265 MB |
+
+That is 132x the measured v1 capture and 83x the measured v1 publish, against
+bounds of 22.691 s and 6.618 s. Every segment present before a pass is
+byte-identical after it, matched by hash.
+
+Three things the implementation settled that the plan had left open:
+
+- A base segment cannot carry the generation id that is derived from its own
+  hash, so it carries a sentinel and `generation.json` names it. A base segment
+  the generation does not name is refused, exactly like a segment from another
+  generation.
+- A capture flushes at 2,000 staged fragments rather than accumulating. Peak
+  memory then follows the flush size instead of the corpus being seeded; the
+  unbounded version measured 602 MB and a single 44 MB segment for 25,000
+  artifacts.
+- Resident memory never returns inside a process, so passes sharing one cannot
+  be compared: a pass that read 1,608 bytes reported 574,898,176 bytes because
+  the seeding pass before it had grown the heap. Each pass now runs in its own
+  process, which is also what the hourly agent and the SessionEnd hook do.
+
+JSONL suffix resume was not built. The per-storage-kind measurement clears the
+22.691-second threshold by more than an order of magnitude with whole-artifact
+recapture, and the plan makes the checkpoint machinery conditional on missing
+it.
 
 ### Stage 3: complete erasure, transport, Atrium delivery, and freeze controls in test homes
 

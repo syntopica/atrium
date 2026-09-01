@@ -173,19 +173,19 @@
 
 ## Observability
 
-- [ ] **`atrium embed` can sit at 0% CPU for many minutes printing nothing.**
-  Observed 2026-09-01: a hand-run `embed` spent twelve minutes idle, wrote no
-  vectors and printed nothing, then was killed. **The first diagnosis — that it
-  was queued behind the hourly refresh's writer — is disproved.** A controlled
-  probe (two processes, one holding `BEGIN IMMEDIATE`) shows the second writer
-  raises `OperationalError: database is locked` after 30.9 s, exactly as
-  `busy_timeout = 30000` promises, so a lock wait cannot explain twelve silent
-  minutes. The remaining suspect is the embedder's model load, which runs after
-  the pending query and does network work through `huggingface_hub` — a stalled
-  metadata request would look exactly like this. Reproduce with the store
-  uncontended and a stalled or offline network before changing anything; the
-  fix is probably `HF_HUB_OFFLINE` plus a printed "loading the embedder" line,
-  not lock handling.
+- [~] **`atrium embed` sat at 0% CPU for twelve minutes printing nothing.** The
+  network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):
+  the model load made three `hf_hub_download` calls that each revalidate the
+  etag before falling back to the cache, costing 34.2 s against a packet-
+  dropping endpoint versus 1.4 s normally, and now 1.4 s in both cases. The
+  first diagnosis, a writer queued behind the refresh, was disproved by a
+  controlled probe: a second writer raises `database is locked` after 30.9 s
+  exactly as `busy_timeout` promises. Remaining, and why this is `[~]` rather
+  than closed: 3 x 34 s is about 100 s, not twelve minutes, so the original
+  observation is still not fully explained — either the retries stack worse
+  than measured, or something else was also waiting. Worth one more look the
+  next time a long command goes quiet; `embed` should also say what it is doing
+  before the load, so the next occurrence is legible instead of mysterious.
 
 > Filed 2026-08-31, from the memstore retirement. Every defect that session
 > found had been running silently for days, and none of them were subtle --

@@ -97,10 +97,17 @@
     it. It now takes a `mkdir` lock with a stale-pid check -- macOS has no
     `flock(1)` -- so a second start exits instead of doubling the quota burn
     the way the 2026-08-28 orphan did.
-  Measured coverage after the fixes: **2,609 of 11,028 archived conversations
-  (23.7%)**; 8,419 conversations still unsynthesized. One day of agy work on
-  2026-08-28 (13,966 records) spent an entire Google AI Pro *weekly* quota,
-  so the remaining corpus is several weekly cycles on that lane alone.
+  Coverage after the fixes was 2,609 of 11,028 archived conversations (23.7%).
+  **Re-measured 2026-09-01: 3,007 of 30,318 (9.9%)** — the numerator grew by
+  398 while the denominator nearly tripled, because the memstore recovery and
+  the Mac mini capture added conversations far faster than a quota-walled drip
+  can synthesize them. Coverage is now falling, not rising, and the drip has
+  been sleeping against the weekly Gemini wall since 2026-08-31 23:22. One day
+  of agy work on 2026-08-28 (13,966 records) spent an entire Google AI Pro
+  *weekly* quota, so the remaining corpus is many weekly cycles on that lane
+  alone. Decide whether that lane can ever catch up, or whether coverage has to
+  be bought differently (a second producer, a cheaper model, or synthesizing
+  only what recall actually reaches for).
   Remaining: let the drip finish, re-run `ingest-synthesis` + `embed`
   periodically, and spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**

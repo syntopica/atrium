@@ -147,12 +147,6 @@
   does not close the class. Either capture becomes event-driven, or the window
   has to be provably shorter than the shortest deletion cycle any provider
   uses, and that number has to be known rather than assumed.
-- [ ] **Both ingests should report what they admitted, not just how many.**
-  `atrium ingest` prints a row count, which is exactly the number that looked
-  healthy while 162,225 tool-call, tool-result and thinking records were being
-  filed as conversation during the mempalace recovery. A breakdown by role and
-  event kind, and the count rejected by each admission rule, turns that from a
-  post-hoc audit into the first line of output.
 - [ ] **Nothing compares what synthesis produced against what the index
   serves.** The active-recipe manifest silently excluded an entire producer
   population -- 3,686 episodes across 580 conversations, already paid for in

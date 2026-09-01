@@ -4,6 +4,7 @@ import argparse
 import sys
 from pathlib import Path
 
+from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.read_archive import read_archive
 from atrium.ingest.read_notes import read_notes
 from atrium.ingest.to_note_records import to_note_records
@@ -175,13 +176,14 @@ def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     conversations = 0
     unchanged = 0
     removed = 0
+    tally = AdmissionTally()
     seen_by_provider: dict[str, set[str]] = {}
     try:
         with connection:
             for conversation in read_archive(archive):
                 conversations += 1
                 written = write_conversation(
-                    connection, conversation["id"], to_records(conversation)
+                    connection, conversation["id"], to_records(conversation, tally)
                 )
                 unchanged += written == UNCHANGED
                 total += max(written, 0)
@@ -195,6 +197,10 @@ def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     swept = f", {removed} absent removed" if removed else ""
     skipped = f", {unchanged} conversations unchanged" if unchanged else ""
     print(f"  {conversations} conversations -> {total} records written at {index}{skipped}{swept}")
+    for label, counts in (("admitted", tally.admitted), ("rejected", tally.rejected)):
+        if counts:
+            ranked = sorted(counts.items(), key=lambda item: -item[1])
+            print(f"  {label}: " + ", ".join(f"{count:,} {name}" for name, count in ranked))
     return 0
 
 

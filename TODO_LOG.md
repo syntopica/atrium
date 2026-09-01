@@ -20,6 +20,16 @@
     live `atrium status` prints `archive last written 459s ago / last refresh
     finished 253s ago / newest indexed content authored 726s ago`.
 
+- [x] 2026-09-01 — **Observability:** `atrium ingest` reports what it admitted
+  per role and what each admission rule rejected, per kind and role.
+  - Result: new `atrium/ingest/admission_tally.py`; `to_records` takes an
+    optional tally and counts `kind <x>` / `role <x>` / `empty or
+    acknowledgement` / `missing event id` rejections; ingest prints
+    `admitted:` and `rejected:` lines ranked by count. The 162,225 tool-call
+    records the mempalace recovery mis-filed would now be the first line of
+    output.
+  - Evidence: `tests/test_admission_breakdown.py` (3 tests); suite 105 passed.
+
 - [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
   resolution unsatisfiable, taking the MCP server and hourly refresh down;
   fixed at the source by the baseline rollout session.

@@ -108,7 +108,24 @@
   alone. Decide whether that lane can ever catch up, or whether coverage has to
   be bought differently (a second producer, a cheaper model, or synthesizing
   only what recall actually reaches for).
-  Remaining: let the drip finish, re-run `ingest-synthesis` + `embed`
+  **2026-09-01: the producer moved off the walled Gemini lane.** Benched four
+  Codex configurations on three real unsynthesized episodes with a blind
+  fourth-model judge (`docs/studies/synthesis-producer-bench.md`). The result
+  inverts the obvious economy: dropping `gpt-5.6-sol` from high to low
+  reasoning effort made it **fabricate** — three claims unsupported by the
+  transcript across two episodes — while the smaller `gpt-5.6-terra` at low
+  effort produced none and ran 2.2x faster than the account default. Bulk now
+  runs `--producer codex --model gpt-5.6-terra --effort low`; the population
+  `gpt-5.6-terra-low` is appended last in `active-recipe.json`, so it serves
+  only episodes nothing else covers and never outranks paid-for output.
+  Measured throughput: ~2.6 s per episode at 4 workers.
+  **The scale is the open question, not the lane.** ~150,000 episodes remain
+  (5.5 per conversation, measured over 300), which is ~108 hours of continuous
+  running at 4 workers, and 84% of the corpus is the two most recent months, so
+  there is no cheap prioritization escape — the recent work *is* the bulk.
+  Decide the budget: run it down over days, raise worker count, or accept
+  partial coverage as policy.
+  Remaining: let the pass run, re-run `ingest-synthesis` + `embed`
   periodically, and spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**
   * Producer, second amendment (operator, 2026-08-28): the Codex CLI's own

@@ -20,15 +20,16 @@
     live `atrium status` prints `archive last written 459s ago / last refresh
     finished 253s ago / newest indexed content authored 726s ago`.
 
-- [x] 2026-09-01 — **Observability:** `atrium ingest` reports what it admitted
-  per role and what each admission rule rejected, per kind and role.
+- [x] 2026-09-01 — **Observability:** Both ingests report what they admitted
+  per role and what each admission rule rejected.
   - Result: new `atrium/ingest/admission_tally.py`; `to_records` takes an
     optional tally and counts `kind <x>` / `role <x>` / `empty or
     acknowledgement` / `missing event id` rejections; ingest prints
     `admitted:` and `rejected:` lines ranked by count. The 162,225 tool-call
     records the mempalace recovery mis-filed would now be the first line of
-    output.
-  - Evidence: `tests/test_admission_breakdown.py` (3 tests); suite 105 passed.
+    output. `ingest-notes` gained the same lines after the wave review caught
+    it missing: files skipped as hidden or excluded are counted per rule.
+  - Evidence: `tests/test_admission_breakdown.py` (4 tests); suite 118 passed.
 
 - [x] 2026-09-01 — **Observability:** `atrium status` names every synthesis
   population and how many episodes of each the index serves.
@@ -37,9 +38,13 @@
     now shared, so status reports exactly what ingest would serve). Rows
     carry records/episodes/served, flag models missing from the active
     recipe, and mark a population serving zero episodes with
-    `<- SERVES NOTHING`. On a machine without a registry status reports
-    nothing and writes nothing (the manifest is created on first use, and a
-    status must not write).
+    `<- SERVES NOTHING`. The wave review hardened it twice: `intended` (what
+    the manifest would serve) is now printed beside `indexed` (episodes the
+    index actually holds), so an ingest that never ran shows as
+    `<- N NOT IN INDEX` instead of hiding inside a recomputed count; and
+    status reads the recipe through a non-writing reader
+    (`read_recipe_priority`), so inspecting the system can never create the
+    manifest the next ingest obeys.
   - First live run: `claude-sonnet-5` (the 383-episode Max-lane tranche,
     4.7M input tokens) serves 0 episodes — fully shadowed by
     `codex-cli-default`, which covers every episode it has. Expected under
@@ -73,6 +78,43 @@
     verdict: scratchpad `decision.md` / `decision.json`, `codex exec -s
     read-only --output-schema`.
   - Evidence: `tests/test_third_party_origin.py` (5 tests); suite 115 passed.
+
+- [x] 2026-09-01 — **Integrations:** "Thin adapters over the CLI core: MCP
+  server and per-agent hooks" — verified already built, not rebuilt.
+  - Result: `atrium/adapters/mcp_server.py` serves `atrium_search` and
+    `atrium_recall` over stdio by calling the same `search`/`recent_episodes`
+    the CLI uses (read-only annotations, bounded limits); registered in the
+    personal profile's MCP list. Per-agent hooks:
+    `~/.claude/hooks/atrium-recall.sh` (SessionStart injection) and
+    `atrium-refresh-on-session-end.sh`, both thin shells over the CLI. The
+    adapter never became the engine: `mcp` stays an optional extra and the
+    core imports nothing from it. This session's CONNECTION_CLOSED was the uv
+    resolution outage, not the adapter; import verified clean after the fix.
+
+- [x] 2026-09-01 — **Integrations:** Remote-export adapter family designed
+  before the local-file assumption hardened further.
+  - Result: spike at `docs/designs/remote-export-adapter-family.md`. Grounded
+    in current vendor reality (both ChatGPT and Grok ship official JSON
+    account exports; neither has a consumer API): a content-addressed inbox
+    of vendor ZIPs, vendor-specific parse, then the shared redaction and
+    manifest path with `complete:false` and per-source `exportedAt`
+    staleness. Scraping explicitly last. Implementation filed in
+    `~/p/rocket-agents/TODO.md` (Conversations export) with the smallest
+    next step: request both exports and write the ChatGPT parser against a
+    real `conversations.json`.
+
+- [-] 2026-09-01 — **Synthesis:** "Session-start injection with frozen-snapshot
+  discipline" — superseded by the live SessionStart hook.
+  - The injection exists and runs: `~/.claude/hooks/atrium-recall.sh` injects
+    `atrium recall` output at every session start (verified live this run,
+    including its honest failure block during the uv outage). The
+    frozen-snapshot half was deliberately rejected in the hook's own header:
+    recall is deterministic given the index and runs in ~1.2s with no
+    embedder, so a snapshot file would add a staleness window and a writer
+    for no measured gain — revisit only if recall ever needs the dense lane.
+    The ~900-token budget is enforced in `render_snapshot`
+    (`_BUDGET_CHARACTERS = 3600`), and the staleness warning added this run
+    rides the same block.
 
 - [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
   resolution unsatisfiable, taking the MCP server and hourly refresh down;

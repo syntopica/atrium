@@ -443,10 +443,16 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
         reverse=True,
     )
     if target is not None:
+        # The same aliases the ingest applies, or this filter would miss exactly
+        # the renamed history that makes a project whole: verticagtm's first
+        # month is archived under `p/provertly`.
+        aliases = workspace_aliases()
         conversations = [
             conversation
             for conversation in conversations
-            if workspace_matches(canonical_workspace(conversation.get("workspace")), target)
+            if workspace_matches(
+                canonical_workspace(conversation.get("workspace"), aliases=aliases), target
+            )
         ]
         print(f"  {len(conversations)} conversations in {target}")
     if limit is not None:

@@ -173,15 +173,19 @@
 
 ## Observability
 
-- [ ] **A second writer blocks silently, with no output and no error.** Running
-  `atrium embed` by hand while the hourly refresh was inside its own
-  `ingest-synthesis` left it at 0% CPU for twelve minutes: no vectors written,
-  nothing printed, no timeout — indistinguishable from a hung process or a slow
-  model load, and diagnosable only by finding the other process. `busy_timeout`
-  is 30 s, so something is waiting well past it. Either the long-running
-  commands should say "waiting for another writer" the moment they queue, or
-  the CLI should refuse a second concurrent writer outright and say which
-  process holds it. Discovered 2026-09-01 while babysitting the codex lane.
+- [ ] **`atrium embed` can sit at 0% CPU for many minutes printing nothing.**
+  Observed 2026-09-01: a hand-run `embed` spent twelve minutes idle, wrote no
+  vectors and printed nothing, then was killed. **The first diagnosis — that it
+  was queued behind the hourly refresh's writer — is disproved.** A controlled
+  probe (two processes, one holding `BEGIN IMMEDIATE`) shows the second writer
+  raises `OperationalError: database is locked` after 30.9 s, exactly as
+  `busy_timeout = 30000` promises, so a lock wait cannot explain twelve silent
+  minutes. The remaining suspect is the embedder's model load, which runs after
+  the pending query and does network work through `huggingface_hub` — a stalled
+  metadata request would look exactly like this. Reproduce with the store
+  uncontended and a stalled or offline network before changing anything; the
+  fix is probably `HF_HUB_OFFLINE` plus a printed "loading the embedder" line,
+  not lock handling.
 
 > Filed 2026-08-31, from the mempalace retirement. Every defect that session
 > found had been running silently for days, and none of them were subtle --

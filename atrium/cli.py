@@ -91,7 +91,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         help="Codex lane only: reasoning effort. Synthesis is extraction, not "
         "judgement, so the account default is usually the wrong price",
     )
-    synthesize.add_argument(
+    scope = synthesize.add_mutually_exclusive_group()
+    scope.add_argument(
         "--project",
         type=Path,
         default=None,
@@ -99,6 +100,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         help="Synthesize only the project containing DIR. Whole-corpus coverage "
         "costs about a dozen weekly quota cycles; the projects actually missing "
         "memory are a handful, and `status --coverage` names them",
+    )
+    scope.add_argument(
+        "--workspace",
+        default=None,
+        metavar="PREFIX",
+        help="Same, by stored workspace (e.g. '[HOME]/p/provertly'). The one that "
+        "works for a project no longer on disk -- which is precisely the memory "
+        "nothing else can reconstruct",
     )
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
@@ -187,6 +196,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
             args.model,
             args.effort,
             args.project,
+            args.workspace,
         )
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
@@ -389,16 +399,21 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
     model: str | None = None,
     effort: str | None = None,
     project: Path | None = None,
+    workspace: str | None = None,
 ) -> int:
     """Synthesize episodes newest-first; resumable, so interruption is cheap.
 
     Conversations run in a small worker pool: registry writes are atomic and
     never overwrite, so the worst a race costs is one duplicate call.
 
-    ``project`` narrows the pass to one project. Whole-corpus coverage costs
-    about a dozen weekly quota cycles, while the projects that actually lack
-    memory are a handful -- `status --coverage` names them, and this is how one
-    gets filled without paying for the other 145,000 episodes.
+    ``project`` and ``workspace`` narrow the pass to one project. Whole-corpus
+    coverage costs about a dozen weekly quota cycles, while the projects that
+    actually lack memory are a handful -- `status --coverage` names them, and
+    this is how one gets filled without paying for the other 145,000 episodes.
+    ``workspace`` takes the stored prefix directly, which is the only form that
+    reaches a project whose directory is gone: three of the five largest
+    uncovered projects here no longer exist on disk, and their conversations
+    are exactly the ones nothing but this archive can still account for.
     """
     import threading
     from concurrent.futures import ThreadPoolExecutor
@@ -411,7 +426,7 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
 
-    target = None
+    target = workspace
     if project is not None:
         target = project_workspace(project)
         if target is None:

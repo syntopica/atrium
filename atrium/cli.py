@@ -332,6 +332,12 @@ def _embed(index: Path) -> int:
         connection.close()
         print("  nothing to embed")
         return 0
+    # Say so before the model loads. The first batch is the load plus 256
+    # embeddings, so without these lines the command prints nothing at all for
+    # its opening minute -- and a slow load then looks exactly like a hang,
+    # which is how one cost twelve minutes of diagnosis on 2026-09-01.
+    print(f"  {len(pending):,} records to embed", flush=True)
+    print("  loading the embedder (a first run on this machine downloads it)", flush=True)
     embedder = Embedder()
     written = 0
     processed = 0

@@ -11,14 +11,15 @@ from atrium.synthesize.choose_served_records import choose_served_records
 from atrium.synthesize.population_report import population_report
 
 
-def _registry(tmp_path, records):
+def _registry(tmp_path, records, manifest=True):
     directory = tmp_path / "registry" / "records"
     directory.mkdir(parents=True)
     for position, record in enumerate(records):
         (directory / f"job-{position}.json").write_text(json.dumps(record))
-    (tmp_path / "registry" / "active-recipe.json").write_text(
-        json.dumps({"model_priority": ["codex-cli-default", "claude-sonnet-5"]})
-    )
+    if manifest:
+        (tmp_path / "registry" / "active-recipe.json").write_text(
+            json.dumps({"model_priority": ["codex-cli-default", "claude-sonnet-5"]})
+        )
     return tmp_path / "registry"
 
 
@@ -42,7 +43,7 @@ def test_an_unlisted_population_still_serves_what_only_it_covers():
     assert chosen["e9"]["model_requested"] == "gemini-3.7-flash-medium"
 
 
-def test_population_report_counts_records_episodes_and_served(tmp_path):
+def test_population_report_counts_records_episodes_and_intent(tmp_path):
     registry = _registry(
         tmp_path,
         [
@@ -53,16 +54,43 @@ def test_population_report_counts_records_episodes_and_served(tmp_path):
         ],
     )
     rows = {row["model"]: row for row in population_report(registry)}
-    assert rows["codex-cli-default"]["served"] == 1
-    assert rows["claude-sonnet-5"]["served"] == 1
+    assert rows["codex-cli-default"]["intended"] == 1
+    assert rows["claude-sonnet-5"]["intended"] == 1
     # Fully shadowed: every episode it has, a higher-priority model also has.
-    assert rows["gemini-3.7-flash-medium"]["served"] == 0
+    assert rows["gemini-3.7-flash-medium"]["intended"] == 0
     assert rows["gemini-3.7-flash-medium"]["listed"] is False
     assert rows["claude-sonnet-5"]["records"] == 2
     assert rows["claude-sonnet-5"]["episodes"] == 2
+
+
+def test_intended_is_checked_against_what_the_index_actually_holds(tmp_path):
+    """A recomputed intention is not service: an episode the index lacks --
+    ingest never ran, or the record's output produced no row -- must show as
+    drift, not hide inside a healthy-looking count."""
+    registry = _registry(
+        tmp_path,
+        [
+            {"episode_id": "e1", "model_requested": "codex-cli-default"},
+            {"episode_id": "e2", "model_requested": "codex-cli-default"},
+        ],
+    )
+    rows = {row["model"]: row for row in population_report(registry, {"e1"})}
+    assert rows["codex-cli-default"]["intended"] == 2
+    assert rows["codex-cli-default"]["indexed"] == 1
 
 
 def test_a_machine_without_a_registry_reports_nothing_and_writes_nothing(tmp_path):
     absent = tmp_path / "nowhere"
     assert population_report(absent) == []
     assert not absent.exists(), "a status must never create the registry"
+
+
+def test_a_missing_manifest_is_read_as_the_default_and_never_created(tmp_path):
+    """`status` on the records-but-no-manifest machine must not write the
+    manifest the next synthesis ingest will obey."""
+    registry = _registry(
+        tmp_path, [{"episode_id": "e1", "model_requested": "codex-cli-default"}], manifest=False
+    )
+    rows = population_report(registry)
+    assert rows and rows[0]["model"] == "codex-cli-default"
+    assert not (registry / "active-recipe.json").exists()

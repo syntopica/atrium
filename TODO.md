@@ -164,6 +164,16 @@
 
 ## Observability
 
+- [ ] **A second writer blocks silently, with no output and no error.** Running
+  `atrium embed` by hand while the hourly refresh was inside its own
+  `ingest-synthesis` left it at 0% CPU for twelve minutes: no vectors written,
+  nothing printed, no timeout — indistinguishable from a hung process or a slow
+  model load, and diagnosable only by finding the other process. `busy_timeout`
+  is 30 s, so something is waiting well past it. Either the long-running
+  commands should say "waiting for another writer" the moment they queue, or
+  the CLI should refuse a second concurrent writer outright and say which
+  process holds it. Discovered 2026-09-01 while babysitting the codex lane.
+
 > Filed 2026-08-31, from the mempalace retirement. Every defect that session
 > found had been running silently for days, and none of them were subtle --
 > they were invisible because nothing reported the right number.

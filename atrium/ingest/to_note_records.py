@@ -13,7 +13,7 @@ _HEADING = re.compile(r"^#{1,6}\s", re.MULTILINE)
 _MAX_CHUNK_CHARS = 2000
 
 
-def to_note_records(note: dict, provider: str = "brain") -> Iterator[Record]:
+def to_note_records(note: dict, provider: str = "brain", role: str = "note") -> Iterator[Record]:
     """Yield one record per chunk of a note, split on headings then paragraphs.
 
     ``conversation_id`` is the note's relative path and ``event_id`` the chunk's
@@ -21,6 +21,12 @@ def to_note_records(note: dict, provider: str = "brain") -> Iterator[Record]:
     ids -- the same convergence property the conversation path has. Editing a
     note shifts its chunks; reconciliation replaces the whole file's records, so
     stale chunks never linger.
+
+    ``role`` is the origin mark, and it is security-relevant: "note" is the
+    user's own curated text and earns a vector; "source" is saved third-party
+    content (web articles), which stays out of SEMANTIC_ROLES so it is never
+    embedded, never fused into semantic answers, and never injected at session
+    start. It remains word- and substring-searchable when the user asks.
     """
     text = note["text"]
     title = _first_heading(text) or note["path"]
@@ -32,7 +38,7 @@ def to_note_records(note: dict, provider: str = "brain") -> Iterator[Record]:
             conversation_id=note["path"],
             source_sha256=note["sha256"],
             provider=provider,
-            role="note",
+            role=role,
             text=chunk,
             authored_at=None,
             workspace=None,

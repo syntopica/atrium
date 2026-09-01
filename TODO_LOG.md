@@ -57,6 +57,23 @@
     cannot return without this failing.
   - Evidence: suite 110 passed.
 
+- [x] 2026-09-01 — **Security:** Untrusted-origin content is marked at ingest
+  and can never travel unmarked into an agent's context.
+  - Result: `ingest-notes --third-party` stamps records with role `source`
+    (kept out of `SEMANTIC_ROLES`, so never embedded and never in semantic
+    fusion); recall serves synthesis only, so no session-start injection;
+    `Hit` now carries `role` through every lane, and search output prints
+    `UNTRUSTED THIRD-PARTY TEXT` on source hits. Boundary documented in
+    AGENTS.md as a hard rule. Third-party content is not ingested today
+    (brain's `sources/`, 10,934 files, is excluded); this closes the path in
+    advance of it. No schema change, no index rebuild.
+  - Decision: Codex adjudication chose role/provider tagging over an `origin`
+    schema column (high confidence; a column would cost hours of re-embed per
+    machine or migration logic the disposable-index design avoids). Brief and
+    verdict: scratchpad `decision.md` / `decision.json`, `codex exec -s
+    read-only --output-schema`.
+  - Evidence: `tests/test_third_party_origin.py` (5 tests); suite 115 passed.
+
 - [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
   resolution unsatisfiable, taking the MCP server and hourly refresh down;
   fixed at the source by the baseline rollout session.

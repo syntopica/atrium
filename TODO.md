@@ -187,13 +187,6 @@
   `~/p/rocket-agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
 
-## Security
-
-- [ ] Mark untrusted-origin content and never auto-inject it: brain stores
-  saved web articles (third-party text), and a retrieved instruction inside one
-  can steer a tool-bearing agent. Tag origin at ingest; requires no restriction
-  on the user's own access. (Accepted Codex round-1 warning.)
-
 ## Self-improvement
 
 - [ ] Query log, gap detection, and brain proposals — with the durable-state

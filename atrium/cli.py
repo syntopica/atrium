@@ -147,6 +147,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     status.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
     status.add_argument("--refresh-stamp", type=Path, default=REFRESH_STAMP)
     status.add_argument("--synthesis-registry", type=Path, default=None)
+    status.add_argument(
+        "--coverage",
+        action="store_true",
+        help="Also report how many real projects have synthesized memory. Off by "
+        "default: it scans every record and costs ~44s, and the answer moves slowly",
+    )
 
     args = parser.parse_args(argv)
     if args.command == "ingest":
@@ -191,7 +197,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         return _search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "recall":
         return _recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
-    return _status(args.index, args.archive, args.refresh_stamp, args.synthesis_registry)
+    return _status(
+        args.index,
+        args.archive,
+        args.refresh_stamp,
+        args.synthesis_registry,
+        coverage=args.coverage,
+    )
 
 
 def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
@@ -637,7 +649,12 @@ def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path = REF
 
 
 def _status(
-    index: Path, archive: Path, stamp: Path = REFRESH_STAMP, registry: Path | None = None
+    index: Path,
+    archive: Path,
+    stamp: Path = REFRESH_STAMP,
+    registry: Path | None = None,
+    *,
+    coverage: bool = False,
 ) -> int:
     """Show what the index holds -- and say loudly when it is answering stale.
 
@@ -649,6 +666,7 @@ def _status(
     from atrium.doctor.archive_freshness import archive_freshness
     from atrium.doctor.newest_content_gap import newest_content_gap
     from atrium.doctor.refresh_health import refresh_health
+    from atrium.recall.project_coverage import project_coverage
 
     connection = open_store(index, read_only=True)
     records = connection.execute("SELECT count(*) FROM records").fetchone()[0]
@@ -665,6 +683,10 @@ def _status(
         row[0]
         for row in connection.execute("SELECT event_id FROM records WHERE provider = 'synthesis'")
     }
+    # Scanning every record for coverage costs ~44s against 1.1M rows, so the
+    # hourly refresh does not pay for a number that moves by fractions of a
+    # percent between runs. Ask for it when the question is being asked.
+    project_memory = project_coverage(connection) if coverage else None
     connection.close()
     print(f"  index: {index}")
     print(f"  built by: schema {build.get('schema')}, pipeline {build.get('pipeline')}")
@@ -674,8 +696,27 @@ def _status(
     for finding in freshness:
         loud = {"ok": "", "warn": "  <- STALE", "broken": "  <- BROKEN"}[finding.severity]
         print(f"  {finding.summary}{loud}")
+    if project_memory is not None:
+        _print_coverage(project_memory)
     _print_populations(registry, indexed_episodes)
     return 0
+
+
+def _print_coverage(coverage: dict[str, Any]) -> None:
+    """Report coverage over real projects, not over every directory ever opened.
+
+    Counting every workspace makes coverage read 2.1% while the work that
+    matters is above half. The alarming number and the useful one are different
+    numbers; this prints the useful one, and names the projects a recall would
+    answer nothing for.
+    """
+    share = 100 * coverage["covered"] / coverage["projects"] if coverage["projects"] else 0.0
+    print(
+        f"  project coverage: {coverage['covered']} of {coverage['projects']} projects "
+        f"with >={coverage['floor']} conversations have memory ({share:.0f}%)"
+    )
+    for workspace, conversations in coverage["uncovered"]:
+        print(f"    no memory: {workspace:<40} {conversations:>6,} conversations")
 
 
 def _print_populations(registry: Path | None, indexed_episodes: set[str]) -> None:

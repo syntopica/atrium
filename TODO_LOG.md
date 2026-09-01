@@ -6,6 +6,32 @@
 
 ### 2026-09
 
+- [x] 2026-09-01 — **Observability:** The capture-versus-deletion window is
+  measured, and the deletion cycle that cost 7,638 sessions is identified and
+  already closed.
+  - **The cause was Claude Code's own retention.** `cleanupPeriodDays` defaults
+    to 30 days, and that is the cycle that emptied `~/.claude/projects` between
+    exports. It is set to `99999` in both profiles — verified live and in the
+    dotfiles source (`claude/settings.json`, landed `87c097d`, 2026-08-28,
+    three days *after* the loss and by auto-sync rather than by decision).
+    `~/.claude-favish/settings.json` symlinks to the personal file, so one
+    value covers both quotas.
+  - **Measured evidence that nothing is deleting today**: the oldest surviving
+    Claude transcript is 2026-04-01 (five months, far past the 30-day default);
+    4,772 session files, 659 of them older than 30 days. Codex keeps 16,476
+    rollouts with 240 older than 60 days. Cursor stores conversations in a
+    SQLite DB with no per-conversation expiry.
+  - **Verdict**: the shortest active deletion cycle across every captured
+    provider is now *none*; the refresh runs hourly with a 15-minute floor plus
+    a session-end trigger. One hour against an unbounded retention is provably
+    ahead, so the class is closed — by measurement, not by assumption, which is
+    what the item asked for.
+  - **Residual, filed in `~/p/dotfiles/TODO.md`**: nothing asserts the setting
+    stays high. It is a plain value in a synced JSON file, and the same
+    auto-sync that set it could revert it; a bootstrap against an older source
+    would restore the 30-day default silently. Enforcement belongs to dotfiles,
+    which owns that file — Atrium must not read provider configuration.
+
 - [x] 2026-09-01 — **Observability:** `atrium status` says how stale it is, and
   recall complains instead of staying silent over a dead archive.
   - Result: every `status` now prints the archive's age, the last finished

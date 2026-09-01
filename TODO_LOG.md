@@ -6,6 +6,25 @@
 
 ### 2026-09
 
+- [x] 2026-09-01 — **Observability:** `atrium doctor`'s coverage check stopped
+  warning about a permanent, expected class.
+  - It warned "528 missing" on every run. Measured against the live archive:
+    all 528 legitimately admit zero records — every event in them is a tool
+    call, a system notice or a bare acknowledgement, which is the admission
+    rule working. Real drift was zero. A check that warns every run is how an
+    operator learns to ignore warnings, which is the failure this whole group
+    of items exists to prevent.
+  - Coverage is now measured against the conversations that *can* be indexed:
+    `read_archive_admissions` streams the archive once and returns both sets
+    (the admission test is nearly free — the line is already parsed for its
+    id, and `to_records` is a generator, so it stops at the first admissible
+    event). The zero-admission count is still printed, because a number that
+    moves is worth seeing; it just is not a defect.
+  - Evidence: live `doctor` now reports `30318 of 30318 indexable
+    conversations indexed, 0 missing, 0 indexed but not archived, 528 archived
+    conversations admit no record` — all six checks ok, 88s over a 3.4 GB
+    archive. `tests/test_doctor.py` 10 tests; suite 120 passed.
+
 - [x] 2026-09-01 — **Observability:** The capture-versus-deletion window is
   measured, and the deletion cycle that cost 7,638 sessions is identified and
   already closed.

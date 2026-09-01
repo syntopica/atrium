@@ -30,6 +30,23 @@
     output.
   - Evidence: `tests/test_admission_breakdown.py` (3 tests); suite 105 passed.
 
+- [x] 2026-09-01 — **Observability:** `atrium status` names every synthesis
+  population and how many episodes of each the index serves.
+  - Result: new `atrium/synthesize/population_report.py` and
+    `choose_served_records.py` (chooser extracted from `_ingest_synthesis`,
+    now shared, so status reports exactly what ingest would serve). Rows
+    carry records/episodes/served, flag models missing from the active
+    recipe, and mark a population serving zero episodes with
+    `<- SERVES NOTHING`. On a machine without a registry status reports
+    nothing and writes nothing (the manifest is created on first use, and a
+    status must not write).
+  - First live run: `claude-sonnet-5` (the 383-episode Max-lane tranche,
+    4.7M input tokens) serves 0 episodes — fully shadowed by
+    `codex-cli-default`, which covers every episode it has. Expected under
+    the priority, but now visible instead of assumed. Status now costs ~7s
+    (one registry pass, ~16k records).
+  - Evidence: `tests/test_population_report.py` (4 tests); suite 109 passed.
+
 - [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
   resolution unsatisfiable, taking the MCP server and hourly refresh down;
   fixed at the source by the baseline rollout session.

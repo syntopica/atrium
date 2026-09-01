@@ -123,6 +123,7 @@ def main(argv: list[str] | None = None) -> int:
     status = subcommands.add_parser("status", help="Show what the index holds, and how stale")
     status.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
     status.add_argument("--refresh-stamp", type=Path, default=REFRESH_STAMP)
+    status.add_argument("--synthesis-registry", type=Path, default=None)
 
     args = parser.parse_args(argv)
     if args.command == "ingest":
@@ -154,7 +155,7 @@ def main(argv: list[str] | None = None) -> int:
         return _search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "recall":
         return _recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
-    return _status(args.index, args.archive, args.refresh_stamp)
+    return _status(args.index, args.archive, args.refresh_stamp, args.synthesis_registry)
 
 
 def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
@@ -460,17 +461,12 @@ def _ingest_synthesis(index: Path) -> int:
     from atrium.ingest.conversation_workspaces import conversation_workspaces
     from atrium.ingest.to_synthesis_records import to_synthesis_records
     from atrium.synthesize.active_recipe import active_recipe_priority
+    from atrium.synthesize.choose_served_records import choose_served_records
     from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY, read_records
 
-    priority = active_recipe_priority(DEFAULT_REGISTRY)
-    rank = {model: position for position, model in enumerate(priority)}
-    chosen: dict[str, dict] = {}
-    for record in read_records(DEFAULT_REGISTRY):
-        episode = record["episode_id"]
-        record_rank = rank.get(record.get("model_requested"), len(priority))
-        best = chosen.get(episode)
-        if best is None or record_rank < rank.get(best.get("model_requested"), len(priority)):
-            chosen[episode] = record
+    chosen = choose_served_records(
+        read_records(DEFAULT_REGISTRY), active_recipe_priority(DEFAULT_REGISTRY)
+    )
 
     connection = open_store(index)
     total = 0
@@ -570,7 +566,9 @@ def _recall(
     return 0
 
 
-def _status(index: Path, archive: Path, stamp: Path = REFRESH_STAMP) -> int:
+def _status(
+    index: Path, archive: Path, stamp: Path = REFRESH_STAMP, registry: Path | None = None
+) -> int:
     """Show what the index holds -- and say loudly when it is answering stale.
 
     The archive sat frozen from 2026-08-27 while status printed healthy row
@@ -602,7 +600,31 @@ def _status(index: Path, archive: Path, stamp: Path = REFRESH_STAMP) -> int:
     for finding in freshness:
         loud = {"ok": "", "warn": "  <- STALE", "broken": "  <- BROKEN"}[finding.severity]
         print(f"  {finding.summary}{loud}")
+    _print_populations(registry)
     return 0
+
+
+def _print_populations(registry: Path | None) -> None:
+    """Name every synthesis population and how much of it the index serves.
+
+    The active-recipe manifest silently excluded an entire producer population
+    on 2026-08-30, and it took an audit to notice. A population serving zero
+    episodes is the drop made visible.
+    """
+    from atrium.synthesize.population_report import population_report
+    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
+
+    rows = population_report(registry if registry is not None else DEFAULT_REGISTRY)
+    if not rows:
+        return
+    print("  synthesis populations (registry -> served):")
+    for row in rows:
+        unlisted = "" if row["listed"] else "  (not in active recipe)"
+        dropped = "  <- SERVES NOTHING" if row["served"] == 0 else ""
+        print(
+            f"    {row['model']:<26} {row['records']:>7,} records "
+            f"{row['episodes']:>7,} episodes {row['served']:>7,} served{unlisted}{dropped}"
+        )
 
 
 if __name__ == "__main__":

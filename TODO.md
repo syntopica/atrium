@@ -136,16 +136,6 @@
 > found had been running silently for days, and none of them were subtle --
 > they were invisible because nothing reported the right number.
 
-- [ ] **The canonical archive is only canonical while capture outruns
-  deletion.** `AGENTS.md` says anything Atrium cannot rebuild from layer 1 or 3
-  is a design defect; layer 1 holds only what was on disk when the exporter
-  ran. 7,638 Claude Code sessions were deleted from `~/.claude/projects`
-  between exports and were lost from the archive permanently -- they survived
-  only inside mempalace, the store being retired, and were recovered from it
-  hours before deletion. The hourly refresh narrows the window to an hour but
-  does not close the class. Either capture becomes event-driven, or the window
-  has to be provably shorter than the shortest deletion cycle any provider
-  uses, and that number has to be known rather than assumed.
 
 - [ ] **The dotfiles auto-sync manufactures conflicts and leaves them.**
   `com.cristian.sync-all-safe` merges the two machines and commits, but a
@@ -180,12 +170,36 @@
   `~/p/rocket-agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
 
+## Durability
+
+- [!] **The synthesis registry is on one disk and nothing replicates it.**
+  Measured 2026-09-01: `~/.local/share/atrium/synthesis/records` holds 17,456
+  records, 94 MB — several weekly Google AI Pro cycles on the agy lane plus the
+  383-episode Max tranche that cost 4.7M input tokens. It is the one thing here
+  that is *not* disposable: the index rebuilds from it, and it rebuilds from
+  nothing but paid model calls. Evidence that it is unprotected: no sync script
+  under `~/p/dotfiles/bin` names the path (`sync-all-safe` and
+  `sync-conversations` move the archive only); `tmutil destinationinfo` reports
+  **no Time Machine destination configured at all** on this machine; and
+  `macmini` — reachable, and the host carrying the archive snapshot — has no
+  `~/.local/share/atrium/` directory whatsoever. `backup_synthesis_records`
+  copies to a sibling directory on the same disk, which is protection against a
+  bad re-key, not against losing the disk.
+  This is the same class as the archive-on-one-disk defect closed 2026-08-31;
+  the registry was simply missed, and the pinned design already says it should
+  be "synced by the dotfiles transport, never the SQLite index".
+  Blocked because the fix changes a recurring automation in another repo:
+  filed in `~/p/dotfiles/TODO.md` with the smallest step (add the registry to
+  the existing transport, one designated writer, other machines consume).
+
 ## Self-improvement
 
-- [ ] Query log, gap detection, and brain proposals — with the durable-state
-  contradiction resolved first: layer 2 must stay disposable, so synthesis,
-  query log and proposal state either live in brain or in an explicitly
-  backed-up sidecar. As designed today a rebuild would erase them.
+- [ ] Query log, gap detection, and brain proposals. The durable-state
+  contradiction this waits on is no longer abstract — it is the Durability item
+  above, and a query log would add a *second* unreplicated store next to it.
+  Resolve the placement rule first (brain, or an explicitly backed-up sidecar
+  that the transport actually carries), then build; layer 2 must stay
+  disposable, and as designed today a rebuild would erase both.
 
 ## Cross-project
 

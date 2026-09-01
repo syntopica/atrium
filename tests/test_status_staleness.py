@@ -86,6 +86,8 @@ def test_status_says_stale_when_the_archive_stopped_moving(tmp_path, capsys):
             str(archive),
             "--refresh-stamp",
             str(absent_stamp),
+            "--synthesis-registry",
+            str(tmp_path / "no-registry"),
         ]
     )
     out = capsys.readouterr().out
@@ -107,6 +109,8 @@ def test_status_stays_quiet_when_everything_is_fresh(tmp_path, capsys):
             str(archive),
             "--refresh-stamp",
             str(stamp),
+            "--synthesis-registry",
+            str(tmp_path / "no-registry"),
         ]
     )
     out = capsys.readouterr().out

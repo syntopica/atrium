@@ -147,12 +147,6 @@
   does not close the class. Either capture becomes event-driven, or the window
   has to be provably shorter than the shortest deletion cycle any provider
   uses, and that number has to be known rather than assumed.
-- [ ] **Nothing compares what synthesis produced against what the index
-  serves.** The active-recipe manifest silently excluded an entire producer
-  population -- 3,686 episodes across 580 conversations, already paid for in
-  quota -- and it took an audit to notice. `atrium status` should name every
-  population in the registry and how many episodes of each the index serves,
-  so a manifest that drops one is visible immediately.
 - [ ] **The cost of a no-op pass is an invariant worth measuring.** Rewriting
   unchanged conversations cascaded away every vector it touched, so an hourly
   refresh paid a full re-embed -- 19,198 vectors, hours of CPU -- every hour.

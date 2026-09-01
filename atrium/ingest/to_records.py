@@ -3,6 +3,7 @@
 import re
 from collections.abc import Iterator
 
+from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.record_identity import record_identity
 from atrium.record import Record
 
@@ -27,13 +28,15 @@ _ACKNOWLEDGEMENT = re.compile(
 )
 
 
-def to_records(conversation: dict) -> Iterator[Record]:
+def to_records(conversation: dict, tally: AdmissionTally | None = None) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
     Skips non-conversational events and bare acknowledgements. Nothing is
     deleted by skipping: the archive keeps every event, and this only decides
     what earns a row in a derived index that can be rebuilt with a different
-    rule tomorrow.
+    rule tomorrow. Pass a ``tally`` to learn what each rule turned away -- the
+    admitted total alone looked healthy while 162,225 tool-call and thinking
+    records were being filed as conversation.
     """
     conversation_id = conversation.get("id")
     provenance = conversation.get("provenance") or {}
@@ -47,15 +50,25 @@ def to_records(conversation: dict) -> Iterator[Record]:
 
     for index, event in enumerate(conversation.get("events") or []):
         if event.get("kind") != "message":
+            if tally:
+                tally.reject(f"kind {event.get('kind') or 'absent'}")
             continue
         if event.get("role") not in CONVERSATIONAL_ROLES:
+            if tally:
+                tally.reject(f"role {event.get('role') or 'absent'}")
             continue
         text = (event.get("text") or "").strip()
         if not text or _ACKNOWLEDGEMENT.match(text):
+            if tally:
+                tally.reject("empty or acknowledgement")
             continue
         event_id = event.get("id")
         if not event_id:
+            if tally:
+                tally.reject("missing event id")
             continue
+        if tally:
+            tally.admit(event["role"])
         yield Record(
             record_id=record_identity(conversation_id, event_id),
             event_id=event_id,

@@ -55,9 +55,7 @@ def _snapshot(index):
     rows = connection.execute(
         "SELECT rowid, record_id, source_sha256 FROM records ORDER BY rowid"
     ).fetchall()
-    vectors = connection.execute(
-        "SELECT record_id FROM vectors ORDER BY record_id"
-    ).fetchall()
+    vectors = connection.execute("SELECT record_id FROM vectors ORDER BY record_id").fetchall()
     placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
     pending = connection.execute(
         f"SELECT count(*) FROM records WHERE role IN ({placeholders}) "  # noqa: S608

@@ -173,7 +173,7 @@
 
 ## Observability
 
-- [~] **Coverage was being measured against the wrong denominator.** "9.9% of
+- [x] **Coverage was being measured against the wrong denominator.** "9.9% of
   conversations synthesized" is true and misleading. Measured 2026-09-01 by
   project instead: of 13,269 distinct workspaces only 284 have memory (2.1%),
   but 13,162 of those workspaces hold fewer than five conversations — they are
@@ -181,9 +181,11 @@
   conversations coverage is **53.8%**, and against those with >=100 it is
   **64%**. The memory already covers most of the work that matters, which is
   the number that should decide whether a whole-corpus backfill is worth
-  buying. Remaining: make `status` report coverage by project above a size
-  floor, so the useful number is the one on screen rather than the alarming
-  one.
+  buying. **Done 2026-09-01** (`9fc40b7`): `atrium status --coverage` reports
+  it — 36 of 51 projects, 71% — and names the largest projects recall would
+  answer nothing for. Behind a flag because the query scans all 1.1M records
+  at ~44 s against 4 s for the rest of status, and the hourly refresh should
+  not pay hourly for a number that moves by fractions of a percent.
 
 - [~] **`atrium embed` sat at 0% CPU for twelve minutes printing nothing.** The
   network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):

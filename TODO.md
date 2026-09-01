@@ -125,6 +125,14 @@
   there is no cheap prioritization escape — the recent work *is* the bulk.
   Decide the budget: run it down over days, raise worker count, or accept
   partial coverage as policy.
+  **Two producers must not run at once.** The agy drip loop is still installed
+  and alive, sleeping to its next Gemini reset (observed 2026-09-01 04:05,
+  sleeping 15,355 s). `done_episodes` is read once at pass start, so a codex
+  pass and a drip pass overlapping will both pick up the same pending episodes
+  and pay for each of them twice, in two populations — the failure the
+  one-population rule exists to prevent. Before any long codex run, stop the
+  drip (or gate it on the same lock) rather than trusting the two schedules not
+  to meet.
   Remaining: let the pass run, re-run `ingest-synthesis` + `embed`
   periodically, and spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**

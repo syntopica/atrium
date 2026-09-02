@@ -6,6 +6,31 @@
 
 ### 2026-09
 
+- [x] 2026-09-01 — **Retrieval:** Four renamed projects got their history back.
+  - A rename splits memory the way the missed `[HOME]` redaction did, but more
+    quietly: nothing in the archive records that a directory was renamed rather
+    than deleted while an unrelated one appeared. Only a person knows.
+    `workspace-aliases.json` (hand-maintained, `~/.atrium/`) folds the old name
+    onto the current one at ingest, subdirectories included.
+  - **Detection matters as much as the mechanism.** Timestamp contiguity alone
+    is useless — it proposes the cross-product of every dead project ending
+    near every live one starting, including `vexa-enrichment-backfill ->
+    brain`. What works is content: the known-true rename shows `provertly`
+    mentioned **7,522 times** by `verticagtm` against 46 by the runner-up, a
+    163:1 dominance. Weaker ratios (2:1 to 4:1) are suggestive only, so the
+    candidates were put to the operator with their evidence rather than
+    applied. `smart-sales` was offered and declined — the signal came only from
+    `brain`, which documents everything.
+  - Folded, confirmed by the operator: `provertly -> verticagtm`,
+    `agents-tools -> rocket-agents`, `smartfactu -> intelifactu`,
+    `vexa-enrichment-backfill -> vexa`.
+  - Result after re-ingest of both raw and synthesis records: rocket-agents'
+    history starts 2026-06-26 instead of 2026-08-19 and its episodes reach back
+    to 2026-08-13; intelifactu starts 2026-01-16 instead of 2026-04-14;
+    verticagtm 2026-06-14 instead of 2026-07-12; vexa gained a 1,017-
+    conversation day. No old name survives anywhere in the index.
+  - Evidence: `tests/test_workspace_aliases.py` (9 tests); suite 149 passed.
+
 - [x] 2026-09-01 — **Synthesis:** The producer moved to the Codex lane, and the
   unit of work moved from "the corpus" to "a project".
   - **Lane**: `gpt-5.6-terra` at low effort, chosen by measurement and a blind

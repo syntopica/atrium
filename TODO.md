@@ -173,6 +173,16 @@
 
 ## Observability
 
+- [ ] **Session scratchpads are indexed as if they were projects.** Paths like
+  `/private/tmp/claude-501/-Users-user-p-agents-tools/<uuid>/scratchpad`
+  carry a `workspace` and become their own workspaces in the index — found
+  2026-09-01 while folding renames. They are per-session temporary directories,
+  not projects: they inflate the workspace count that made coverage read 2.1%,
+  they never match a live `project_workspace`, so nothing can ever recall them,
+  and their content is scratch. Either map a scratchpad back to the project
+  whose name it encodes (the path contains it) or drop the workspace entirely
+  at ingest, but not silently keep them as phantom projects.
+
 - [x] **Coverage was being measured against the wrong denominator.** "9.9% of
   conversations synthesized" is true and misleading. Measured 2026-09-01 by
   project instead: of 13,269 distinct workspaces only 284 have memory (2.1%),

@@ -59,7 +59,10 @@ class Embedder:
                 "embedder produced a NaN or all-zero vector -- refusing to store "
                 "unusable vectors; check the onnxruntime installation"
             )
-        return matrix / norms[:, np.newaxis]
+        # Typed local: on 3.11 numpy's stubs make the division Any and strict
+        # mypy rejects returning it; the annotation pins what the gate checks.
+        unit: np.ndarray = matrix / norms[:, np.newaxis]
+        return unit
 
     def _forward(self, texts: list[str]) -> np.ndarray:
         assert self._tokenizer is not None

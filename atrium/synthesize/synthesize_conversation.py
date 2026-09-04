@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from atrium.synthesize.empty_synthesis_error import EmptySynthesisError
 from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
 from atrium.synthesize.segment_episodes import SEGMENTATION_FINGERPRINT, segment_episodes
@@ -48,6 +49,9 @@ def synthesize_conversation(
             skipped += 1
             continue
         result = _synthesize_episode(episode, events, producer)
+        output = result["input"]
+        if not (output.get("title") or output.get("summary")):
+            raise EmptySynthesisError(f"empty synthesis for episode {episode_id}")
         output_json = json.dumps(result["input"], ensure_ascii=False, sort_keys=True)
         write_record(
             registry,

@@ -6,6 +6,40 @@
 
 ### 2026-09
 
+- [x] 2026-09-04 — **Durability / Observability:** The Mac mini runs Atrium; memstore
+  retired from it; the empty synthesis record found and refused.
+  - Mini before: no `~/p/atrium`, no index, no registry copy, memstore daemon
+    still mining 26 GB, `cleanupPeriodDays` unset (30-day session purge live),
+    `~/.claude/settings.json` carrying the retired hooks and re-injecting them
+    into `dotfiles` on six of eight daily runs. After: checkout + `uv sync`,
+    hooks, `atrium-refresh` + `atrium-lock` + hourly LaunchAgent, aliases,
+    registry copy (29,989 records -- the second disk the Durability item
+    lacked), first full pass launched under a stall guard on `refresh.log`.
+    Dotfiles fix (`a2ee1a5`): per-host snapshots under `claude/hosts/`, the
+    template written by the primary only, `claude-apply` leaves an established
+    host alone, import retry on `ConversationArchiveChangedError`, backup prune
+    after every applied import, config push from the primary only, and a
+    `macbook` leg for the secondary; mini schedule moved to 20:00.
+  - memstore copy: 28.07 GB, 1,475 files, at
+    `~/.local/share/memstore-peer-b-retired-20260904/`; verified by rsync
+    itemize (clean), `integrity_check` ok on all four sqlite files, and the
+    live palace's 464,413 embeddings intact. Its 6,755 mined sources were
+    checked against the archive by session filename: 1,875 absent, all of them
+    subagent transcripts (1,054), `memory/` notes (228), `tool-results/` blobs
+    (590) or peer-a root paths (3) -- zero top-level sessions, so nothing to
+    rebuild. Then daemon booted out, plist deleted, tool uninstalled, MCP entry
+    removed, store deleted (26 GB reclaimed, 357 GB free).
+  - The `1 NOT IN INDEX` on 77 consecutive refreshes was record
+    `0514a5475b5b…` (episode `18e5771b225ee012d8cb6937`, `gpt-5.6-terra-low`):
+    the producer answered `{"title": "", "summary": ""}` and the empty output
+    was persisted, so it counted as intended, blocked every later population,
+    and produced no index row. Quarantined to `records.empty-20260904/` on both
+    machines; `synthesize_conversation` now raises `EmptySynthesisError`
+    instead of writing such a record (`tests/test_synthesize_conversation_empty_output.py`).
+  - Evidence: `atrium doctor` all ok at 16:54; `sync-all-safe.log` (conflicts
+    08-28..09-03, `synced peer-b` 09-01..09-04); mini `first-run.out`,
+    `refresh.log`; palace comparison in the session scratchpad.
+
 - [x] 2026-09-01 — **Retrieval:** Four renamed projects got their history back.
   - A rename splits memory the way the missed `[HOME]` redaction did, but more
     quietly: nothing in the archive records that a directory was renamed rather

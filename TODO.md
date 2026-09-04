@@ -142,17 +142,26 @@
   one-population rule exists to prevent. Before any long codex run, stop the
   drip (or gate it on the same lock) rather than trusting the two schedules not
   to meet.
-  **2026-09-04: the drip itself moved to the codex lane** (operator directive:
-  the Gemini weekly quota was spent and the drip had produced nothing on 09-01,
-  09-02 and 09-03). `drip-loop.sh` now runs `--producer codex --model
-  gpt-5.6-terra --effort low --workers 4`; `drip-quota.py` reads the codex
-  windows CodexBar reports (weekly at 70% when it started, primary 5-hour
-  reported `null`, so the in-pass wall is the backstop and a wall the probe
-  cannot see sleeps 1,800 s blind); `drip-guard.sh` kills a pass whose
-  `run.log` sits idle 1,800 s; the codex lane raises `QuotaExhaustedError` on
-  a usage-limit reply (`71ef603`). The agy loop was stopped by process group
-  first, so one producer runs at a time. It shares the account's interactive
-  Codex quota; two "Restablecimiento completo" reset credits were available.
+  **2026-09-04: the drip's lane is now configuration, not code.** It moved to
+  codex when the Gemini weekly quota was spent (nothing produced on 09-01,
+  09-02, 09-03) and back to agy the same evening when Antigravity reset, and
+  rewriting the loop twice in one day is what `lane.env` exists to stop:
+  `LANE`, `LANE_ARGS`, `QUOTA_PROVIDER` and `WORKERS` in one file, with the
+  codex alternative kept commented beside the live setting. `drip-quota.py`
+  takes the provider as an argument and still treats `usageKnown: false` as no
+  evidence of headroom; `drip-guard.sh` kills a pass whose `run.log` sits idle
+  1,800 s; a wall the probe cannot see sleeps 1,800 s blind. The codex lane
+  now raises `QuotaExhaustedError` on a usage-limit reply (`71ef603`) -- it
+  had no wall detection at all, so a spent window would have grated 44,000
+  conversations into `FAILED` lines the way the agy lane did in August.
+  Measured on the codex lane's 55 minutes: 1,213 records, and the account's
+  **weekly Codex quota went 70% to 72%, about 3% per hour** -- roughly nine
+  hours of drip before the wall, on the same quota interactive Codex work
+  spends. agy is the standing routing rule for exactly that reason, and its
+  population also outranks `gpt-5.6-terra-low` in `active-recipe.json`.
+  Switching lanes means killing the running loop by process group first: two
+  overlapping passes read `done_episodes` at their own start and pay for the
+  same episodes twice.
   Remaining: let the pass run, re-run `ingest-synthesis` + `embed`
   periodically (the hourly refresh does both), and spot-check quality with
   Codex as evaluator. **Design pinned in the 2026-08-27 two-agent

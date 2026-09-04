@@ -294,6 +294,18 @@
 
 ## Durability
 
+- [ ] **The drip's own scripts live only in `~/.local/share/atrium/synthesis/`.**
+  `drip-loop.sh`, `drip-quota.py`, `drip-guard.sh` and `lane.env` are the bulk
+  synthesis producer's whole control surface -- which lane runs, which quota
+  gates it, what kills a hung pass -- and they are in no repository, on the
+  same single disk as the registry, replicated by nothing. Two of them were
+  rewritten twice on 2026-09-04 and the only copies of the previous versions
+  are `*.bak-*` files beside them. Same class as the registry item below, and
+  cheaper to fix: they belong in `~/p/dotfiles/bin` (or this repo) with the
+  live paths as symlinks, so a lane switch is a reviewable commit rather than
+  an unrecorded edit on one machine. Not done during a running pass.
+
+
 - [!] **The synthesis registry is on one disk and nothing replicates it.**
   Measured 2026-09-01: `~/.local/share/atrium/synthesis/records` holds 17,456
   records, 94 MB — several weekly Google AI Pro cycles on the agy lane plus the

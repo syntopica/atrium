@@ -142,8 +142,20 @@
   one-population rule exists to prevent. Before any long codex run, stop the
   drip (or gate it on the same lock) rather than trusting the two schedules not
   to meet.
+  **2026-09-04: the drip itself moved to the codex lane** (operator directive:
+  the Gemini weekly quota was spent and the drip had produced nothing on 09-01,
+  09-02 and 09-03). `drip-loop.sh` now runs `--producer codex --model
+  gpt-5.6-terra --effort low --workers 4`; `drip-quota.py` reads the codex
+  windows CodexBar reports (weekly at 70% when it started, primary 5-hour
+  reported `null`, so the in-pass wall is the backstop and a wall the probe
+  cannot see sleeps 1,800 s blind); `drip-guard.sh` kills a pass whose
+  `run.log` sits idle 1,800 s; the codex lane raises `QuotaExhaustedError` on
+  a usage-limit reply (`71ef603`). The agy loop was stopped by process group
+  first, so one producer runs at a time. It shares the account's interactive
+  Codex quota; two "Restablecimiento completo" reset credits were available.
   Remaining: let the pass run, re-run `ingest-synthesis` + `embed`
-  periodically, and spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
+  periodically (the hourly refresh does both), and spot-check quality with
+  Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**
   * Producer, second amendment (operator, 2026-08-28): the Codex CLI's own
     quota (`--producer codex`, default) after the Max lane measured 4.7M

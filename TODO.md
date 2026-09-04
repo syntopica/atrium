@@ -173,6 +173,28 @@
 
 ## Observability
 
+- [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly
+  refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
+  rewrite filed under Ingest / Store); recall fires in both Claude profiles
+  (`~/.claude-favish/projects` is a symlink into `~/.claude/projects`, so Favish sessions are
+  captured); the Mac mini's sessions reach the archive through the daily `sync-all-safe`
+  leg (verified on mini-only sessions of 09-03 and 09-04). Fixed the same day: the Mac mini
+  now runs Atrium with its own index and hourly refresh, MemPalace is gone from it, and its
+  copy of the synthesis registry is the second disk the Durability item asked for (see
+  `TODO_LOG.md` 2026-09-04). Still open:
+  * The agy drip produced **nothing on 09-01, 09-02 and 09-03** -- `drip.log` shows three
+    consecutive `sleeping 86400s` against the Gemini weekly wall -- and 405 episodes on 09-04
+    before the next wall. Newest-first ordering (`cli.py:440`) means the recent days do get
+    memory first, but ~150k episodes of backlog at ~400/day is not a plan. Same open decision as
+    the Synthesis item: pay the codex lane on a schedule, or accept partial coverage.
+  * Coverage 38 of 51 projects (75%). `staffbase-global-content` (495 conversations) and
+    `smart-sales` (114) have zero memory; `atrium synthesize --project` can fill them the next
+    time a lane has quota.
+  * Disk: index 20 GB, archive 5.2 GB plus one 5.2 GB backup, the retired mini MemPalace copy
+    28 GB at `~/.local/share/mempalace-macmini-retired-20260904/`, and the volume is at 94%.
+  * A fused search measured 20 s and a `--words` search 12.5 s while the refresh was writing the
+    index; re-measure idle before calling retrieval slow.
+
 - [ ] **Session scratchpads are indexed as if they were projects.** Paths like
   `/private/tmp/claude-501/-Users-cristiandeluxe-p-agents-tools/<uuid>/scratchpad`
   carry a `workspace` and become their own workspaces in the index — found

@@ -7,6 +7,8 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
+
 # The job key needs a deterministic model string BEFORE the call; the account
 # default is what actually runs, and the resolved id is recorded per record.
 CODEX_MODEL_ID = "codex-cli-default"
@@ -79,6 +81,13 @@ def codex_lane_call(
             timeout=1200,
         )
         if completed.returncode != 0 or not output_path.exists():
+            # A spent usage window cannot succeed until its reset. Raising the
+            # quota error lets the pass stop at the wall instead of grinding
+            # 43,000 conversations into "FAILED" lines, which is what the agy
+            # lane did for eighteen hours before it learned the same thing.
+            streams_lower = f"{completed.stderr}\n{completed.stdout}".lower()
+            if "usage limit" in streams_lower or "quota" in streams_lower:
+                raise QuotaExhaustedError((completed.stderr or completed.stdout).strip()[-400:])
             raise RuntimeError(
                 f"codex exec failed ({completed.returncode}): "
                 f"{(completed.stderr or completed.stdout)[-400:]}"

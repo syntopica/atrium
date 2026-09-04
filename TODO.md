@@ -162,9 +162,38 @@
   Switching lanes means killing the running loop by process group first: two
   overlapping passes read `done_episodes` at their own start and pay for the
   same episodes twice.
-  Remaining: let the pass run, re-run `ingest-synthesis` + `embed`
-  periodically (the hourly refresh does both), and spot-check quality with
-  Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
+  **The lane economics, measured over two full passes on 2026-09-04/05.** A
+  pass runs until the Gemini 5-hour window is spent, and each one costs about
+  a sixth of the weekly window:
+
+  | pass | workers | weekly cost | records | records per point |
+  | --- | --- | --- | --- | --- |
+  | A | 8 | 16.78 pts | 391 | 23.3 |
+  | B | 3 | 16.70 pts | 544 | 32.6 |
+
+  Two things follow. First, **more workers do not buy throughput on this lane
+  and cost quota**: 3 workers produced 12.3 records/min against 8 workers'
+  14.0, a 1.14x return on 2.7x the concurrency because agy rate-limits server
+  side, and pass B got 39% more records for the same quota. Both passes had 9
+  real call failures, so retries were not the difference; episode size varies
+  between passes and confounds the comparison, but nothing here argues for
+  raising workers. Sized at 3 in `lane.env` with the measurement written down.
+  Second, and this is the number that decides the project: a **full Gemini
+  weekly window is worth roughly 2,300-3,300 records**, so against ~150,000
+  pending episodes the agy lane alone is on the order of a year. The weekly was
+  at 50.7% after two passes; the ~3 windows left before the 2026-09-10 reset
+  are worth about 1,600 more records.
+  For comparison the codex lane produced ~1,213 records for about 2 points of
+  its weekly window, which is 13-39x more records per unit of quota (the range
+  is honest: CodexBar reports that window in whole percent, and other codex
+  activity on the account contaminates the reading -- a `codex exec --yolo`
+  from another session was measured burning it during the comparison). It is
+  also the account's *interactive* Codex quota, which is why the lane is an
+  operator decision and not an optimization to apply.
+  Remaining: decide the lane against those numbers (agy alone, codex, or
+  alternating agy while it has a window and codex while it sleeps), re-run
+  `ingest-synthesis` + `embed` periodically (the hourly refresh does both), and
+  spot-check quality with Codex as evaluator. **Design pinned in the 2026-08-27 two-agent
   consult, one amendment by operator directive:**
   * Producer, second amendment (operator, 2026-08-28): the Codex CLI's own
     quota (`--producer codex`, default) after the Max lane measured 4.7M

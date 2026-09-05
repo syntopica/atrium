@@ -335,25 +335,18 @@
   an unrecorded edit on one machine. Not done during a running pass.
 
 
-- [!] **The synthesis registry is on one disk and nothing replicates it.**
-  Measured 2026-09-01: `~/.local/share/atrium/synthesis/records` holds 17,456
-  records, 94 MB — several weekly Google AI Pro cycles on the agy lane plus the
-  383-episode Max tranche that cost 4.7M input tokens. It is the one thing here
-  that is *not* disposable: the index rebuilds from it, and it rebuilds from
-  nothing but paid model calls. Evidence that it is unprotected: no sync script
-  under `~/p/dotfiles/bin` names the path (`sync-all-safe` and
-  `sync-conversations` move the archive only); `tmutil destinationinfo` reports
-  **no Time Machine destination configured at all** on this machine; and
-  `macmini` — reachable, and the host carrying the archive snapshot — has no
-  `~/.local/share/atrium/` directory whatsoever. `backup_synthesis_records`
-  copies to a sibling directory on the same disk, which is protection against a
-  bad re-key, not against losing the disk.
-  This is the same class as the archive-on-one-disk defect closed 2026-08-31;
-  the registry was simply missed, and the pinned design already says it should
-  be "synced by the dotfiles transport, never the SQLite index".
-  Blocked because the fix changes a recurring automation in another repo:
-  filed in `~/p/dotfiles/TODO.md` with the smallest step (add the registry to
-  the existing transport, one designated writer, other machines consume).
+- [x] **The synthesis registry is replicated since 2026-09-04/05.** It held 17,456
+  records on one disk when this was filed and nothing carried it: no sync script named the
+  path, `tmutil destinationinfo` reported no Time Machine destination on this machine, and
+  `macmini` had no `~/.local/share/atrium/` at all. It is the one thing here that is not
+  disposable -- the index rebuilds from it, and it rebuilds from nothing but paid model calls.
+  Closed by provisioning the mini with a full copy and adding `sync_synthesis_registry_to` to
+  `~/p/dotfiles/bin/sync-all-safe` (`dc689ae` there), which pushes `records/` and
+  `active-recipe.json` from the designated writer on every daily run and never deletes on the
+  peer, exactly as the pinned design says. Verified 2026-09-05: 2,514 files, 9.7 MB
+  incremental, both machines at 32,503 records with an identical manifest.
+  Still open, and wider than this item: the MacBook has no Time Machine destination
+  configured at all, and Backblaze now excludes the archive (see `~/p/TODO.md`).
 
 ## Self-improvement
 

@@ -235,6 +235,17 @@
   `atrium-refresh`, `atrium-lock` and `watch-mtime.sh`, which had lived unversioned in
   `~/.local/bin` and been copied between machines by hand -- which is how the two came to run
   different pipelines at all -- and points `~/.local/bin` at them by symlink on both.
+  **Adding the step exposed the deeper cause, fixed in `05ae293`:** the ingest read files the
+  brain repository ignores. `inbox/` (its own SCHEMA calls it a scratch drop-zone "emptied
+  after ingestion"), `reviews/` and `tools/offers/reports/` are all gitignored generated
+  output, and 49 such files were in the dense lane as if they were curated knowledge -- 44
+  raw newsletter-triage dumps among them. Being untracked they also differ per machine, which
+  is the whole reason the two counts could not converge. `read_notes` now skips what the
+  notes repo itself ignores, which is the right unit: an exclude list cannot express it,
+  since brain ignores `tools/offers/reports/` while `docs/reports/` is curated content, and
+  it would need editing on every new ignore rule. `--exclude` stays for raw subtrees a repo
+  does track, which is what `sources/` is. Verified 2026-09-05: both machines index the
+  identical set of 219 notes, diffed id by id.
 
 
 - [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly

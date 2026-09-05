@@ -359,6 +359,21 @@
 
 ## Cross-project
 
+- [ ] **The two machines' archives are not identical after a two-way sync.** Found
+  2026-09-05 by running `atrium doctor` on the newly provisioned Mac mini: it warns
+  `9 conversations no longer archived` -- nine conversations that have paid synthesis
+  records but are absent from the mini's archive -- while the same check on the MacBook
+  reports zero. The nine are old (2026-07-15 to 2026-08-09), so this is not the
+  registry-ahead-of-archive lag it first looked like. Counts diverge in both directions:
+  43,995 indexable conversations on the mini against 43,991 on the MacBook, after
+  `sync-conversations ... sync` ran both legs on 09-04. The merge is supposed to be a union,
+  so a set difference either way is either an import that silently dropped records or a
+  leg that did not complete. Small (9 of 32,503 records) and not urgent, but it is exactly
+  the silent-loss class the archive design exists to prevent, and it will be masked once the
+  v2 journal lands. Smallest step: dump both archives' conversation id sets and diff them,
+  then look for those ids in the import logs. Cross-project: rocket-agents, dotfiles.
+
+
 - [ ] `rocket-agents`: canonical event IDs are conversation-local in practice —
   `conversationEventFromRecord.ts:20` derives them from `event_index + text`
   with no conversation identity, and real cross-conversation collisions were

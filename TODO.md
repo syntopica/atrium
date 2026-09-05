@@ -223,6 +223,20 @@
 
 ## Observability
 
+- [x] **The curated notes were never re-indexed, so each machine's brain memory froze.**
+  `atrium-refresh` ran `ingest`, `ingest-synthesis` and `embed` but not `ingest-notes`, which
+  was left to be run by hand -- so a machine's brain index sat at whatever commit it last
+  saw while the notes themselves moved on. Measured 2026-09-05 with both checkouts at the
+  same commit: 268 notes indexed here against 243 on the mini, and this machine's own index
+  was 268 notes stale before the manual catch-up. The notes are half the dense lane, so a
+  frozen brain is a quietly worse `atrium search` with nothing on screen to say so. Fixed by
+  adding the step to the refresh (33 s, incremental, skips unchanged notes) in
+  `~/p/dotfiles/bin/atrium/atrium-refresh` (`280c432` there). The same commit versions
+  `atrium-refresh`, `atrium-lock` and `watch-mtime.sh`, which had lived unversioned in
+  `~/.local/bin` and been copied between machines by hand -- which is how the two came to run
+  different pipelines at all -- and points `~/.local/bin` at them by symlink on both.
+
+
 - [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly
   refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
   rewrite filed under Ingest / Store); recall fires in both Claude profiles

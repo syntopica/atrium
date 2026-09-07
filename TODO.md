@@ -340,6 +340,25 @@
   to call it an improvement.
 
 ## Integrations
+- [~] **`atrium` was not on PATH, so the documented command did not exist.** The console script
+  is installed only inside `~/p/atrium/.venv`, while the global agent guidance tells every
+  session to run `atrium search "<question>" --project .` — which answered
+  `command not found` on any machine that never activated that venv. The index was healthy the
+  whole time (1,252,652 records, `doctor` all-green, 44,076/44,076 conversations indexed), so
+  this was a live memory that no agent could reach by the only route it was told to use, and it
+  fails in the one way nobody reports: a session simply improvises instead. Only the helper
+  scripts `atrium-lock` and `atrium-refresh` were linked into `~/.local/bin`; the CLI itself
+  never was. Fixed on the Mac mini 2026-09-07: `dotfiles/bin/atrium/atrium` wraps
+  `uv run --directory ~/p/atrium atrium "$@"` — the same call `atrium-refresh` already makes —
+  symlinked as `~/.local/bin/atrium` (dotfiles `9408859`). Verified from an unrelated directory
+  in a fresh login shell. **Still pending on the MacBook Pro**, where the symlink has to be
+  created once: `ln -s ~/p/dotfiles/bin/atrium/atrium ~/.local/bin/atrium`.
+- [ ] Nothing checks that Atrium's own documented entry points resolve, on either machine.
+  `doctor` proves the index would answer, and proved nothing about whether a caller can ask.
+  The same class of gap covers the `atrium-mcp` server, which both `.claude.json` files spawn as
+  `uv run --extra mcp --directory ~/p/atrium atrium-mcp`. Smallest action: have `doctor` (or
+  `atrium-refresh`, which already runs hourly) assert `command -v atrium` and that the MCP entry
+  point starts, and report a machine where either is missing.
 - [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
   emits 0 conversations from its 4 database artifacts, and the Trae exporter
   emits VS Code workspace metadata instead of dialogue. Both filed in

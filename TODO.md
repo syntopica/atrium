@@ -351,7 +351,18 @@
   never was. Fixed on the Mac mini 2026-09-07: `dotfiles/bin/atrium/atrium` wraps
   `uv run --directory ~/p/atrium atrium "$@"` — the same call `atrium-refresh` already makes —
   symlinked as `~/.local/bin/atrium` (dotfiles `9408859`). Verified from an unrelated directory
-  in a fresh login shell. **Still pending on the MacBook Pro**, where the symlink has to be
+  in a fresh login shell.
+  **That first wrapper was itself wrong, and a Codex review caught it the same day.**
+  `uv run --directory` changes the caller's working directory, so the `--project .` the guidance
+  prescribes resolved to `~/p/atrium` and every scoped search silently answered from the wrong
+  project — a worse failure than `command not found`, because it returns plausible results.
+  Fixed in dotfiles `5439c53` with `uv run --project "$HOME/p/atrium"`, which selects the
+  environment without moving the cwd. Verified from `~/p/brain`: `--project .` now hashes
+  identical to an explicit `--project ~/p/brain` and differs from `--project ~/p/atrium`;
+  before the change it matched the atrium one exactly. A second install bug went with it —
+  `dotfiles/bootstrap.sh` linked every top-level `bin/*` entry, so a fresh machine got
+  `~/.local/bin/atrium` pointing at the *directory*, shadowing the wrapper and installing none
+  of the scripts inside it. **Still pending on the MacBook Pro**, where the symlink has to be
   created once: `ln -s ~/p/dotfiles/bin/atrium/atrium ~/.local/bin/atrium`.
 - [ ] Nothing checks that Atrium's own documented entry points resolve, on either machine.
   `doctor` proves the index would answer, and proved nothing about whether a caller can ask.

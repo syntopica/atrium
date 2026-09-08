@@ -1,7 +1,7 @@
 # TODO
 
 > Consolidated from the accessible Claude, Codex, Cursor, and Antigravity
-> project history. Last reviewed: 2026-08-27. History coverage: Partial —
+> project history. Last reviewed: 2026-09-08. History coverage: Partial —
 > Atrium was designed and built inside the `~/p/memstore` project history
 > (session `a88ac62e`, 2026-08-25 to 2026-08-27, plus one Codex review
 > rollout); that history is fully parsed here. The older memstore sessions
@@ -60,6 +60,20 @@
   them. Each is filed separately below and in `~/p/rocket-agents/TODO.md`, but
   together they are the answer to "is the archive complete", and today the
   answer is no.
+
+- [ ] **45 scratchpad conversations stay unattributed because their projects are gone.**
+  The scratchpad decode (`7e0ca9b`) walks the real directory tree, so a project deleted from
+  disk -- `p/atc-prototype`, `p/thewealthadvisor`, `p/agents-tools` -- cannot be decoded and its
+  sessions lose their workspace instead of gaining one. The workspace-alias map cannot rescue
+  them as things stand, because aliases are applied after the decode. Smallest step: consult the
+  alias map on the encoded form as well, which is also what would let a renamed-and-deleted
+  project keep its memory.
+
+- [ ] **331 conversations lose their vectors on the next ingest.** `write_conversation`
+  replaces rather than upserts and `vectors.record_id` cascades on delete, so every conversation
+  the scratchpad decode remaps is re-embedded on the following `embed` run. One-off and cheap at
+  this size, but it is the reason the next refresh will look slower than the ones around it --
+  worth knowing before that is diagnosed as a regression.
 
 ## Synthesis
 
@@ -223,31 +237,6 @@
 
 ## Observability
 
-- [x] **The curated notes were never re-indexed, so each machine's brain memory froze.**
-  `atrium-refresh` ran `ingest`, `ingest-synthesis` and `embed` but not `ingest-notes`, which
-  was left to be run by hand -- so a machine's brain index sat at whatever commit it last
-  saw while the notes themselves moved on. Measured 2026-09-05 with both checkouts at the
-  same commit: 268 notes indexed here against 243 on the mini, and this machine's own index
-  was 268 notes stale before the manual catch-up. The notes are half the dense lane, so a
-  frozen brain is a quietly worse `atrium search` with nothing on screen to say so. Fixed by
-  adding the step to the refresh (33 s, incremental, skips unchanged notes) in
-  `~/p/dotfiles/bin/atrium/atrium-refresh` (`280c432` there). The same commit versions
-  `atrium-refresh`, `atrium-lock` and `watch-mtime.sh`, which had lived unversioned in
-  `~/.local/bin` and been copied between machines by hand -- which is how the two came to run
-  different pipelines at all -- and points `~/.local/bin` at them by symlink on both.
-  **Adding the step exposed the deeper cause, fixed in `05ae293`:** the ingest read files the
-  brain repository ignores. `inbox/` (its own SCHEMA calls it a scratch drop-zone "emptied
-  after ingestion"), `reviews/` and `tools/offers/reports/` are all gitignored generated
-  output, and 49 such files were in the dense lane as if they were curated knowledge -- 44
-  raw newsletter-triage dumps among them. Being untracked they also differ per machine, which
-  is the whole reason the two counts could not converge. `read_notes` now skips what the
-  notes repo itself ignores, which is the right unit: an exclude list cannot express it,
-  since brain ignores `tools/offers/reports/` while `docs/reports/` is curated content, and
-  it would need editing on every new ignore rule. `--exclude` stays for raw subtrees a repo
-  does track, which is what `sources/` is. Verified 2026-09-05: both machines index the
-  identical set of 219 notes, diffed id by id.
-
-
 - [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly
   refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
   rewrite filed under Ingest / Store); recall fires in both Claude profiles
@@ -270,30 +259,6 @@
   * A fused search measured 20 s and a `--words` search 12.5 s while the refresh was writing the
     index; re-measure idle before calling retrieval slow.
 
-- [ ] **Session scratchpads are indexed as if they were projects.** Paths like
-  `/private/tmp/claude-501/-Users-user-p-agents-tools/<uuid>/scratchpad`
-  carry a `workspace` and become their own workspaces in the index — found
-  2026-09-01 while folding renames. They are per-session temporary directories,
-  not projects: they inflate the workspace count that made coverage read 2.1%,
-  they never match a live `project_workspace`, so nothing can ever recall them,
-  and their content is scratch. Either map a scratchpad back to the project
-  whose name it encodes (the path contains it) or drop the workspace entirely
-  at ingest, but not silently keep them as phantom projects.
-
-- [x] **Coverage was being measured against the wrong denominator.** "9.9% of
-  conversations synthesized" is true and misleading. Measured 2026-09-01 by
-  project instead: of 13,269 distinct workspaces only 284 have memory (2.1%),
-  but 13,162 of those workspaces hold fewer than five conversations — they are
-  directories someone opened once, not projects. Against projects with >=20
-  conversations coverage is **53.8%**, and against those with >=100 it is
-  **64%**. The memory already covers most of the work that matters, which is
-  the number that should decide whether a whole-corpus backfill is worth
-  buying. **Done 2026-09-01** (`9fc40b7`): `atrium status --coverage` reports
-  it — 36 of 51 projects, 71% — and names the largest projects recall would
-  answer nothing for. Behind a flag because the query scans all 1.1M records
-  at ~44 s against 4 s for the rest of status, and the hourly refresh should
-  not pay hourly for a number that moves by fractions of a percent.
-
 - [~] **`atrium embed` sat at 0% CPU for twelve minutes printing nothing.** The
   network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):
   the model load made three `hf_hub_download` calls that each revalidate the
@@ -307,6 +272,12 @@
   than measured, or something else was also waiting. Worth one more look the
   next time a long command goes quiet; `embed` should also say what it is doing
   before the load, so the next occurrence is legible instead of mysterious.
+  **The legibility half is done 2026-09-08 (`e52b6d9`)**: every step that can block now
+  announces itself and flushes -- opening the index, counting pending records, loading the
+  named model (from cache or network, probed without touching the network and across all
+  three files the load needs), then the batch size. What stays open is only the diagnosis:
+  the next time embed goes quiet the log will name the step, and that is the evidence this
+  item has been missing.
 
 > Filed 2026-08-31, from the memstore retirement. Every defect that session
 > found had been running silently for days, and none of them were subtle --
@@ -324,6 +295,27 @@
   entirely. It needs to either resolve deterministically, or fail loudly
   enough that someone looks. Cross-project: dotfiles.
 
+- [ ] **The drip's stall guard kills any other synthesize pass on the machine.**
+  `drip-guard.sh` finds its target with `pgrep -f "atrium synthesize"`, which matches *any*
+  pass, and judges it against the drip's own `run.log`. While the drip sleeps against a quota
+  wall that log does not move -- it has not moved since 2026-09-05 -- so the idle time is
+  always over the threshold and any manually launched pass is killed within 120 s of starting.
+  Found 2026-09-08 when a `--producer max` pass died silently twice before the cause was
+  visible; the run printed nothing and exited, which reads exactly like a broken lane.
+  The guard also violates the rule it was written under: watch the pid you launched, not a
+  name pattern. Smallest fix: have `drip-loop.sh` pass its pass pid to the guard and have the
+  guard `kill -0` that pid, so the guard is scoped to the pass it armed for.
+
+- [ ] **The drip loop is stopped and nothing will restart it.** Killed by process group
+  2026-09-08 23:37 so a `--producer max` pass could run without two producers overlapping.
+  It is started by hand, not by a LaunchAgent (`~/Library/LaunchAgents` has only
+  `com.cristian.atrium-refresh`), so it stays down until someone runs
+  `nohup ~/.local/share/atrium/synthesis/drip-loop.sh >/dev/null 2>&1 &`. It was producing
+  nothing at the time -- four consecutive days of `sleeping 86400s` against the Gemini weekly
+  wall -- so nothing was lost, but a producer that only ever runs because a human remembers is
+  the same class of gap as the guard above. Either give it a LaunchAgent or accept it as a
+  manual lane and say so where the operator will read it.
+
 ## Measurement
 
 - [!] Hand-labeled acceptance set — blocks the measurement phase. The 365/389
@@ -340,36 +332,6 @@
   to call it an improvement.
 
 ## Integrations
-- [~] **`atrium` was not on PATH, so the documented command did not exist.** The console script
-  is installed only inside `~/p/atrium/.venv`, while the global agent guidance tells every
-  session to run `atrium search "<question>" --project .` — which answered
-  `command not found` on any machine that never activated that venv. The index was healthy the
-  whole time (1,252,652 records, `doctor` all-green, 44,076/44,076 conversations indexed), so
-  this was a live memory that no agent could reach by the only route it was told to use, and it
-  fails in the one way nobody reports: a session simply improvises instead. Only the helper
-  scripts `atrium-lock` and `atrium-refresh` were linked into `~/.local/bin`; the CLI itself
-  never was. Fixed on the Mac mini 2026-09-07: `dotfiles/bin/atrium/atrium` wraps
-  `uv run --directory ~/p/atrium atrium "$@"` — the same call `atrium-refresh` already makes —
-  symlinked as `~/.local/bin/atrium` (dotfiles `9408859`). Verified from an unrelated directory
-  in a fresh login shell.
-  **That first wrapper was itself wrong, and a Codex review caught it the same day.**
-  `uv run --directory` changes the caller's working directory, so the `--project .` the guidance
-  prescribes resolved to `~/p/atrium` and every scoped search silently answered from the wrong
-  project — a worse failure than `command not found`, because it returns plausible results.
-  Fixed in dotfiles `5439c53` with `uv run --project "$HOME/p/atrium"`, which selects the
-  environment without moving the cwd. Verified from `~/p/brain`: `--project .` now hashes
-  identical to an explicit `--project ~/p/brain` and differs from `--project ~/p/atrium`;
-  before the change it matched the atrium one exactly. A second install bug went with it —
-  `dotfiles/bootstrap.sh` linked every top-level `bin/*` entry, so a fresh machine got
-  `~/.local/bin/atrium` pointing at the *directory*, shadowing the wrapper and installing none
-  of the scripts inside it. **Still pending on the MacBook Pro**, where the symlink has to be
-  created once: `ln -s ~/p/dotfiles/bin/atrium/atrium ~/.local/bin/atrium`.
-- [ ] Nothing checks that Atrium's own documented entry points resolve, on either machine.
-  `doctor` proves the index would answer, and proved nothing about whether a caller can ask.
-  The same class of gap covers the `atrium-mcp` server, which both `.claude.json` files spawn as
-  `uv run --extra mcp --directory ~/p/atrium atrium-mcp`. Smallest action: have `doctor` (or
-  `atrium-refresh`, which already runs hourly) assert `command -v atrium` and that the MCP entry
-  point starts, and report a machine where either is missing.
 - [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
   emits 0 conversations from its 4 database artifacts, and the Trae exporter
   emits VS Code workspace metadata instead of dialogue. Both filed in
@@ -377,31 +339,6 @@
   (needs authorization to change that repo).
 
 ## Durability
-
-- [ ] **The drip's own scripts live only in `~/.local/share/atrium/synthesis/`.**
-  `drip-loop.sh`, `drip-quota.py`, `drip-guard.sh` and `lane.env` are the bulk
-  synthesis producer's whole control surface -- which lane runs, which quota
-  gates it, what kills a hung pass -- and they are in no repository, on the
-  same single disk as the registry, replicated by nothing. Two of them were
-  rewritten twice on 2026-09-04 and the only copies of the previous versions
-  are `*.bak-*` files beside them. Same class as the registry item below, and
-  cheaper to fix: they belong in `~/p/dotfiles/bin` (or this repo) with the
-  live paths as symlinks, so a lane switch is a reviewable commit rather than
-  an unrecorded edit on one machine. Not done during a running pass.
-
-
-- [x] **The synthesis registry is replicated since 2026-09-04/05.** It held 17,456
-  records on one disk when this was filed and nothing carried it: no sync script named the
-  path, `tmutil destinationinfo` reported no Time Machine destination on this machine, and
-  `peer-b` had no `~/.local/share/atrium/` at all. It is the one thing here that is not
-  disposable -- the index rebuilds from it, and it rebuilds from nothing but paid model calls.
-  Closed by provisioning the mini with a full copy and adding `sync_synthesis_registry_to` to
-  `~/p/dotfiles/bin/sync-all-safe` (`dc689ae` there), which pushes `records/` and
-  `active-recipe.json` from the designated writer on every daily run and never deletes on the
-  peer, exactly as the pinned design says. Verified 2026-09-05: 2,514 files, 9.7 MB
-  incremental, both machines at 32,503 records with an identical manifest.
-  Still open, and wider than this item: the MacBook has no Time Machine destination
-  configured at all, and Backblaze now excludes the archive (see `~/p/TODO.md`).
 
 ## Self-improvement
 

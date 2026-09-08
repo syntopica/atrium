@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from atrium.embed.model_repo import MODEL_REPO
+
 if TYPE_CHECKING:
     import onnxruntime  # type: ignore[import-untyped]
     from tokenizers import Tokenizer
@@ -14,7 +16,6 @@ if TYPE_CHECKING:
 # (77% Spanish); this multilingual model scored 70.4% at the same 384 dims.
 # CPU is required: on CoreML this model silently returns NaN or all-zero vectors
 # without raising, which is why every batch is validated below.
-_REPO = "onnx-community/embeddinggemma-300m-ONNX"
 _ONNX_FILE = "model_quantized.onnx"
 # The benchmark that produced the fusion weights embedded queries and documents
 # through this same prefix, so changing it invalidates the measured 70/30.
@@ -87,9 +88,9 @@ class Embedder:
 
             from atrium.embed.cached_model_file import cached_model_file
 
-            model_path = cached_model_file(_REPO, _ONNX_FILE, subfolder="onnx")
-            cached_model_file(_REPO, _ONNX_FILE + "_data", subfolder="onnx")
-            tokenizer_path = cached_model_file(_REPO, "tokenizer.json")
+            model_path = cached_model_file(MODEL_REPO, _ONNX_FILE, subfolder="onnx")
+            cached_model_file(MODEL_REPO, _ONNX_FILE + "_data", subfolder="onnx")
+            tokenizer_path = cached_model_file(MODEL_REPO, "tokenizer.json")
 
             session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
             output_names = [output.name for output in session.get_outputs()]

@@ -14,7 +14,7 @@ def mcp_extra_requirements(distribution: str = "atrium") -> list[str]:
 
     An empty list is a real failure, not an absence of information: both
     `.claude.json` files spawn the server as `uv run --extra mcp --directory
-    ~/p/atrium atrium-mcp`, and uv refuses an extra the installed metadata does
+    ~/p/mem atrium-mcp`, and uv refuses an extra the installed metadata does
     not declare. So the extra having survived into the installed distribution
     is the part of that command line this process can honestly check.
     """

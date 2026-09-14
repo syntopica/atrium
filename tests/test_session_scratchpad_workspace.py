@@ -138,7 +138,7 @@ def test_a_scratchpad_shape_outside_a_temp_root_is_untouched(home: Path):
     and that project's records are re-filed under whatever the encoded segment
     names -- here atrium's would become project-after's.
     """
-    workspace = f"{home}/p/atrium/{_encoded(home / 'p' / 'project-after')}/{SESSION}/scratchpad"
+    workspace = f"{home}/p/mem/{_encoded(home / 'p' / 'project-after')}/{SESSION}/scratchpad"
     assert canonical_workspace(workspace, home) == workspace.replace(str(home), "[HOME]", 1)
 
 
@@ -157,5 +157,7 @@ def test_a_project_directory_that_is_a_symlink_still_decodes(tmp_path: Path) -> 
     elsewhere.mkdir(parents=True)
     (home / "p" / "client-site").symlink_to(elsewhere)
 
-    workspace = f"/private/tmp/claude-501/{_encoded(home / 'p' / 'client-site')}/{SESSION}/scratchpad"
+    workspace = (
+        f"/private/tmp/claude-501/{_encoded(home / 'p' / 'client-site')}/{SESSION}/scratchpad"
+    )
     assert canonical_workspace(workspace, home) == "[HOME]/p/client-site"

@@ -19,9 +19,9 @@ def _project(tmp_path, *segments):
 
 
 def test_a_live_cwd_is_written_the_way_the_exporter_redacted_it(tmp_path):
-    home, root = _project(tmp_path, "p", "atrium")
+    home, root = _project(tmp_path, "p", "mem")
     (root / ".git").mkdir()
-    assert project_workspace(root, home) == "[HOME]/p/atrium"
+    assert project_workspace(root, home) == "[HOME]/p/mem"
 
 
 def test_a_subdirectory_recalls_its_project_not_itself(tmp_path):
@@ -78,12 +78,12 @@ def test_recall_covers_the_project_and_stops_at_its_edge(tmp_path):
         write_conversation(
             connection,
             "synthesis/a",
-            [_episode(1, "synthesis/a", "[HOME]/p/atrium", "2026-08-01T00:00:00Z")],
+            [_episode(1, "synthesis/a", "[HOME]/p/mem", "2026-08-01T00:00:00Z")],
         )
         write_conversation(
             connection,
             "synthesis/b",
-            [_episode(2, "synthesis/b", "[HOME]/p/atrium/docs", "2026-08-02T00:00:00Z")],
+            [_episode(2, "synthesis/b", "[HOME]/p/mem/docs", "2026-08-02T00:00:00Z")],
         )
         # A sibling whose name merely starts with the project's must not leak in.
         write_conversation(
@@ -91,7 +91,7 @@ def test_recall_covers_the_project_and_stops_at_its_edge(tmp_path):
             "synthesis/c",
             [_episode(3, "synthesis/c", "[HOME]/p/atrium-old", "2026-08-03T00:00:00Z")],
         )
-    hits = recent_episodes(connection, "[HOME]/p/atrium", 10)
+    hits = recent_episodes(connection, "[HOME]/p/mem", 10)
     connection.close()
     assert [hit.text for hit in hits] == ["episode 2", "episode 1"]
 
@@ -113,7 +113,7 @@ def test_the_snapshot_stays_inside_its_budget():
         )
         for index in range(200)
     ]
-    block = render_snapshot("[HOME]/p/atrium", hits)
+    block = render_snapshot("[HOME]/p/mem", hits)
     assert len(block) < 4200
     assert "body that must never be rendered" not in block
 
@@ -146,19 +146,19 @@ def test_a_path_is_a_path_not_a_like_pattern(tmp_path):
 
 def test_a_relative_path_names_the_same_project_as_an_absolute_one(tmp_path, monkeypatch):
     """`--project .` is the natural way to ask about the project you are in."""
-    home, root = _project(tmp_path, "p", "atrium")
+    home, root = _project(tmp_path, "p", "mem")
     (root / ".git").mkdir()
     monkeypatch.chdir(root)
-    assert project_workspace(".", home) == project_workspace(root, home) == "[HOME]/p/atrium"
+    assert project_workspace(".", home) == project_workspace(root, home) == "[HOME]/p/mem"
 
 
 def test_a_symlinked_checkout_resolves_to_its_real_project(tmp_path):
     """Records were stored under the real path; the link has to reach them."""
-    home, root = _project(tmp_path, "p", "atrium")
+    home, root = _project(tmp_path, "p", "mem")
     (root / ".git").mkdir()
     link = tmp_path / "home" / "shortcut"
     link.symlink_to(root)
-    assert project_workspace(link, home) == "[HOME]/p/atrium"
+    assert project_workspace(link, home) == "[HOME]/p/mem"
 
 
 def test_the_home_directory_is_not_a_project(tmp_path):

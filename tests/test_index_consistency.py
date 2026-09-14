@@ -135,7 +135,7 @@ def test_rewriting_an_unchanged_conversation_keeps_its_vectors(tmp_path):
         role="synthesis",
         text="an episode",
         authored_at="2026-08-01T00:00:00Z",
-        workspace="/home/me/p/atrium",
+        workspace="/home/me/p/mem",
         title="t",
         event_index=0,
     )

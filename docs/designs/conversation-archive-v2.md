@@ -1000,7 +1000,7 @@ The implementation is not releasable until these commands pass from the reposito
 
 ```bash
 cd "$HOME/p/agents" && ./scripts/check
-cd "$HOME/p/atrium" && uv run ruff check . && uv run ruff format --check . && uv run pytest tests/ -q
+cd "$HOME/p/mem" && uv run ruff check . && uv run ruff format --check . && uv run pytest tests/ -q
 cd "$HOME/p/dotfiles" && ./scripts/check
 ```
 

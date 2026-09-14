@@ -57,7 +57,7 @@
   codex export declares `complete:false` and skips two rollouts over 64 MiB
   outright; the Windsurf and Trae exporters emit zero conversations; ChatGPT
   and Grok leave no local transcript, so nothing has ever been captured from
-  them. Each is filed separately below and in `~/p/rocket-agents/TODO.md`, but
+  them. Each is filed separately below and in `~/p/agents/TODO.md`, but
   together they are the answer to "is the archive complete", and today the
   answer is no.
 
@@ -343,7 +343,7 @@
 - [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
   emits 0 conversations from its 4 database artifacts, and the Trae exporter
   emits VS Code workspace metadata instead of dialogue. Both filed in
-  `~/p/rocket-agents/TODO.md`; smallest unblock is fixing those exporters
+  `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
 
 ## Durability
@@ -380,7 +380,7 @@
   measured (OpenCode, Cursor). Atrium works around it with
   `sha256(conversation_id, event_id)`; the canonical contract should carry the
   identity itself. Also: the Windsurf exporter emits 0 conversations from 4
-  database artifacts. Filed in `~/p/rocket-agents/TODO.md`.
+  database artifacts. Filed in `~/p/agents/TODO.md`.
 - [ ] `mempalace` fork: the live palace embeds with the English-only default
   model over a ~77% Spanish corpus; switching to `embeddinggemma` (same 384
   dims, config-only) nearly doubles dense quality (R@10 40.8% -> 70.4%) at

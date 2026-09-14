@@ -254,8 +254,13 @@
   * Coverage 38 of 51 projects (75%). `staffbase-global-content` (495 conversations) and
     `smart-sales` (114) have zero memory; `atrium synthesize --project` can fill them the next
     time a lane has quota.
-  * Disk: index 20 GB, archive 5.2 GB plus one 5.2 GB backup, the retired mini MemPalace copy
-    28 GB at `~/.local/share/mempalace-macmini-retired-20260904/`, and the volume is at 94%.
+  * Disk: the 2026-09-04 measurements were index 20 GB, archive 5.2 GB plus one 5.2 GB backup,
+    and 94% used. Corrected 2026-09-14: the retired MemPalace copy is on the MacBook,
+    not the mini (`du -sk`: 27,416,464 KiB). The named path is absent on the mini;
+    its residual repository, launchers and plugins were backed up and removed there.
+    The mini still measures 96% used. The MacBook copy remains pending confirmation
+    that the owner's no-second-backup deletion exception applies to its actual location.
+    Evidence and exact before/after disk measurements: `~/p/TODO_LOG.md`, 2026-09-14.
   * A fused search measured 20 s and a `--words` search 12.5 s while the refresh was writing the
     index; re-measure idle before calling retrieval slow.
 

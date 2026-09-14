@@ -322,7 +322,7 @@ Verification:
 
 ```bash
 cd "$HOME/p/agents" && pnpm run check && \
-cd "$HOME/p/atrium" && \
+cd "$HOME/p/mem" && \
 uv run ruff check . && \
 uv run ruff format --check . && \
 uv run pytest tests/ -q && \
@@ -380,7 +380,7 @@ jq -s -e 'map(select(.reachable and .archivePresent) | .rocketAgentsCommit) | un
   "$MIGRATION/preflight/macmini.json" \
   "$MIGRATION/preflight/portatil-usb.json" \
   "$MIGRATION/preflight/portatil.json"
-cd "$HOME/p/atrium"
+cd "$HOME/p/mem"
 atrium rekey-synthesis | tee "$MIGRATION/preflight/synthesis-rekey-plan.txt"
 atrium rekey-synthesis --repair --archive "$ARCHIVE" | \
   tee "$MIGRATION/preflight/synthesis-rekey-repair-plan.txt"
@@ -485,7 +485,7 @@ pnpm run conversations:compare-semantic -- \
   --after "$MIGRATION/segments.semantic.jsonl" \
   --require-id-equality --require-event-byte-equality \
   --require-metadata-equality --require-fragment-provenance-preserved
-cd "$HOME/p/atrium"
+cd "$HOME/p/mem"
 atrium rekey-synthesis | tee "$MIGRATION/synthesis-rekey-before.txt"
 if grep -Eq 'would re-key [1-9][0-9]* records' "$MIGRATION/synthesis-rekey-before.txt"; then
   atrium rekey-synthesis --apply | tee "$MIGRATION/synthesis-rekey-apply.txt"
@@ -549,7 +549,7 @@ pnpm run conversations:recovery-drill -- \
 conversation-writers unfreeze --trigger atrium-refresh --all-peers
 conversation-writers verify-running --trigger atrium-refresh --all-peers
 pnpm run conversations:capture -- --json | tee "$MIGRATION/canary-capture.json"
-cd "$HOME/p/atrium"
+cd "$HOME/p/mem"
 atrium ingest --partial "$MIGRATION/pending-materialized.jsonl"
 for route in neo "$PORTATIL_ROUTE" macmini; do
   sync-conversations "$route" sync

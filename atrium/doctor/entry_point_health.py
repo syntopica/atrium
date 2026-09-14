@@ -12,9 +12,9 @@ from atrium.doctor.mcp_route_gaps import MCP_SCRIPT, mcp_route_gaps
 
 # The two documented ways in: the CLI the agent guidance prescribes
 # (`atrium search "<question>" --project .`) and the console script both
-# `.claude.json` files spawn as `uv run --extra mcp --directory ~/p/atrium
+# `.claude.json` files spawn as `uv run --extra mcp --directory ~/p/mem
 # atrium-mcp`. The index was all-green for weeks while the CLI existed only
-# inside `~/p/atrium/.venv`, so every session that followed the guidance got
+# inside `~/p/mem/.venv`, so every session that followed the guidance got
 # `command not found` and improvised instead -- a live memory nobody could ask.
 COMMAND = "atrium"
 
@@ -28,7 +28,7 @@ def entry_point_health(
     """Report whether a login shell would find the CLI and the MCP route is intact.
 
     The PATH examined is not the one this process inherited. Every documented
-    route to the doctor runs it under `uv run --project ~/p/atrium`, which
+    route to the doctor runs it under `uv run --project ~/p/mem`, which
     prepends the venv's `bin` -- where the console scripts exist because
     installing the project put them there. Asked of that PATH the check is
     green in precisely the state it exists to catch, so the venv's script

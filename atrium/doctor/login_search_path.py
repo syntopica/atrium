@@ -10,7 +10,7 @@ def login_search_path(search_path: str) -> str:
     """Strip the running interpreter's script directory from ``search_path``.
 
     Every documented route to this doctor runs it through `uv run --project
-    ~/p/atrium`, which prepends `.venv/bin` -- where the `atrium` console
+    ~/p/mem`, which prepends `.venv/bin` -- where the `atrium` console
     script exists by construction, because installing the project is what
     creates it. Asking whether the inherited PATH resolves `atrium` therefore
     always says yes, including throughout the outage this check exists to

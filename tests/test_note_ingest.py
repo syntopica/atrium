@@ -103,14 +103,14 @@ def test_synthesis_records_inherit_the_source_conversation_workspace(tmp_path):
 
     connection = open_store(tmp_path / "index.sqlite3")
     with connection:
-        write_conversation(connection, "conv1", [event(0, "conv1", "/home/me/p/atrium")])
+        write_conversation(connection, "conv1", [event(0, "conv1", "/home/me/p/mem")])
         # A conversation the exporter could not place has no workspace at all;
         # its synthesis must stay unscoped rather than borrow someone else's.
         write_conversation(connection, "conv2", [event(0, "conv2", None)])
     workspaces = conversation_workspaces(connection)
     connection.close()
 
-    assert workspaces == {"conv1": "/home/me/p/atrium"}
+    assert workspaces == {"conv1": "/home/me/p/mem"}
 
     def record(conversation_id):
         return {
@@ -123,7 +123,7 @@ def test_synthesis_records_inherit_the_source_conversation_workspace(tmp_path):
 
     scoped = list(to_synthesis_records(record("conv1"), workspaces.get("conv1")))
     unscoped = list(to_synthesis_records(record("conv2"), workspaces.get("conv2")))
-    assert [row.workspace for row in scoped] == ["/home/me/p/atrium"]
+    assert [row.workspace for row in scoped] == ["/home/me/p/mem"]
     assert [row.workspace for row in unscoped] == [None]
 
 

@@ -3,7 +3,7 @@
 from importlib.util import find_spec
 
 # Both `.claude.json` files spawn the server as `uv run --extra mcp --directory
-# ~/p/atrium atrium-mcp`. Every part of that line this process can honestly
+# ~/p/mem atrium-mcp`. Every part of that line this process can honestly
 # answer for lives in the installed metadata; the spawn itself cannot be
 # checked here, because the server blocks until its client speaks and runs in
 # an environment (the `mcp` extra) the doctor is not in.

@@ -150,14 +150,17 @@ def test_reading_the_archive_skips_the_manifest(tmp_path):
 def _wrapper(directory, name):
     directory.mkdir(parents=True, exist_ok=True)
     wrapper = directory / name
-    wrapper.write_text("#!/bin/sh\nexec uv run --project ~/p/atrium atrium \"$@\"\n")
+    wrapper.write_text('#!/bin/sh\nexec uv run --project ~/p/mem atrium "$@"\n')
     wrapper.chmod(0o755)
     return wrapper
 
 
 def _health(tmp_path, search_path, **overrides):
     """The MCP half held at its healthy shape, so a CLI test asserts only the CLI."""
-    fixed = {"scripts": {"atrium-mcp": "atrium.doctor.finding:Finding"}, "requirements": ["mcp>=2.1"]}
+    fixed = {
+        "scripts": {"atrium-mcp": "atrium.doctor.finding:Finding"},
+        "requirements": ["mcp>=2.1"],
+    }
     return entry_point_health(search_path, hostname="mini", **{**fixed, **overrides})
 
 
@@ -180,7 +183,7 @@ def test_a_cli_missing_from_path_names_the_machine(tmp_path):
 
 
 def test_the_venv_the_doctor_runs_under_does_not_answer_for_a_login_shell(tmp_path, monkeypatch):
-    """The regression this check exists for: `uv run --project ~/p/atrium` prepends
+    """The regression this check exists for: `uv run --project ~/p/mem` prepends
     the venv bin, where the console script exists by construction. Asked of the
     inherited PATH the check is green exactly while no caller can reach the CLI."""
     venv = tmp_path / "venv" / "bin"
@@ -229,11 +232,18 @@ def test_an_unusable_candidate_does_not_hide_a_working_wrapper_further_along(tmp
     (tmp_path / "shadow" / "atrium").mkdir(parents=True)
     _wrapper(tmp_path / "bin", "atrium")
     path = os.pathsep.join([str(tmp_path / "shadow"), str(tmp_path / "bin")])
-    assert subprocess.run(["/bin/sh", "-c", "command -v atrium"], env={"PATH": path}, check=False).returncode == 0
+    assert (
+        subprocess.run(
+            ["/bin/sh", "-c", "command -v atrium"], env={"PATH": path}, check=False
+        ).returncode
+        == 0
+    )
     finding = _health(tmp_path, path)
     assert finding.severity == "warn"
     assert finding.detail["command"] == str(tmp_path / "bin" / "atrium")
-    assert finding.detail["shadowed_by"] == [f"{tmp_path / 'shadow' / 'atrium'} is a directory, not the wrapper"]
+    assert finding.detail["shadowed_by"] == [
+        f"{tmp_path / 'shadow' / 'atrium'} is a directory, not the wrapper"
+    ]
 
 
 def test_an_uninstalled_mcp_console_script_is_broken(tmp_path):
@@ -253,7 +263,7 @@ def test_an_mcp_entry_point_naming_a_module_that_moved_is_broken(tmp_path):
 
 
 def test_an_mcp_extra_missing_from_the_installed_metadata_is_broken(tmp_path):
-    """`uv run --extra mcp --directory ~/p/atrium atrium-mcp` is what both
+    """`uv run --extra mcp --directory ~/p/mem atrium-mcp` is what both
     `.claude.json` files spawn, and uv refuses an extra it cannot find."""
     _wrapper(tmp_path / "bin", "atrium")
     finding = _health(tmp_path, str(tmp_path / "bin"), requirements=[])

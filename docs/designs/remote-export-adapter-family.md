@@ -5,7 +5,7 @@ ChatGPT and Grok leave no local transcript, and every exporter built so far
 assumes one. That assumption is hardening with each adapter that shares it;
 this records the contract a remote source needs before the next local-file
 refactor bakes the assumption into the shared capture path. Implementation
-belongs to `~/p/rocket-agents`; this copy keeps the reasoning where the
+belongs to `~/p/agents`; this copy keeps the reasoning where the
 backlog item lives (precedent: `conversation-archive-v2.md`).
 
 ## The gap

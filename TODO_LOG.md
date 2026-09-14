@@ -238,7 +238,7 @@
     conversations, because the stored workspace now differs from the new one.
   - Evidence: `tests/test_canonical_workspace.py` (7 tests, including the
     `/Users/someone-else` prefix trap); suite 133 passed. Filed upstream in
-    `~/p/rocket-agents/TODO.md`.
+    `~/p/agents/TODO.md`.
 
 - [x] 2026-09-01 — **Observability:** Fixed the staleness warning that the
   staleness reporting itself created.
@@ -394,7 +394,7 @@
     of vendor ZIPs, vendor-specific parse, then the shared redaction and
     manifest path with `complete:false` and per-source `exportedAt`
     staleness. Scraping explicitly last. Implementation filed in
-    `~/p/rocket-agents/TODO.md` (Conversations export) with the smallest
+    `~/p/agents/TODO.md` (Conversations export) with the smallest
     next step: request both exports and write the ChatGPT parser against a
     real `conversations.json`.
 
@@ -747,7 +747,7 @@
   events with texts `rule`, `code`, `folder` from `state.vscdb:ItemTable` —
   VS Code workspace metadata, not conversation. The admission gate is correct
   to drop them; the defect is the layer-1 exporter, filed in
-  `~/p/rocket-agents/TODO.md`.
+  `~/p/agents/TODO.md`.
 
 - [-] 2026-08-27 — **Refactors:** "Bounded semantic layer via admission gate
   on raw drawers" — superseded. Measured: a deterministic filter removes only

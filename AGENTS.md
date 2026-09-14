@@ -7,7 +7,7 @@ over content it does not own, and serves retrieval to agents.
 
 | layer | owner | holds |
 | --- | --- | --- |
-| 1. capture and canonical archive | `~/p/rocket-agents` | the truth: redacted, SHA-256-verified conversations |
+| 1. capture and canonical archive | `~/p/agents` | the truth: redacted, SHA-256-verified conversations |
 | 2. index, retrieval, synthesis | **this repo** | nothing irreplaceable |
 | 3. curated judgment | `~/p/brain` | hand-written notes, single human writer |
 

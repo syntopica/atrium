@@ -4,7 +4,7 @@ Design snapshot: 2026-08-31. Produced with codex over three review rounds and
 kept here because the archive spans all three layers: `rocket-agents` owns and
 implements it, Atrium ingests it, and the dotfiles transport moves it. Atrium
 does not own this format; this copy exists so the reasoning survives, and
-`~/p/rocket-agents` remains the place it is implemented.
+`~/p/agents` remains the place it is implemented.
 
 Measured before anything was designed, on the live machine:
 
@@ -181,7 +181,7 @@ Fields:
 ### 2.7 Fragment entry
 
 ```json
-{"kind":"conversation-fragment","schemaVersion":2,"conversationId":"conv-1","fragmentSha256":"df329f33409eddf1e25ca34c0e7a78e15d7b69f7d69ddf7220e80b9f01010101","record":{"schemaVersion":1,"id":"conv-1","source":"codex","sourceId":"01abc","title":"Archive design","events":[{"id":"event-1","kind":"message","role":"user","text":"Preserve this","timestamp":"2026-08-31T17:59:00.000Z"}],"provenance":{"contentSha256":"source-hash","relativePath":"sessions/example.jsonl","redactions":0},"startedAt":"2026-08-31T17:59:00.000Z","updatedAt":"2026-08-31T17:59:00.000Z","workspace":"/Users/example/p/rocket-agents"}}
+{"kind":"conversation-fragment","schemaVersion":2,"conversationId":"conv-1","fragmentSha256":"df329f33409eddf1e25ca34c0e7a78e15d7b69f7d69ddf7220e80b9f01010101","record":{"schemaVersion":1,"id":"conv-1","source":"codex","sourceId":"01abc","title":"Archive design","events":[{"id":"event-1","kind":"message","role":"user","text":"Preserve this","timestamp":"2026-08-31T17:59:00.000Z"}],"provenance":{"contentSha256":"source-hash","relativePath":"sessions/example.jsonl","redactions":0},"startedAt":"2026-08-31T17:59:00.000Z","updatedAt":"2026-08-31T17:59:00.000Z","workspace":"/Users/example/p/agents"}}
 ```
 
 Fields:
@@ -280,7 +280,7 @@ The frontier is sorted and contiguous. `peerMembership` is the materialized obse
 A live conversation is stored in normalized form so compaction removes repeated event bodies without losing fragment lineage needed for commutative replay and tombstones:
 
 ```json
-{"kind":"conversation-live-state","schemaVersion":2,"conversationId":"conv-1","source":"codex","sourceId":"01abc","fragments":[{"fragmentSha256":"df329f33409eddf1e25ca34c0e7a78e15d7b69f7d69ddf7220e80b9f01010101","title":"Archive design","events":[{"eventId":"event-1","eventSha256":"65d7752c66a3cb85f55e0cbd7fd837f079a34afbf9f21088c3feea7a02020202"}],"provenance":{"contentSha256":"source-hash","relativePath":"sessions/example.jsonl","redactions":0},"startedAt":"2026-08-31T17:59:00.000Z","updatedAt":"2026-08-31T17:59:00.000Z","workspace":"/Users/example/p/rocket-agents"}],"eventVariants":[{"eventId":"event-1","eventSha256":"65d7752c66a3cb85f55e0cbd7fd837f079a34afbf9f21088c3feea7a02020202","fragmentSha256":["df329f33409eddf1e25ca34c0e7a78e15d7b69f7d69ddf7220e80b9f01010101"],"event":{"id":"event-1","kind":"message","role":"user","text":"Preserve this","timestamp":"2026-08-31T17:59:00.000Z"}}],"eventVariantResolutions":[],"supersededEventVariantResolutionSha256":[],"removedFragmentSha256":[]}
+{"kind":"conversation-live-state","schemaVersion":2,"conversationId":"conv-1","source":"codex","sourceId":"01abc","fragments":[{"fragmentSha256":"df329f33409eddf1e25ca34c0e7a78e15d7b69f7d69ddf7220e80b9f01010101","title":"Archive design","events":[{"eventId":"event-1","eventSha256":"65d7752c66a3cb85f55e0cbd7fd837f079a34afbf9f21088c3feea7a02020202"}],"provenance":{"contentSha256":"source-hash","relativePath":"sessions/example.jsonl","redactions":0},"startedAt":"2026-08-31T17:59:00.000Z","updatedAt":"2026-08-31T17:59:00.000Z","workspace":"/Users/example/p/agents"}],"eventVariants":[{"eventId":"event-1","eventSha256":"65d7752c66a3cb85f55e0cbd7fd837f079a34afbf9f21088c3feea7a02020202","fragmentSha256":["df329f33409eddf1e25ca34c0e7a78e15d7b69f7d69ddf7220e80b9f01010101"],"event":{"id":"event-1","kind":"message","role":"user","text":"Preserve this","timestamp":"2026-08-31T17:59:00.000Z"}}],"eventVariantResolutions":[],"supersededEventVariantResolutionSha256":[],"removedFragmentSha256":[]}
 ```
 
 Fields:
@@ -598,7 +598,7 @@ for label in com.cristian.sync-all-safe com.cristian.sync-conversations com.cris
     exit 1
   fi
 done
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:locks -- --check
 "$HOME/p/dotfiles/bin/conversation-writers" verify-frozen
 ```
@@ -634,7 +634,7 @@ If the first `pgrep` reports an existing writer, wait and repeat before `bootout
 3. On one host only, create v2 with exclusive output paths:
 
    ```bash
-   cd "$HOME/p/rocket-agents"
+   cd "$HOME/p/agents"
    pnpm run conversations:migrate-v1 -- \
      --input "$HOME/.local/share/rocket-agents/conversations/archive.jsonl" \
      --output "$HOME/.local/share/rocket-agents/conversations/archive-v2" \
@@ -899,7 +899,7 @@ mkdir -p "$BENCH"
 system_profiler SPHardwareDataType > "$BENCH/hardware.txt"
 sw_vers > "$BENCH/os.txt"
 node --version > "$BENCH/node.txt"
-git -C "$HOME/p/rocket-agents" rev-parse HEAD > "$BENCH/git-sha.txt"
+git -C "$HOME/p/agents" rev-parse HEAD > "$BENCH/git-sha.txt"
 stat -f '%z' "$HOME/.local/share/rocket-agents/conversations/archive.jsonl" > "$BENCH/v1.bytes"
 shasum -a 256 "$HOME/.local/share/rocket-agents/conversations/archive.jsonl" > "$BENCH/v1.sha256"
 ```
@@ -999,7 +999,7 @@ Acceptance is zero payload bytes on an immediate post-sync dry run apart from in
 The implementation is not releasable until these commands pass from the repository roots:
 
 ```bash
-cd "$HOME/p/rocket-agents" && ./scripts/check
+cd "$HOME/p/agents" && ./scripts/check
 cd "$HOME/p/atrium" && uv run ruff check . && uv run ruff format --check . && uv run pytest tests/ -q
 cd "$HOME/p/dotfiles" && ./scripts/check
 ```

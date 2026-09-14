@@ -234,7 +234,7 @@ delete anything.
 Verification:
 
 ```bash
-cd "$HOME/p/rocket-agents" && \
+cd "$HOME/p/agents" && \
 pnpm run type-check && \
 pnpm exec tsx --test \
   scripts/lib/conversations/CONVERSATION_SEGMENT_FORMAT_TEST.ts \
@@ -258,7 +258,7 @@ measurement misses the 22.691-second one-change threshold.
 Verification:
 
 ```bash
-cd "$HOME/p/rocket-agents" && \
+cd "$HOME/p/agents" && \
 pnpm run conversations:test && \
 pnpm run conversations:benchmark-segments -- \
   --artifacts 25000 \
@@ -321,7 +321,7 @@ tests use isolated homes.
 Verification:
 
 ```bash
-cd "$HOME/p/rocket-agents" && pnpm run check && \
+cd "$HOME/p/agents" && pnpm run check && \
 cd "$HOME/p/atrium" && \
 uv run ruff check . && \
 uv run ruff format --check . && \
@@ -351,7 +351,7 @@ set -euo pipefail
 MIGRATION="$HOME/.local/state/rocket-agents/conversations/migration"
 ARCHIVE="$HOME/.local/share/rocket-agents/conversations/archive.jsonl"
 mkdir -p "$MIGRATION/preflight"
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:verify-export -- \
   --archive "$ARCHIVE" --deep --json | \
   tee "$MIGRATION/preflight/local-archive.json" | \
@@ -423,7 +423,7 @@ for pass in 1 2; do
   sync-conversations "$PEER_C_ROUTE" dry --migration-frozen --format v1 --require-zero
   sync-conversations peer-b dry --migration-frozen --format v1 --require-zero
 done
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:semantic-inventory -- \
   --archive "$HOME/.local/share/rocket-agents/conversations/archive.jsonl" \
   --output "$MIGRATION/frozen-v1.semantic.jsonl"
@@ -466,7 +466,7 @@ SEGMENTS="$HOME/.local/share/rocket-agents/conversations/segments"
 PEER_C_ROUTE=$(jq -r 'select(.reachable and .archivePresent) | .route' \
   "$MIGRATION/preflight/peer-c-usb.json" \
   "$MIGRATION/preflight/peer-c.json" | head -n 1)
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:migrate-segments -- \
   --input "$ARCHIVE" --output "$SEGMENTS" --prepare-only \
   --report "$MIGRATION/segment-migration.json"
@@ -513,7 +513,7 @@ for route in peer-a "$PEER_C_ROUTE" peer-b; do
   sync-conversations "$route" activate-generation \
     --generation "$GENERATION_ID" --migration-frozen
 done
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:verify-peers -- \
   --require-peers local,peer-a,peer-c,peer-b \
   --require-identical-generation \
@@ -541,7 +541,7 @@ MIGRATION="$HOME/.local/state/rocket-agents/conversations/migration"
 PEER_C_ROUTE=$(jq -r 'select(.reachable and .archivePresent) | .route' \
   "$MIGRATION/preflight/peer-c-usb.json" \
   "$MIGRATION/preflight/peer-c.json" | head -n 1)
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:recovery-drill -- \
   --archive "$HOME/.local/share/rocket-agents/conversations/segments" \
   --work "$MIGRATION/recovery-drill" \
@@ -555,7 +555,7 @@ for route in peer-a "$PEER_C_ROUTE" peer-b; do
   sync-conversations "$route" sync
   sync-conversations "$route" dry --require-zero
 done
-cd "$HOME/p/rocket-agents"
+cd "$HOME/p/agents"
 pnpm run conversations:benchmark-segments -- \
   --trials 5 --artifacts 25000 --changed 1 \
   --max-capture-seconds 22.691 --max-import-seconds 6.618 \
@@ -577,7 +577,7 @@ purge old generations and affected backups.
 Verification:
 
 ```bash
-cd "$HOME/p/rocket-agents" && \
+cd "$HOME/p/agents" && \
 pnpm run conversations:retention-status -- \
   --archive "$HOME/.local/share/rocket-agents/conversations/segments" \
   --legacy "$HOME/.local/share/rocket-agents/conversations/archive.jsonl" \

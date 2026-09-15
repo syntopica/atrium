@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 from urllib.parse import quote
 
+from atrium.context.ensure_context_indexes import ensure_context_indexes
 from atrium.store.schema import SCHEMA
 from atrium.store.verify_build_stamp import verify_build_stamp
 
@@ -49,4 +50,5 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
     connection.executescript(SCHEMA)
     with connection:
         verify_build_stamp(connection, stamp_if_empty=True)
+        ensure_context_indexes(connection)
     return connection

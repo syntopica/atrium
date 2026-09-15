@@ -8,6 +8,9 @@ from typing import TYPE_CHECKING, Any
 from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
 
+from atrium.context.context_from_index import context_from_index
+from atrium.context.lazy_embedder import LazyEmbedder
+from atrium.context.render_hit import render_hit
 from atrium.recall.project_workspace import project_workspace
 from atrium.recall.recent_episodes import recent_episodes
 from atrium.retrieve.hit import Hit
@@ -72,19 +75,7 @@ def _rendered(hits: list[Hit]) -> list[dict[str, Any]]:
     Never the CLI's printed form: that truncates text to fit a terminal, and an
     agent served the truncated version has no way to see what is missing.
     """
-    return [
-        {
-            "record_id": hit.record_id,
-            "text": hit.text,
-            "lane": hit.lane,
-            "score": hit.score,
-            "authored_at": hit.authored_at,
-            "provider": hit.provider,
-            "conversation_id": hit.conversation_id,
-            "source_sha256": hit.source_sha256,
-        }
-        for hit in hits
-    ]
+    return [render_hit(hit) for hit in hits]
 
 
 @mcp.tool(annotations=_READ_ONLY)
@@ -143,6 +134,32 @@ def atrium_recall(cwd: str, limit: int = 12) -> list[dict[str, Any]]:
         return _rendered(recent_episodes(connection, workspace, limit))
     finally:
         connection.close()
+
+
+@mcp.tool(annotations=_READ_ONLY)
+def atrium_context(
+    query: str,
+    project: str | None = None,
+    limit: int = 8,
+    max_chars: int = 16000,
+    lane: str = "auto",
+) -> dict[str, Any]:
+    """Retrieve scoped history, curated notes and one hop of indexed note links.
+
+    Evidence text shares max_chars (1..100000); limit (1..50) caps evidence
+    records. Provenance and warnings are additional JSON metadata. History
+    requires live verification before asserting present-day operational results.
+    """
+    return context_from_index(
+        INDEX,
+        query,
+        project=project,
+        limit=limit,
+        max_chars=max_chars,
+        lane=lane,
+        state=state_directory(),
+        embedder=LazyEmbedder(_resident_embedder),
+    )
 
 
 def main() -> None:

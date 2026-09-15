@@ -154,6 +154,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     lanes.add_argument("--words", action="store_true", help="Lexical lane only, no fusion")
     lanes.add_argument("--dense", action="store_true", help="Semantic lane only, no fusion")
 
+    prepare = subcommands.add_parser("prepare-context", help="Add derived context lookup indexes")
+    prepare.add_argument("--json", action="store_true", help="Emit preparation metadata as JSON")
+
+    context = subcommands.add_parser("context", help="Retrieve bounded project and curated context")
+    context.add_argument("query")
+    context.add_argument("--project", type=Path, default=None)
+    context.add_argument("--limit", type=_positive_limit, default=8)
+    context.add_argument("--max-chars", type=_positive_limit, default=16000)
+    context.add_argument("--lane", choices=("auto", "words", "substring", "dense"), default="auto")
+    context.add_argument(
+        "--json", action="store_true", help="Emit the shared JSON contract (default)"
+    )
+
     recall = subcommands.add_parser(
         "recall", help="Render this project's session-start recall block"
     )
@@ -221,6 +234,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
             else "auto"
         )
         return _search(args.index, args.query, args.limit, lane, args.project)
+    if args.command == "prepare-context":
+        from atrium.context.prepare_context_cli import prepare_context_cli
+
+        return prepare_context_cli(args.index)
+    if args.command == "context":
+        from atrium.context.run_context_cli import run_context_cli
+
+        try:
+            return run_context_cli(
+                args.index, args.query, args.project, args.limit, args.max_chars, args.lane, state
+            )
+        except ValueError as error:
+            parser.error(str(error))
     if args.command == "recall":
         return _recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
     return _status(

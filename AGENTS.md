@@ -24,6 +24,10 @@ rebuilds in 27 days on the system this replaces.
 - **Never write to layer 1 or layer 3.** Proposals to `brain` are files an operator
   reviews, never direct commits.
 - Never sync the index between machines. Sync the archive; each machine rebuilds.
+  The state directory sits inside the data directory (`atrium.path` of the
+  instance, see README "Where state lives") and is ignored by its repository;
+  living beside layer 3 does not make it part of layer 3, and nothing here
+  writes a page.
 - **Role `source` is the untrusted-origin mark** (saved third-party content,
   e.g. brain's `sources/`, ingested with `ingest-notes --third-party`). It must
   never enter `SEMANTIC_ROLES`, never be embedded, and never reach session-start

@@ -4,8 +4,8 @@ import os
 from collections.abc import Mapping
 from pathlib import Path
 
-from atrium.state.find_data_directory import find_data_directory
-from atrium.state.read_atrium_path import read_atrium_path
+from atrium.state.instance_directory import instance_directory
+from atrium.state.read_section_path import read_section_path
 
 
 def state_directory(
@@ -29,10 +29,7 @@ def state_directory(
     explicit = env.get("ATRIUM_STATE")
     if explicit:
         return Path(explicit).expanduser().resolve()
-    data = env.get("SYNTOPICA_DATA")
-    if data:
-        return read_atrium_path(Path(data).expanduser().resolve())
-    found = find_data_directory(Path.cwd() if cwd is None else cwd)
-    if found is not None:
-        return read_atrium_path(found)
+    data = instance_directory(env, cwd)
+    if data is not None:
+        return read_section_path(data, "atrium", "atrium")
     return (Path.home() if home is None else home) / ".atrium"

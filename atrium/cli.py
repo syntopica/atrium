@@ -12,15 +12,12 @@ from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
 from atrium.ingest.workspace_aliases import workspace_aliases
 from atrium.record import Record
+from atrium.state.archive_path import archive_path
 from atrium.state.state_directory import state_directory
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
 from atrium.store.write_conversation import UNCHANGED, write_conversation
 from atrium.synthesize.default_registry import default_registry
-
-DEFAULT_ARCHIVE = (
-    Path.home() / ".local" / "share" / "rocket-agents" / "conversations" / "archive.jsonl"
-)
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one flat parser and one return per subcommand; a dispatch table would hide the arg wiring this makes greppable
@@ -31,6 +28,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     # instance sits beside its config, never under the home directory.
     state = state_directory()
     refresh_stamp = state / "last-refresh"
+    archive = archive_path()
     parser.add_argument("--index", type=Path, default=state / "index.sqlite3")
     subcommands = parser.add_subparsers(dest="command", required=True)
 
@@ -121,7 +119,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     doctor = subcommands.add_parser(
         "doctor", help="Check whether the memory would answer from a world that still exists"
     )
-    doctor.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
+    doctor.add_argument("--archive", type=Path, default=archive)
 
     rekey = subcommands.add_parser(
         "rekey-synthesis",
@@ -133,7 +131,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         action="store_true",
         help="Ask the archive which rule each record's ids follow, rather than trusting its stamp",
     )
-    rekey.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
+    rekey.add_argument("--archive", type=Path, default=archive)
 
     search = subcommands.add_parser("search", help="Search the index")
     search.add_argument("query")
@@ -177,11 +175,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         help="Directory whose project to recall (default: the working directory)",
     )
     recall.add_argument("--limit", type=_positive_limit, default=12)
-    recall.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
+    recall.add_argument("--archive", type=Path, default=archive)
     recall.add_argument("--refresh-stamp", type=Path, default=refresh_stamp)
 
     status = subcommands.add_parser("status", help="Show what the index holds, and how stale")
-    status.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
+    status.add_argument("--archive", type=Path, default=archive)
     status.add_argument("--refresh-stamp", type=Path, default=refresh_stamp)
     status.add_argument("--synthesis-registry", type=Path, default=None)
     status.add_argument(

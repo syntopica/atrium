@@ -14,44 +14,6 @@
 
 ## Retrieval
 
-- [ ] Preserve the untrusted-origin marker in MCP results before expanding
-  automatic source following. On 2026-09-15, `atrium/adapters/mcp_server.py`
-  `_rendered` omitted `Hit.role`, while `atrium/cli.py` marked `role=source`
-  as `UNTRUSTED THIRD-PARTY TEXT`. A live `atrium_search(query="server-a SSH",
-  lane="words", limit=2)` confirmed the response keys omit origin/trust role;
-  the two returned records were ordinary conversation records, so this checks
-  the response contract, not an observed malicious-source incident. Next step:
-  add a third-party fixture across both adapters and require the origin mark
-  to survive rendering. Source content must never become agent instructions.
-
-- [ ] Evaluate operational retrieval against the Server-a mail incident (2026-09-15).
-  Reproductions run from `~/p/consumer-i`: `atrium search "Server-a SSH mail delivery logs consumer-aa" --project .`,
-  `atrium search 'info@consumer-aa.com' --project . --substring --limit 5`,
-  and `atrium search 'server-a SSH' --words --limit 5`. The broad query led with
-  billing/site-cleanup history and repeated cron findings; the address query
-  led with August account-list errors and snippets that did not show the
-  matched address. The SSH query found usable access commands at rank 2,
-  after an unrelated-looking file-list excerpt. CLI hits showed shortened
-  source/conversation IDs without a directly usable path or expansion command.
-  Smallest next step: label expected evidence for these queries, separate
-  access lookup from incident lookup, and evaluate match-centered excerpts,
-  source expansion and duplicate suppression before changing measured ranking.
-  Include curated access/runbook discovery across project boundaries and
-  surface the existing status freshness fields beside recent-incident results;
-  an index refresh alone does not establish coverage of today's send.
-  Follow-up: the CLI deliberately prints only `hit.text[:200]`, whereas MCP
-  returns complete records and reuses its embedder. The live MCP words query
-  above returned 2,387- and 955-character records in 2.143 seconds. This is a
-  single observation, not a latency benchmark or a claim of better ranking.
-  The loaded global instructions offer CLI or MCP interchangeably; the Brain
-  skill separately starts from `index.md`. Design one portable context flow
-  over configured instance paths, with bounded linked-page expansion, source
-  freshness and provenance, and explicit unknowns requiring live verification.
-  Update canonical agent guidance and the Brain skill together; verify a fresh
-  client's loaded instructions and real tool calls, not only generated files.
-  Acceptance fixture: recover access/runbook context for a missing-mail report,
-  preserve trust boundaries, and require SMTP logs before asserting delivery.
-
 - [ ] `baseline-py baseline check` reports two BPY001 findings that predate the
   state-directory work (verified 2026-09-15 by stashing it: still 2 new on a clean
   HEAD): `atrium/embed/model_repo.py` has no declaration and

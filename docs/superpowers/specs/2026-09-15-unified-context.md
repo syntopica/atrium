@@ -23,7 +23,9 @@ JSON CLI. Retrieved history never establishes a present-day operational outcome.
   dates, truncation flags, route/scope, freshness and warnings. Missing or malformed
   configuration/index metadata is explicit; an empty result is not a healthy store.
 - No arbitrary filesystem reads from retrieved links, credential retrieval,
-  external execution, database mutation, new model dependency or schema migration.
+  external execution, read-side database mutation, new model dependency or schema migration.
+  Existing stores may add rebuildable secondary indexes through the explicit
+  `prepare-context` command; canonical records must remain unchanged.
 - Resolve instance state using existing Syntopica configuration. Work without
   machine-specific paths and without a configured Brain checkout; indexed notes
   remain the retrieval source, with their revision hash clearly labelled.

@@ -259,10 +259,10 @@
     not the mini (`du -sk`: 27,416,464 KiB). The named path is absent on the mini;
     its residual repository, launchers and plugins were backed up and removed there.
     The mini still measures 96% used. During the retirement task, another operation moved
-    the MacBook copy to `~/p/brain/mem/mempalace/macmini-retired-20260904/`; its adjacent
+    the MacBook copy to `~/p/wiki/mem/mempalace/macmini-retired-20260904/`; its adjacent
     README retains it as raw material for a possible Atrium ingestion pass. The retirement
     task did not delete it or authorize ingestion. The local retirement backup also moved
-    to `~/p/brain/mem/mempalace/this-mac-retired-20260914/` and its hashes were reverified.
+    to `~/p/wiki/mem/mempalace/this-mac-retired-20260914/` and its hashes were reverified.
     Evidence and exact before/after disk measurements: `~/p/TODO_LOG.md`, 2026-09-14.
   * A fused search measured 20 s and a `--words` search 12.5 s while the refresh was writing the
     index; re-measure idle before calling retrieval slow.

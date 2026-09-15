@@ -12,21 +12,26 @@ from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
 from atrium.ingest.workspace_aliases import workspace_aliases
 from atrium.record import Record
+from atrium.state.state_directory import state_directory
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
 from atrium.store.write_conversation import UNCHANGED, write_conversation
+from atrium.synthesize.default_registry import default_registry
 
-DEFAULT_INDEX = Path.home() / ".atrium" / "index.sqlite3"
 DEFAULT_ARCHIVE = (
     Path.home() / ".local" / "share" / "rocket-agents" / "conversations" / "archive.jsonl"
 )
-REFRESH_STAMP = Path.home() / ".local" / "state" / "atrium" / "last-refresh"
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one flat parser and one return per subcommand; a dispatch table would hide the arg wiring this makes greppable
     """Parse one subcommand and run it; the adapters wrap this, never each other."""
     parser = argparse.ArgumentParser(prog="atrium", description=__doc__)
-    parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
+    # Resolved here, not at import: the instance is chosen by the environment
+    # and the working directory of this invocation, and the archive of an
+    # instance sits beside its config, never under the home directory.
+    state = state_directory()
+    refresh_stamp = state / "last-refresh"
+    parser.add_argument("--index", type=Path, default=state / "index.sqlite3")
     subcommands = parser.add_subparsers(dest="command", required=True)
 
     ingest = subcommands.add_parser("ingest", help="Index a canonical archive")
@@ -160,11 +165,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     )
     recall.add_argument("--limit", type=_positive_limit, default=12)
     recall.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
-    recall.add_argument("--refresh-stamp", type=Path, default=REFRESH_STAMP)
+    recall.add_argument("--refresh-stamp", type=Path, default=refresh_stamp)
 
     status = subcommands.add_parser("status", help="Show what the index holds, and how stale")
     status.add_argument("--archive", type=Path, default=DEFAULT_ARCHIVE)
-    status.add_argument("--refresh-stamp", type=Path, default=REFRESH_STAMP)
+    status.add_argument("--refresh-stamp", type=Path, default=refresh_stamp)
     status.add_argument("--synthesis-registry", type=Path, default=None)
     status.add_argument(
         "--coverage",
@@ -204,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     if args.command == "rekey-synthesis":
         return _rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
-        return _doctor(args.index, args.archive)
+        return _doctor(args.index, args.archive, refresh_stamp)
     if args.command == "search":
         lane = (
             "substring"
@@ -437,7 +442,6 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
     from atrium.recall.workspace_matches import workspace_matches
     from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
     from atrium.synthesize.segment_episodes import segment_episodes
-    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
 
     target = workspace
@@ -497,7 +501,7 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
 
     from atrium.synthesize.synthesis_registry import read_records
 
-    done_episodes = {record["episode_id"] for record in read_records(DEFAULT_REGISTRY)}
+    done_episodes = {record["episode_id"] for record in read_records(default_registry())}
     made = skipped = failed = 0
     total = len(conversations)
     # Once the quota window is spent nothing left in the pass can succeed:
@@ -511,7 +515,7 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
             return {"synthesized": 0, "skipped": 0, "failed": 1}
         try:
             result = synthesize_conversation(
-                conversation, call, model_id, DEFAULT_REGISTRY, done_episodes
+                conversation, call, model_id, default_registry(), done_episodes
             )
         except QuotaExhaustedError as error:
             if not quota_wall.is_set():
@@ -535,12 +539,12 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
             failed += result["failed"]
     print(
         f"  synthesized {made}, already present {skipped}, failed conversations {failed}, "
-        f"registry {DEFAULT_REGISTRY}"
+        f"registry {default_registry()}"
     )
     return 0 if failed == 0 else 1
 
 
-def _doctor(index: Path, archive: Path) -> int:
+def _doctor(index: Path, archive: Path, stamp: Path) -> int:
     """Report every coherence check, and fail when the memory is answering wrongly.
 
     Everything this looks at had already gone wrong silently: a sync eleven days
@@ -549,9 +553,8 @@ def _doctor(index: Path, archive: Path) -> int:
     they were invisible because nothing printed the right number.
     """
     from atrium.doctor.run_doctor import run_doctor
-    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
 
-    findings = run_doctor(index, archive, REFRESH_STAMP, DEFAULT_REGISTRY)
+    findings = run_doctor(index, archive, stamp, default_registry())
     mark = {"ok": "ok  ", "warn": "warn", "broken": "FAIL"}
     for finding in findings:
         print(f"  {mark[finding.severity]} {finding.check:<16} {finding.summary}")
@@ -569,13 +572,12 @@ def _rekey_synthesis(*, apply: bool, repair: bool = False, archive: Path | None 
     paid for once and cannot be regenerated for free.
     """
     from atrium.synthesize.rekey_synthesis_registry import rekey_synthesis_registry
-    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
 
     if repair:
         from atrium.synthesize.repair_mis_stamped_records import repair_mis_stamped_records
 
         assert archive is not None
-        found = repair_mis_stamped_records(DEFAULT_REGISTRY, archive, apply=apply)
+        found = repair_mis_stamped_records(default_registry(), archive, apply=apply)
         verb = "repaired" if apply else "would repair"
         print(
             f"  {verb} {found['repaired']} mis-stamped records, "
@@ -585,7 +587,7 @@ def _rekey_synthesis(*, apply: bool, repair: bool = False, archive: Path | None 
             print(f"  {found['unexplained']} cite events absent under either rule; left alone")
         return 0
 
-    report = rekey_synthesis_registry(DEFAULT_REGISTRY, apply=apply)
+    report = rekey_synthesis_registry(default_registry(), apply=apply)
     verb = "re-keyed" if apply else "would re-key"
     print(f"  {verb} {report['moved']} records, {report['already']} already current")
     if report["backup"]:
@@ -610,10 +612,10 @@ def _ingest_synthesis(index: Path) -> int:
     from atrium.ingest.to_synthesis_records import to_synthesis_records
     from atrium.synthesize.active_recipe import active_recipe_priority
     from atrium.synthesize.choose_served_records import choose_served_records
-    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY, read_records
+    from atrium.synthesize.synthesis_registry import read_records
 
     chosen = choose_served_records(
-        read_records(DEFAULT_REGISTRY), active_recipe_priority(DEFAULT_REGISTRY)
+        read_records(default_registry()), active_recipe_priority(default_registry())
     )
 
     connection = open_store(index)
@@ -672,7 +674,7 @@ def _search(index: Path, query: str, limit: int, lane: str, project: Path | None
     return 0
 
 
-def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path = REFRESH_STAMP) -> int:
+def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path) -> int:
     """Print the recall block for the project containing ``cwd``.
 
     Exit status separates the two ways of printing nothing. Zero means there is
@@ -719,7 +721,7 @@ def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path = REF
 def _status(
     index: Path,
     archive: Path,
-    stamp: Path = REFRESH_STAMP,
+    stamp: Path,
     registry: Path | None = None,
     *,
     coverage: bool = False,
@@ -797,10 +799,9 @@ def _print_populations(registry: Path | None, indexed_episodes: set[str]) -> Non
     record's output produced no index row, which is the drift worth catching.
     """
     from atrium.synthesize.population_report import population_report
-    from atrium.synthesize.synthesis_registry import DEFAULT_REGISTRY
 
     rows = population_report(
-        registry if registry is not None else DEFAULT_REGISTRY, indexed_episodes
+        registry if registry is not None else default_registry(), indexed_episodes
     )
     if not rows:
         return

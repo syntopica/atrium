@@ -3,16 +3,21 @@
 import json
 from pathlib import Path
 
+from atrium.state.state_directory import state_directory
+
 # Small, hand-maintained, and deliberately not derivable: only a person knows
 # that `p/provertly` became `p/verticagtm` rather than being deleted while an
 # unrelated project appeared. Kept beside the index rather than inside it
 # because a rebuild must not lose it -- it is a few lines a human wrote, so the
 # right place for the copy of record is the operator's dotfiles.
-DEFAULT_ALIASES = Path.home() / ".atrium" / "workspace-aliases.json"
+ALIASES_NAME = "workspace-aliases.json"
 
 
-def workspace_aliases(path: Path = DEFAULT_ALIASES) -> dict[str, str]:
+def workspace_aliases(path: Path | None = None) -> dict[str, str]:
     """Return {old workspace: current workspace}, empty when there is no file.
+
+    Without a path the file is looked for in the state directory of the
+    instance selected by the environment and working directory.
 
     A rename splits a project's memory in two exactly as a missed redaction
     does, and more quietly: `p/provertly` holds 558 conversations from
@@ -23,6 +28,8 @@ def workspace_aliases(path: Path = DEFAULT_ALIASES) -> dict[str, str]:
     aliases are a refinement, and ingest must not stop because a hand-edited
     JSON file has a trailing comma.
     """
+    if path is None:
+        path = state_directory() / ALIASES_NAME
     if not path.exists():
         return {}
     try:

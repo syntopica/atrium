@@ -12,6 +12,7 @@ from atrium.recall.project_workspace import project_workspace
 from atrium.recall.recent_episodes import recent_episodes
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.search import LANES, search
+from atrium.state.state_directory import state_directory
 from atrium.store.open_store import open_store
 
 if TYPE_CHECKING:
@@ -20,7 +21,11 @@ if TYPE_CHECKING:
 # Configurable, because this server and the CLI must be able to disagree about
 # which index they serve on purpose rather than by accident -- a second index at
 # the default path would otherwise be served silently.
-INDEX = Path(os.environ.get("ATRIUM_INDEX", Path.home() / ".atrium" / "index.sqlite3"))
+INDEX = (
+    Path(os.environ["ATRIUM_INDEX"])
+    if os.environ.get("ATRIUM_INDEX")
+    else state_directory() / "index.sqlite3"
+)
 
 # A limit is a promise about how much context the answer will spend. Left
 # unbounded, one tool call can flood the agent that asked; left unchecked, a

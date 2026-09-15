@@ -14,6 +14,12 @@
 
 ## Retrieval
 
+- [ ] `baseline-py baseline check` reports two BPY001 findings that predate the
+  state-directory work (verified 2026-09-15 by stashing it: still 2 new on a clean
+  HEAD): `atrium/embed/model_repo.py` has no declaration and
+  `atrium/ingest/decode_workspace_segment.py` carries `_descend` beside its unit.
+  Smallest step: declare `model_repo.py` a data module in `baseline-py.toml` and
+  move `_descend` to its own file, then re-run the gate.
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

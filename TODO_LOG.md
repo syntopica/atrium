@@ -6,6 +6,19 @@
 
 ### 2026-09
 
+- [x] 2026-09-15 — **Unified operational context and origin preservation:**
+  `atrium context` and MCP `atrium_context` now combine scoped history, curated
+  notes and bounded indexed links with provenance, trust, freshness and budgets.
+  Legacy MCP search/recall preserve source roles. Explicit derived-index
+  preparation preserved all 1,399,794 records; the measured automatic query
+  changed from a >90-second timeout to 10.301 seconds via CLI and 6.109 seconds
+  on a resident MCP process. Canonical guidance and the portable Brain skill
+  were deployed and verified in a fresh client: one context call recovered the
+  synthetic access/history/runbook and required current SMTP evidence.
+  Verification: `uv run --extra mcp --group quality pytest tests/ -q` passed
+  236 tests; independent review approved the final fixes. Full commands, quality
+  gate limitations and measurements: `docs/evaluations/unified-context.md`.
+
 - [x] 2026-09-08 — **Ingest / Store:** **Session scratchpads are indexed as if they were projects.** Paths like
   `/private/tmp/claude-501/-Users-cristiandeluxe-p-agents-tools/<uuid>/scratchpad`
   carry a `workspace` and become their own workspaces in the index — found

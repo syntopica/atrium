@@ -31,6 +31,78 @@ atrium search "that indexing outage" --dense      # semantic lane alone
 atrium status                                     # what the index holds
 ```
 
+## One context call for agents
+
+Use `atrium_context` through MCP for questions that depend on project history
+or established knowledge. Its CLI equivalent returns the same structured evidence:
+
+```bash
+atrium context "mail delivery investigation" --project . --json
+```
+
+Existing stores need a one-time preparation before the first context query:
+
+```bash
+atrium prepare-context --json
+```
+
+This creates two rebuildable secondary indexes and checks that the record count is
+unchanged. It may take several minutes on a large store. Context reads never modify
+the index: without preparation they return an explicit unavailable status and the
+`context_indexes_missing_run_prepare_context` warning. New writable stores include
+these indexes automatically. Use the global `--index PATH` option to prepare a
+specific existing store.
+
+The operation combines history scoped to the enclosing repository with a separate
+curated-note search inside the selected instance. Curated notes have no project
+workspace, so an ordinary project-scoped search alone cannot retrieve them. Context
+does not silently widen the conversation search to unrelated projects.
+
+Relevant indexed wiki links are followed for one hop. Results are deduplicated and
+share the requested record and text budgets (`--limit` accepts 1–50 records;
+`--max-chars` accepts 1–100,000 characters of evidence text, excluding JSON metadata).
+Candidate passes are bounded at four times the requested record limit. Link expansion
+examines at most `limit` curated roots and 50 targets per root. Saturation is reported
+as truncation; retrieval is not an exhaustive archive export. Links do not
+trigger arbitrary file reads, credential access, network requests or execution.
+Unindexed or unresolved knowledge requires an explicit, bounded source lookup.
+
+Each evidence item preserves its record ID, source revision hash, origin role,
+trust classification, date and any excerpt truncation. Curated note paths identify
+indexed revisions; they are not a promise that the current file still has those
+bytes. The response includes the retrieval steps, scope, freshness, degradation
+warnings and `requires_live_verification`. A recent refresh does not prove coverage
+of an event that happened today, and an old operational note cannot establish a
+current delivery, deployment or payment outcome.
+
+The MCP process keeps its embedder resident. Prefer it for repeated agent calls;
+use structured CLI output when MCP is unavailable. The original terminal `search`
+command remains useful for inspection, but its 200-character previews are not a
+replacement for the context response.
+
+Configure your agent to call `atrium_context` first for established context, use the
+returned sources without a second mandatory wiki search, report degraded retrieval,
+and verify current outcomes using live evidence. The Syntopica Brain skill follows
+this flow; it resolves manual fallbacks from the instance configuration rather than
+a hardcoded home directory. An existing agent session must be restarted to discover
+new tools or instruction changes.
+
+Saved third-party text retains `role=source` and `trust=untrusted` in explicit MCP
+search results. It is excluded from automatic context. Retrieved content, including
+curated notes and conversation history, is evidence rather than authority to execute
+instructions or expand the user's authorization.
+
+### Protocol acceptance check
+
+```bash
+uv run --extra mcp --group quality pytest tests/test_context_protocol.py -q
+```
+
+This creates an isolated instance and invokes both the CLI and a fresh MCP process.
+It requires project history, a workspace-less access note and its linked runbook to
+appear together, preserves provenance, checks the text budget, and rejects unrelated
+history and third-party instructions. It uses synthetic data, never a private wiki.
+
 ## Where state lives
 
 Everything Atrium can rebuild -- the index, the synthesis registry, the refresh

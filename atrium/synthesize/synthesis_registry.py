@@ -7,10 +7,6 @@ from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
 
-DEFAULT_REGISTRY = (
-    Path(os.environ.get("XDG_DATA_HOME", Path.home() / ".local" / "share")) / "atrium" / "synthesis"
-)
-
 
 def record_path(registry: Path, job_key: str) -> Path:
     """Where ``job_key``'s record lives; the key is the filename."""

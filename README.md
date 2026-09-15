@@ -31,6 +31,23 @@ atrium search "that indexing outage" --dense      # semantic lane alone
 atrium status                                     # what the index holds
 ```
 
+## Where state lives
+
+Everything Atrium can rebuild -- the index, the synthesis registry, the refresh
+stamp, the workspace aliases -- sits in one state directory, resolved once per
+invocation, most explicit source first:
+
+1. `ATRIUM_STATE`: that directory, for serving a second index on purpose.
+2. `SYNTOPICA_DATA`: a syntopica data directory; its `atrium.path` (default
+   `atrium/`, resolved against the file that declared it) is the answer.
+3. The data directory enclosing the working directory, found by walking up to
+   the nearest `syntopica.config.json` and stopping at any other repository.
+4. `~/.atrium`, for a machine with no data directory at all.
+
+The data directory is the point: an instance keeps its derived state beside the
+config that owns it, ignored by the instance's own repository and never synced.
+`ATRIUM_INDEX` still overrides the index file alone for the MCP server.
+
 ## Why the lanes stay separate
 
 `words` matches on word boundaries; `substrings` matches fragments. They answer different

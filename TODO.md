@@ -14,6 +14,22 @@
 
 ## Retrieval
 
+- [ ] Evaluate operational retrieval against the Nova mail incident (2026-09-15).
+  Reproductions run from `~/p/nubenode`: `atrium search "Nova SSH mail delivery logs webcafeina" --project .`,
+  `atrium search 'info@webcafeina.com' --project . --substring --limit 5`,
+  and `atrium search 'nova SSH' --words --limit 5`. The broad query led with
+  billing/site-cleanup history and repeated cron findings; the address query
+  led with August account-list errors and snippets that did not show the
+  matched address. The SSH query found usable access commands at rank 2,
+  after an unrelated-looking file-list excerpt. CLI hits showed shortened
+  source/conversation IDs without a directly usable path or expansion command.
+  Smallest next step: label expected evidence for these queries, separate
+  access lookup from incident lookup, and evaluate match-centered excerpts,
+  source expansion and duplicate suppression before changing measured ranking.
+  Include curated access/runbook discovery across project boundaries and
+  surface the existing status freshness fields beside recent-incident results;
+  an index refresh alone does not establish coverage of today's send.
+
 - [ ] `baseline-py baseline check` reports two BPY001 findings that predate the
   state-directory work (verified 2026-09-15 by stashing it: still 2 new on a clean
   HEAD): `atrium/embed/model_repo.py` has no declaration and

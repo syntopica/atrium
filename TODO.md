@@ -320,6 +320,21 @@
   name pattern. Smallest fix: have `drip-loop.sh` pass its pass pid to the guard and have the
   guard `kill -0` that pid, so the guard is scoped to the pass it armed for.
 
+- [ ] **One episode in 28 is a bare "structured output delivered" acknowledgement and
+  still costs a full synthesis call.** Measured over the 3,165 records the drip wrote on
+  2026-09-16 between 04:30 and 11:45: 111 have no facts, and their titles are variations of
+  "Structured output provided successfully" (18), "Structured output confirmation" (9),
+  "Structured Output Delivery Confirmation" (7)... These are the tail of a Codex subagent
+  session where the last turn is only the StructuredOutput tool call and its
+  acknowledgement, cut into an episode of its own by the segmentation. On the cursor lane
+  each such call still pays the ~24k-token fixed prompt overhead (58.2M input tokens for
+  1,640 records that day, 35k per episode). Smallest step: in the segmentation, fold an
+  episode whose only assistant content is a tool acknowledgement into the previous
+  episode; failing that, have `synthesize` skip episodes under a content-size floor and
+  record them as skipped rather than calling. Evidence: `records/*.json` with
+  `output.facts == []` from that window; the agy lane records `usage` as zeros, so its
+  cost for these is not measurable.
+
 - [ ] **Bulk synthesis moved off Codex onto the Cursor lane, 2026-09-16.** Operator
   directive: the Codex account's quota is for interactive work and must not be spent
   here; the lanes are Cursor and agy. `--producer cursor` was added (`4844757`):

@@ -331,9 +331,15 @@
   window per episode, so ~16,000 episodes before the 2026-10-10 reset. agy is blind, not
   merely walled: CodexBar reports no Antigravity limits at all (`Limits: not available`),
   so `drip-quota.py` answers 1800 for it forever and the loop would never run that lane.
+  Same day, second directive: "use agy until it breaks, forget the quota". The drip
+  (dotfiles `1d8d5ca`) now runs lanes in order, `agy cursor`: agy blind (no probe, stops at
+  its in-pass `Individual quota reached` wall), then a 3 h cooldown file `walled-agy` while
+  cursor takes the passes, then agy again. The first cursor pass lost 7 of 8 failed
+  conversations to the transcript-first prompt order (the model performed the security
+  review the transcript asked for); fixed in `0b449d1`, 1 failure in the next 35.
   Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
   per-episode cost; find why CodexBar lost the Antigravity windows (it read them on
-  2026-09-04) or give agy its own probe, or the "cursor and agy" directive is cursor only.
+  2026-09-04) so agy can be gated again instead of walled.
 
 - [ ] **The drip loop is stopped and nothing will restart it.** Killed by process group
   2026-09-08 23:37 so a `--producer max` pass could run without two producers overlapping.

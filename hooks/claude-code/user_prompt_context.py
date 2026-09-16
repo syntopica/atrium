@@ -4,12 +4,18 @@ Kept beside the hook rather than in the engine: this is one harness's injection
 format, and the shared contract it consumes is `atrium context --json`.
 """
 
+import contextlib
 import json
 import os
+import signal
 import subprocess
 import sys
 
 _MIN_PROMPT_CHARACTERS = 24
+# Five seconds, not ten. The dense lane answers in 1-3s on a 1.4M-record index,
+# and this hook is in front of every turn: a retrieval that cannot answer in
+# five has already cost more than it can return (raised by review, 2026-09-16).
+_TIMEOUT_SECONDS = "5"
 _EXCERPT_CHARACTERS = 220
 _TRUST_LABEL = {"curated": "note", "synthesized": "episode", "history": "transcript"}
 
@@ -38,6 +44,35 @@ def _line(item: dict) -> str:
     return f"- {head}\n  {_excerpt(item.get('text', ''))}"
 
 
+def _retrieved(command: list[str]) -> str:
+    """Run the retrieval in its own process group and kill the group on timeout.
+
+    `subprocess.run` with a timeout kills the child it started and returns, but
+    `atrium` spawns its own work: the timeout then left a retrieval running
+    against the index after the turn had moved on, one per prompt (raised by
+    review, 2026-09-16). A new session makes the whole tree one group to signal.
+    """
+    seconds = float(os.environ.get("ATRIUM_PROMPT_CONTEXT_TIMEOUT", _TIMEOUT_SECONDS))
+    process = subprocess.Popen(  # noqa: S603 -- fixed argv, no shell
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+        text=True,
+        start_new_session=True,
+    )
+    try:
+        out, _ = process.communicate(timeout=seconds)
+        return out
+    except subprocess.TimeoutExpired:
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(os.getpgid(process.pid), signal.SIGTERM)
+        with contextlib.suppress(subprocess.TimeoutExpired):
+            process.communicate(timeout=2)
+        with contextlib.suppress(ProcessLookupError, PermissionError):
+            os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+        raise
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
@@ -61,13 +96,7 @@ def main() -> int:
     if cwd:
         command += ["--project", cwd]
     try:
-        done = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            timeout=float(os.environ.get("ATRIUM_PROMPT_CONTEXT_TIMEOUT", "10")),
-        )
-        result = json.loads(done.stdout)
+        result = json.loads(_retrieved(command))
     except Exception:
         # A retrieval that cannot answer says nothing. The session-start block
         # already tells the session memory exists; a failure line every prompt

@@ -3,7 +3,7 @@
 import re
 
 from atrium.context.folded_text_offsets import folded_text_offsets
-from atrium.retrieve.search_words import _fold
+from atrium.retrieve.fold import fold
 
 
 def matched_excerpt(text: str, query: str, budget: int) -> tuple[str, int, int]:
@@ -12,9 +12,9 @@ def matched_excerpt(text: str, query: str, budget: int) -> tuple[str, int, int]:
         return text, 0, len(text)
     normalized, offsets = folded_text_offsets(text)
     matches = [
-        re.search(re.escape(_fold(term)), normalized, re.IGNORECASE)
+        re.search(re.escape(fold(term)), normalized, re.IGNORECASE)
         for term in [query.strip(), *query.split()]
-        if _fold(term)
+        if fold(term)
     ]
     match = next((match for match in matches if match is not None), None)
     start = 0

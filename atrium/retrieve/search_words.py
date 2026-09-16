@@ -2,13 +2,13 @@
 
 import re
 import sqlite3
-import unicodedata
-from typing import Any
 
-from atrium.retrieve.bounded_rows import bounded_rows
 from atrium.retrieve.conjunctive_expression import conjunctive_expression
+from atrium.retrieve.fold import fold
 from atrium.retrieve.hit import Hit
+from atrium.retrieve.plain_passes import plain_passes
 from atrium.retrieve.query_terms import query_terms
+from atrium.retrieve.verified_pages import verified_pages
 from atrium.retrieve.workspace_scope import workspace_clause
 
 # FTS5 bm25() returns MORE NEGATIVE values for better matches. Negating it here
@@ -32,6 +32,7 @@ def search_words(
     query: str,
     limit: int = 20,
     workspace: str | None = None,
+    exhausted: set[str] | None = None,
 ) -> list[Hit]:
     """Return records matching ``query`` on word boundaries, optionally scoped."""
     match = _match_expression(query)
@@ -40,53 +41,14 @@ def search_words(
     scope, scope_parameters = workspace_clause(workspace)
     statement = _QUERY.format(scope=scope)
     verifiers, has_plain_term = _verifiers(query)
+    conjunction = conjunctive_expression(query)
     if has_plain_term or not verifiers:
-        # Narrow pass first, then the broad one under a budget: see
-        # `conjunctive_expression` for the measurement that put it there.
-        found: list[Hit] = []
-        conjunction = conjunctive_expression(query)
-        if conjunction:
-            parameters = (conjunction, *scope_parameters, limit, 0)
-            found = _hits(connection.execute(statement, parameters).fetchall())
-        if len(found) >= limit:
-            return found[:limit]
-        seen = {hit.record_id for hit in found}
-        rows = bounded_rows(connection, statement, (match, *scope_parameters, limit, 0))
-        found.extend(hit for hit in _hits(rows) if hit.record_id not in seen)
-        return found[:limit]
-    # Every term is punctuated, so every candidate must pass an adjacency
-    # check. Paginate until enough verified hits or the candidates run out: a
-    # fixed oversample cannot guarantee recall -- with 60 spaced `3 7 0` rows
-    # ranked above the one real `3.7.0`, any finite prefetch under 61 returns
-    # nothing (reproduced by review).
-    verified: list[Hit] = []
-    offset = 0
-    while len(verified) < limit:
-        rows = connection.execute(statement, (match, *scope_parameters, _PAGE, offset)).fetchall()
-        if not rows:
-            break
-        verified.extend(
-            hit for hit in _hits(rows) if any(rx.search(_fold(hit.text)) for rx in verifiers)
+        return plain_passes(
+            connection, statement, scope_parameters, conjunction, match, limit, exhausted
         )
-        offset += _PAGE
-    return verified[:limit]
-
-
-def _hits(rows: list[Any]) -> list[Hit]:
-    return [
-        Hit(
-            record_id=row[0],
-            text=row[1],
-            score=float(row[2]),
-            lane="words",
-            conversation_id=row[3],
-            source_sha256=row[4],
-            authored_at=row[5],
-            provider=row[6],
-            role=row[7],
-        )
-        for row in rows
-    ]
+    return verified_pages(
+        connection, statement, scope_parameters, conjunction, match, limit, verifiers, exhausted
+    )
 
 
 def _match_expression(query: str) -> str:
@@ -105,7 +67,7 @@ def _verifiers(query: str) -> tuple[list[re.Pattern[str]], bool]:
     may still have matched a plain word this function cannot see.
 
     Patterns are built over diacritic-folded text and must be matched against
-    ``_fold``-ed text: the index tokenizer removes diacritics, so `café-au-lait`
+    ``fold``-ed text: the index tokenizer removes diacritics, so `café-au-lait`
     finds a stored `cafe-au-lait`, and a verifier comparing raw strings would
     silently throw that legitimate hit away (reproduced by review).
     """
@@ -119,14 +81,8 @@ def _verifiers(query: str) -> tuple[list[re.Pattern[str]], bool]:
             # The separator class is "punctuation": anything that is neither
             # whitespace nor alphanumeric. `_` must be included explicitly --
             # it counts as \w, yet it is exactly what joins snake_case parts.
-            joined = r"(?:[^\w\s]|_)+".join(re.escape(_fold(part)) for part in parts)
+            joined = r"(?:[^\w\s]|_)+".join(re.escape(fold(part)) for part in parts)
             verifiers.append(re.compile(rf"(?<!\w){joined}(?!\w)", re.IGNORECASE))
         else:
             has_plain_term = True
     return verifiers, has_plain_term
-
-
-def _fold(text: str) -> str:
-    """Strip diacritics the way the index tokenizer does (remove_diacritics 2)."""
-    decomposed = unicodedata.normalize("NFKD", text)
-    return "".join(char for char in decomposed if not unicodedata.combining(char))

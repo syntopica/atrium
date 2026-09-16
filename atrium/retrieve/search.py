@@ -21,6 +21,7 @@ def search(  # noqa: PLR0913 -- the one shared retrieval surface; every knob is 
     *,
     embedder: "Embedder | None" = None,
     workspace: str | None = None,
+    exhausted: set[str] | None = None,
 ) -> list[Hit]:
     """Return whole hits for ``query`` on ``lane``.
 
@@ -45,7 +46,7 @@ def search(  # noqa: PLR0913 -- the one shared retrieval surface; every knob is 
     if lane == "substring":
         return search_substrings(connection, query, limit, workspace)
     if lane == "words":
-        return search_words(connection, query, limit, workspace)
+        return search_words(connection, query, limit, workspace, exhausted)
 
     if embedder is None:
         from atrium.embed.embedder import Embedder

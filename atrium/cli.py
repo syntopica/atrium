@@ -768,8 +768,13 @@ def _search(index: Path, query: str, limit: int, lane: str, project: Path | None
             print(f"  {project} is in no repository, so it names no project to search")
             return 1
     connection = open_store(index, read_only=True)
-    hits = search(connection, query, limit, lane, workspace=workspace)
+    exhausted: set[str] = set()
+    hits = search(connection, query, limit, lane, workspace=workspace, exhausted=exhausted)
     connection.close()
+    if exhausted:
+        # "No matches" and "ran out of time" are the same empty list, and only
+        # one of them means the index does not hold this (raised by review).
+        print("  the word lane ran out of its time budget; results may be incomplete")
     if not hits:
         print("  no matches")
         return 0

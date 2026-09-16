@@ -245,3 +245,31 @@ def test_an_exhausted_budget_is_reported_rather_than_read_as_an_empty_index(tmp_
     # The connection survives the interruption and still answers.
     assert connection.execute("SELECT count(*) FROM records").fetchone() == (1,)
     assert isinstance(connection, sqlite3.Connection)
+
+
+def test_a_broken_index_is_not_reported_as_a_spent_budget(tmp_path):
+    """Every OperationalError used to be swallowed as "ran out of time"."""
+    import sqlite3
+
+    import pytest
+
+    from atrium.retrieve.bounded_rows import bounded_rows
+
+    connection = _store(tmp_path, [_record("one", "a stop hook")])
+    exhausted: set[str] = set()
+    with pytest.raises(sqlite3.OperationalError):
+        bounded_rows(connection, "SELECT * FROM a_table_that_is_not_here", (), exhausted)
+    assert exhausted == set()
+
+
+def test_an_all_punctuated_query_also_asks_the_narrow_question_first(tmp_path):
+    """The verifier branch kept the unbounded OR path when the plain one stopped."""
+    connection = _store(
+        tmp_path,
+        [
+            _record("both", "shipping 3.7.0 beside claude-opus-5 in one line"),
+            _record("one", "claude-opus-5 " * 50),
+        ],
+    )
+    hits = search_words(connection, "3.7.0 claude-opus-5", limit=2)
+    assert [hit.record_id for hit in hits] == ["both", "one"]

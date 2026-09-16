@@ -28,7 +28,15 @@
   cannot use `records_context_workspace_role` and `ORDER BY bm25` sorts every
   match. Smallest step: measure a positive role predicate (an explicit IN list
   of history roles) against the existing index, then decide whether the CTE
-  should be replaced by a join.
+  should be replaced by a join. Re-measured 2026-09-16 after the AND-first
+  change: the CTE is already the faster shape -- 2.21s against 4.99s for the
+  same predicate written as a plain join -- so what is left is `ORDER BY bm25`
+  over the whole match set, not the CTE. The per-pass budgets in
+  `atrium/context/lexical_hits.py` are 3000ms narrow and 1200ms broad because a
+  scoped AND pass measured 2.2s and a 2000ms budget cut it off, reporting
+  `lexical_budget_exhausted` on a query that does have an answer. `--lane auto`
+  therefore costs up to ~10s on this corpus, which is why the UserPromptSubmit
+  hook asks for `--lane dense`.
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

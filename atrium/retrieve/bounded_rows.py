@@ -34,12 +34,26 @@ def bounded_rows(
     ``exhausted`` for the caller to surface, never swallowed.
     """
     deadline = time.monotonic() + milliseconds / 1000
-    connection.set_progress_handler(
-        lambda: 1 if time.monotonic() > deadline else 0, _INSTRUCTIONS_PER_CHECK
-    )
+    interrupted = False
+
+    def expired() -> int:
+        # The flag, not the exception message, is what says this deadline fired.
+        # SQLite raises the same OperationalError for a locked database, a
+        # missing table and a schema change, and catching all of them as "out of
+        # time" turns a broken index into a silent empty answer (raised by
+        # review, 2026-09-16).
+        nonlocal interrupted
+        if time.monotonic() <= deadline:
+            return 0
+        interrupted = True
+        return 1
+
+    connection.set_progress_handler(expired, _INSTRUCTIONS_PER_CHECK)
     try:
         return connection.execute(statement, parameters).fetchall()
     except sqlite3.OperationalError:
+        if not interrupted:
+            raise
         if exhausted is not None:
             exhausted.add("lexical_budget_exhausted")
         return []

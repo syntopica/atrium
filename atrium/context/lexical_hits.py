@@ -8,6 +8,13 @@ from atrium.retrieve.conjunctive_expression import conjunctive_expression
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.search_words import _match_expression, _verifiers
 
+# The narrow pass gets the larger share because it is the one that usually
+# answers, and under the context scope it is not cheap: measured 2.2s for
+# `"stop" AND "hook" AND "json"` over 1,414,461 records with the workspace CTE,
+# which a 2s budget cut off mid-answer and reported as nothing found.
+_NARROW_BUDGET = 3000
+_BROAD_BUDGET = 1200
+
 
 def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
     connection: sqlite3.Connection,
@@ -56,7 +63,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
     # history scope and 15s for the curated one on a 1,414,461-record index,
     # against 0.36s for the same expression unscoped -- so an unbounded narrow
     # pass would hand back the hang the broad one no longer has.
-    for expression in (conjunction, match):
+    for expression, milliseconds in ((conjunction, _NARROW_BUDGET), (match, _BROAD_BUDGET)):
         if not expression or len(found) == limit:
             continue
         found += lexical_pages(
@@ -71,5 +78,6 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
             seen=seen,
             exhausted=exhausted if exhausted is not None else set(),
             bounded=True,
+            milliseconds=milliseconds,
         )
     return found

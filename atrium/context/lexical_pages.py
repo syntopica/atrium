@@ -4,8 +4,9 @@ import sqlite3
 from typing import Any
 
 from atrium.retrieve.bounded_rows import bounded_rows
+from atrium.retrieve.fold import fold
 from atrium.retrieve.hit import Hit
-from atrium.retrieve.search_words import _fold, _hits
+from atrium.retrieve.hits_from_rows import hits_from_rows
 
 _PAGE = 200
 
@@ -23,6 +24,7 @@ def lexical_pages(  # noqa: PLR0913, PLR0917 -- one paging pass, fully parameter
     seen: set[str],
     bounded: bool,
     exhausted: set[str],
+    milliseconds: int,
 ) -> list[Hit]:
     """Return up to ``limit`` hits, skipping what ``seen`` already holds.
 
@@ -36,7 +38,7 @@ def lexical_pages(  # noqa: PLR0913, PLR0917 -- one paging pass, fully parameter
     while True:
         arguments = (*parameters, expression, page_size, offset)
         rows = (
-            bounded_rows(connection, statement, arguments, exhausted)
+            bounded_rows(connection, statement, arguments, exhausted, milliseconds)
             if bounded
             else connection.execute(statement, arguments).fetchall()
         )
@@ -44,10 +46,10 @@ def lexical_pages(  # noqa: PLR0913, PLR0917 -- one paging pass, fully parameter
             return found
         offset += page_size
         for row in rows:
-            hit = _hits([row])[0]
+            hit = hits_from_rows([row])[0]
             if hit.record_id in seen:
                 continue
-            if verify and not any(rx.search(_fold(hit.text)) for rx in verifiers):
+            if verify and not any(rx.search(fold(hit.text)) for rx in verifiers):
                 continue
             seen.add(hit.record_id)
             found.append(

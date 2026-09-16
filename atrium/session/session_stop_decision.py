@@ -42,12 +42,10 @@ def session_stop_decision(
     if active or context.scan.prompts_after == 0:
         return None
     consumed = context.consumed
-    baseline_offset = int(consumed["offset"]) if consumed else 0
     baseline_at = (
         consumed.get("at") if consumed else normalize_timestamp(context.scan.first_at or "")
     )
-    new_bytes = context.scan.size - baseline_offset
-    if not over_stop_limits(new_bytes, baseline_at, now or datetime.now(UTC)):
+    if not over_stop_limits(context.scan.new_bytes, baseline_at, now or datetime.now(UTC)):
         return None
     checkpoint = frozen_checkpoint(context.session_id, context.scan, baseline_at)
     if checkpoint is None:

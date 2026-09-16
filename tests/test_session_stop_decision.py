@@ -43,8 +43,7 @@ def _big_session(transcript):
     """Enough transcript to cross the byte limit, with a prompt and an answer."""
     transcript.append(
         T.prompt("u1", "please do the thing", "2026-09-16T11:00:00Z"),
-        T.attachment("2026-09-16T11:00:01Z"),
-        T.answer("a1", "done", "2026-09-16T11:05:00Z"),
+        T.answer("a1", "done " * 8_000, "2026-09-16T11:05:00Z"),
     )
 
 
@@ -73,10 +72,21 @@ def test_silent_under_the_limits_and_without_a_prompt(tmp_path):
     )
     assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
     # Aged but tiny: still silent; aged and over the small limit: refused.
-    transcript.append(T.attachment("2026-09-16T11:59:02Z", size=5_000))
+    transcript.append(T.answer("a2", "x" * 5_000, "2026-09-16T11:59:02Z"))
     assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
     later = datetime(2026, 9, 16, 12, 40, tzinfo=UTC)
     assert session_stop_decision(_payload(cwd, transcript), environ, later) is not None
+
+
+def test_attachments_and_snapshots_do_not_count_as_new_work(tmp_path):
+    """A re-read of the instruction files after compaction is not an episode."""
+    cwd, transcript, environ = _session(tmp_path)
+    transcript.append(
+        T.prompt("u1", "status?", "2026-09-16T11:59:00Z"),
+        T.attachment("2026-09-16T11:59:01Z", size=100_000),
+        T.answer("a1", "fine", "2026-09-16T11:59:02Z"),
+    )
+    assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
 
 
 def test_silent_for_scratch_sdk_subagent_and_opted_out_sessions(tmp_path):

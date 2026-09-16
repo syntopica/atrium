@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 
+from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.state.state_directory import state_directory
 
 # Small, hand-maintained, and deliberately not derivable: only a person knows
@@ -13,8 +14,11 @@ from atrium.state.state_directory import state_directory
 ALIASES_NAME = "workspace-aliases.json"
 
 
-def workspace_aliases(path: Path | None = None) -> dict[str, str]:
-    """Return {old workspace: current workspace}, empty when there is no file.
+def workspace_aliases(path: Path | None = None) -> dict[str, WorkspaceAlias]:
+    """Return {old workspace: alias}, empty when there is no file.
+
+    An entry is either the current name, or ``{"to": name, "until": date}``
+    when the old directory was reused after that date.
 
     Without a path the file is looked for in the state directory of the
     instance selected by the environment and working directory.
@@ -38,4 +42,14 @@ def workspace_aliases(path: Path | None = None) -> dict[str, str]:
         return {}
     if not isinstance(loaded, dict):
         return {}
-    return {str(old): str(new) for old, new in loaded.items() if old and new}
+    aliases = {}
+    for old, new in loaded.items():
+        if not old or not new:
+            continue
+        if isinstance(new, dict):
+            if not new.get("to"):
+                continue
+            aliases[str(old)] = WorkspaceAlias(str(new["to"]), new.get("until") or None)
+        else:
+            aliases[str(old)] = WorkspaceAlias(str(new))
+    return aliases

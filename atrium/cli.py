@@ -528,7 +528,12 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
             conversation
             for conversation in conversations
             if workspace_matches(
-                canonical_workspace(conversation.get("workspace"), aliases=aliases), target
+                canonical_workspace(
+                    conversation.get("workspace"),
+                    aliases=aliases,
+                    started_at=conversation.get("startedAt"),
+                ),
+                target,
             )
         ]
         print(f"  {len(conversations)} conversations in {target}")

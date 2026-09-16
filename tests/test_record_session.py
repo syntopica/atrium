@@ -34,8 +34,7 @@ def _frozen(tmp_path):
     (cwd / ".git").mkdir()
     transcript = T(tmp_path / "s1.jsonl").append(
         T.prompt("u1", "do it", "2026-09-16T11:00:00Z"),
-        T.attachment("2026-09-16T11:00:01Z"),
-        T.answer("a1", "done", "2026-09-16T11:05:00Z"),
+        T.answer("a1", "done " * 8_000, "2026-09-16T11:05:00Z"),
     )
     environ = {"ATRIUM_STATE": str(tmp_path / "state")}
     payload = {"session_id": "s1", "transcript_path": str(transcript.path), "cwd": str(cwd)}

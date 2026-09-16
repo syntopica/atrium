@@ -9,6 +9,7 @@ month.
 import json
 
 from atrium.ingest.canonical_workspace import canonical_workspace
+from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.ingest.workspace_aliases import workspace_aliases
 
 ALIASES = {"[HOME]/p/provertly": "[HOME]/p/verticagtm"}
@@ -62,4 +63,16 @@ def test_a_hand_edited_file_that_does_not_parse_never_stops_an_ingest(tmp_path):
 def test_a_valid_file_is_read(tmp_path):
     path = tmp_path / "aliases.json"
     path.write_text(json.dumps(ALIASES))
-    assert workspace_aliases(path) == ALIASES
+    assert workspace_aliases(path) == {"[HOME]/p/provertly": WorkspaceAlias("[HOME]/p/verticagtm")}
+
+
+def test_a_dated_alias_stops_at_its_date(tmp_path):
+    """`p/brain` was the wiki until 2026-09-14 and the public engine after."""
+    path = tmp_path / "aliases.json"
+    path.write_text(json.dumps({"[HOME]/p/brain": {"to": "[HOME]/p/wiki", "until": "2026-09-14"}}))
+    aliases = workspace_aliases(path)
+    assert aliases == {"[HOME]/p/brain": WorkspaceAlias("[HOME]/p/wiki", "2026-09-14")}
+    before = canonical_workspace("[HOME]/p/brain", HOME, aliases, "2026-09-13T23:59:00Z")
+    after = canonical_workspace("[HOME]/p/brain/x", HOME, aliases, "2026-09-16T10:00:00Z")
+    undated = canonical_workspace("[HOME]/p/brain", HOME, aliases)
+    assert (before, after, undated) == ("[HOME]/p/wiki", "[HOME]/p/brain/x", "[HOME]/p/wiki")

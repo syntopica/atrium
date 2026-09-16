@@ -1,10 +1,12 @@
 """One spelling per project, so a project's memory is not split in two."""
 
+from collections.abc import Mapping
 from pathlib import Path
 
 from atrium.ingest.apply_workspace_aliases import apply_workspace_aliases
 from atrium.ingest.decode_workspace_segment import decode_workspace_segment
 from atrium.ingest.session_scratchpad_segment import session_scratchpad_segment
+from atrium.ingest.workspace_alias import WorkspaceAlias
 
 # The exporter redacts the user's home directory to this before archiving, and
 # `project_workspace` resolves a live cwd to the same form. Anything still
@@ -15,14 +17,16 @@ _HOME = "[HOME]"
 def canonical_workspace(
     workspace: str | None,
     home: str | Path | None = None,
-    aliases: dict[str, str] | None = None,
+    aliases: Mapping[str, str | WorkspaceAlias] | None = None,
+    started_at: str | None = None,
 ) -> str | None:
     """Return ``workspace`` in the one spelling this project answers to.
 
     Three things keep a project's memory from answering, and all are folded
     here: a home directory the exporter failed to redact, a rename, and a
     per-session scratchpad standing in for the project it was working on.
-    ``aliases`` maps an old workspace to the current one.
+    ``aliases`` maps an old workspace to the current one; a dated alias is
+    skipped for a conversation whose ``started_at`` is on or after its date.
 
     Measured 2026-09-01: 29 projects were present in the index under *both*
     spellings, and 4,053 conversations sat under the unredacted one. Since
@@ -66,4 +70,4 @@ def canonical_workspace(
     prefix = root.rstrip("/") + "/"
     if workspace.startswith(prefix):
         workspace = _HOME + "/" + workspace[len(prefix) :]
-    return apply_workspace_aliases(workspace, aliases or {})
+    return apply_workspace_aliases(workspace, aliases or {}, started_at)

@@ -26,9 +26,9 @@ def scan_transcript(path: Path, from_offset: int = 0) -> TranscriptScan:
         head = handle.read(_HEAD_BYTES).decode("utf-8", "replace")
     entrypoint = _ENTRYPOINT.search(head)
     first_at = _TIMESTAMP.search(head)
-    boundary, model, prompts = walk_transcript(path, min(from_offset, size))
+    boundary, model, prompts, new_bytes = walk_transcript(path, min(from_offset, size))
     if boundary is None and from_offset > 0:
-        boundary, model, _ = walk_transcript(path, 0)
+        boundary, model, _, _ = walk_transcript(path, 0)
     return TranscriptScan(
         size=size,
         entrypoint=entrypoint.group(1) if entrypoint else None,
@@ -36,4 +36,5 @@ def scan_transcript(path: Path, from_offset: int = 0) -> TranscriptScan:
         boundary=boundary,
         model=model,
         prompts_after=prompts,
+        new_bytes=new_bytes,
     )

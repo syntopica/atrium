@@ -335,16 +335,13 @@
   to three sentences and the contract moved to `record-session --help` (recipe-2).
   Remaining: the retry accounting has only unit tests; decide
   whether `claude -p` sessions should be excluded outright (they are `entrypoint: cli`);
-  put `session-*` populations first in `active-recipe.json` once a few exist; document
-  the hook in the syntopica hub's install procedure for single-account users.
-
-- [ ] **Sessions in `~/p/brain` (the engine since 2026-09-14) are indexed as `[HOME]/p/wiki`.**
-  `workspace-aliases.json` maps `[HOME]/p/brain` to `[HOME]/p/wiki` because the wiki lived
-  there until the rename; the alias has no date, so the engine's own sessions (archive
-  workspace `[HOME]/p/brain`, e.g. conversation `06eea4d6...` of 2026-09-16) become wiki
-  memory, and `atrium recall --cwd ~/p/brain` answers nothing while `--cwd ~/p/wiki` lists
-  them. Smallest step: apply the alias only to conversations started before 2026-09-14
-  (aliases need a `since`/`until`), or drop it and re-alias the old ones by date once.
+  put `session-*` populations first in `active-recipe.json` once a few exist. 2026-09-16 pm:
+  the hub documents the hook (syntopica `c207031`); the refusal carries a `systemMessage`
+  and `suppressOutput` (`3433fbf`) but this Claude Code build still prints the whole
+  reason as "Stop hook blocking error" (claude-code #50542), so the person-facing line
+  waits on upstream; the byte limit now counts user and assistant records only, after a
+  post-compaction instruction re-read (attachments, ~100 KiB) tripped it on a one-line
+  status turn.
 
 - [ ] **One episode in 28 is a bare "structured output delivered" acknowledgement and
   still costs a full synthesis call.** Measured over the 3,165 records the drip wrote on
@@ -404,16 +401,6 @@
   itself (a signal handler that kills the in-flight groups) so the reaping is not the
   drip's job; find why CodexBar lost the Antigravity windows (it read them on
   2026-09-04) so agy can be gated again instead of walled.
-
-- [ ] **The drip loop is stopped and nothing will restart it.** Killed by process group
-  2026-09-08 23:37 so a `--producer max` pass could run without two producers overlapping.
-  It is started by hand, not by a LaunchAgent (`~/Library/LaunchAgents` has only
-  `com.cristian.atrium-refresh`), so it stays down until someone runs
-  `nohup ~/.local/share/atrium/synthesis/drip-loop.sh >/dev/null 2>&1 &`. It was producing
-  nothing at the time -- four consecutive days of `sleeping 86400s` against the Gemini weekly
-  wall -- so nothing was lost, but a producer that only ever runs because a human remembers is
-  the same class of gap as the guard above. Either give it a LaunchAgent or accept it as a
-  manual lane and say so where the operator will read it.
 
 ## Measurement
 

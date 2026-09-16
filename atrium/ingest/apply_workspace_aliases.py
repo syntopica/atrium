@@ -1,7 +1,15 @@
 """Fold a renamed project onto the name it has now."""
 
+from collections.abc import Mapping
 
-def apply_workspace_aliases(workspace: str, aliases: dict[str, str]) -> str:
+from atrium.ingest.workspace_alias import WorkspaceAlias
+
+
+def apply_workspace_aliases(
+    workspace: str,
+    aliases: Mapping[str, str | WorkspaceAlias],
+    started_at: str | None = None,
+) -> str:
     """Return ``workspace`` under its current name, subdirectories included.
 
     A rename splits memory the same way a missed redaction does, and more
@@ -12,11 +20,19 @@ def apply_workspace_aliases(workspace: str, aliases: dict[str, str]) -> str:
     Longest alias first, so a nested rename cannot be shadowed by a shorter one
     that also matches, and the boundary is a path separator, so
     `p/consumer-pv-archive` is its own project rather than part of the rename.
+
+    A dated alias applies only to conversations started before its ``until``;
+    with no start date known it applies, as an undated one does.
     """
     for old in sorted(aliases, key=len, reverse=True):
+        alias = aliases[old]
+        if isinstance(alias, str):
+            alias = WorkspaceAlias(alias)
+        if alias.until and started_at and started_at[:10] >= alias.until:
+            continue
         root = old.rstrip("/")
         if workspace == root:
-            return aliases[old]
+            return alias.to
         if workspace.startswith(root + "/"):
-            return aliases[old].rstrip("/") + workspace[len(root) :]
+            return alias.to.rstrip("/") + workspace[len(root) :]
     return workspace

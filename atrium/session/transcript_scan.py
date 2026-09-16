@@ -15,3 +15,6 @@ class TranscriptScan:
     boundary: TranscriptBoundary | None
     model: str | None
     prompts_after: int
+    # Bytes of user and assistant records after the consumed offset; never
+    # the file growth, which attachments and snapshots dominate.
+    new_bytes: int

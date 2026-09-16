@@ -6,6 +6,17 @@
 
 ### 2026-09
 
+- [x] 2026-09-16 — **`~/p/brain` sessions no longer filed as wiki memory:** the alias
+  file accepts `{"to": ..., "until": "YYYY-MM-DD"}` and `canonical_workspace` skips a
+  dated alias for a conversation started on or after the date (`startedAt`); the wiki
+  instance dates `[HOME]/p/brain -> [HOME]/p/wiki` at 2026-09-14. Verified by
+  `tests/test_workspace_aliases.py::test_a_dated_alias_stops_at_its_date` and a
+  re-ingest of the archive.
+- [-] 2026-09-16 — **"The drip loop is stopped and nothing will restart it"** was
+  superseded: the loop has run by hand as `~/p/dotfiles/bin/atrium-drip/drip-loop.sh`
+  (lanes agy then cursor, guard `drip-guard.sh 1800`) since 2026-09-16 11:15. It is
+  still a manual lane with no LaunchAgent; that is now the documented state in
+  `atrium-drip/README.md`, not a gap.
 - [x] 2026-09-16 — **History rewritten for the public repository:** `git
   filter-repo` dropped `TODO_HISTORY_INDEX.jsonl` from every commit and
   replaced home paths, the work email, the second Claude profile name and the

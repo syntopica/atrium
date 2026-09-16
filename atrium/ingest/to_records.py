@@ -1,12 +1,13 @@
 """Turn one canonical conversation into retrievable records."""
 
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from typing import Any
 
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.record_identity import record_identity
+from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.record import Record
 
 # Roles that carry conversation. Everything else in an archive event stream is
@@ -33,7 +34,7 @@ _ACKNOWLEDGEMENT = re.compile(
 def to_records(
     conversation: dict[str, Any],
     tally: AdmissionTally | None = None,
-    aliases: dict[str, str] | None = None,
+    aliases: Mapping[str, str | WorkspaceAlias] | None = None,
 ) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
@@ -51,7 +52,9 @@ def to_records(
         raise ValueError("conversation lacks id or provenance.contentSha256")
 
     provider = conversation.get("source") or "unknown"
-    workspace = canonical_workspace(conversation.get("workspace"), aliases=aliases)
+    workspace = canonical_workspace(
+        conversation.get("workspace"), aliases=aliases, started_at=conversation.get("startedAt")
+    )
     title = conversation.get("title")
 
     for index, event in enumerate(conversation.get("events") or []):

@@ -320,6 +320,21 @@
   name pattern. Smallest fix: have `drip-loop.sh` pass its pass pid to the guard and have the
   guard `kill -0` that pid, so the guard is scoped to the pass it armed for.
 
+- [ ] **Bulk synthesis moved off Codex onto the Cursor lane, 2026-09-16.** Operator
+  directive: the Codex account's quota is for interactive work and must not be spent
+  here; the lanes are Cursor and agy. `--producer cursor` was added (`4844757`):
+  `cursor-agent -p --mode ask --output-format json`, prompt on stdin, last balanced JSON
+  object dug out of the envelope, population `cursor-<model>`. Bench in
+  `docs/studies/cursor-lane-bench.md`: `gpt-5.3-codex-low` at 0 fabrications and 15-23 s
+  per episode; `cursor-gpt-5.3-codex-low` appended last in `active-recipe.json`;
+  `lane.env` in dotfiles switched to it. Measured in aggregate, ~0.005% of the monthly
+  window per episode, so ~16,000 episodes before the 2026-10-10 reset. agy is blind, not
+  merely walled: CodexBar reports no Antigravity limits at all (`Limits: not available`),
+  so `drip-quota.py` answers 1800 for it forever and the loop would never run that lane.
+  Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
+  per-episode cost; find why CodexBar lost the Antigravity windows (it read them on
+  2026-09-04) or give agy its own probe, or the "cursor and agy" directive is cursor only.
+
 - [ ] **The drip loop is stopped and nothing will restart it.** Killed by process group
   2026-09-08 23:37 so a `--producer max` pass could run without two producers overlapping.
   It is started by hand, not by a LaunchAgent (`~/Library/LaunchAgents` has only

@@ -12,7 +12,7 @@ from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 # The model the lane runs when none is pinned. Chosen by the bench in
 # docs/studies/cursor-lane-bench.md; a different model is a different
 # population, because the model name enters the job key.
-CURSOR_DEFAULT_MODEL = "gemini-3.7-flash-high"
+CURSOR_DEFAULT_MODEL = "gpt-5.3-codex-low"
 
 # The prompt rides on stdin, not argv, and the pipe still has a cliff: the
 # clips pipeline measured 640 KB answering and 800 KB returning an empty

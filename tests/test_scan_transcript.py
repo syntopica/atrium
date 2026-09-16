@@ -50,3 +50,19 @@ def test_sdk_entrypoint_is_reported(tmp_path):
     path = tmp_path / "t.jsonl"
     T(path, entrypoint="sdk-py").append(T.prompt("u1", "x", "2026-09-16T10:00:00Z"))
     assert scan_transcript(path).entrypoint == "sdk-py"
+
+
+def test_a_long_record_whose_type_comes_after_the_message_is_still_the_boundary(tmp_path):
+    """Claude Code writes `type` after `message`; a prefix check missed 10.9 MB of a real session."""
+    path = tmp_path / "t.jsonl"
+    T(path).append(T.prompt("u1", "start", "2026-09-16T10:00:00Z"))
+    long = {
+        "parentUuid": "u1",
+        "message": {"role": "assistant", "model": "claude-fable-5-1", "content": "z" * 20_000},
+        "type": "assistant",
+        "uuid": "a-long",
+        "timestamp": "2026-09-16T10:09:00Z",
+    }
+    T(path).append(long)
+    scan = scan_transcript(path)
+    assert scan.boundary is not None and scan.boundary.uuid == "a-long"

@@ -4,7 +4,9 @@ import json
 import re
 from typing import Any
 
-_ELIGIBLE = re.compile(r'"type"\s*:\s*"(user|assistant)"')
+# Bytes, over the whole line: Claude Code writes `type` after `message` on
+# assistant records, so a prefix check misses exactly the long ones.
+_ELIGIBLE = re.compile(rb'"type"\s*:\s*"(user|assistant)"')
 
 
 def eligible_transcript_record(line: bytes) -> dict[str, Any] | None:
@@ -14,7 +16,7 @@ def eligible_transcript_record(line: bytes) -> dict[str, Any] | None:
     is mostly attachments and snapshots, and parsing every line on every Stop
     is what would make the hook slow.
     """
-    if not _ELIGIBLE.search(line.decode("utf-8", "replace")[:4096]):
+    if not _ELIGIBLE.search(line):
         return None
     try:
         record = json.loads(line)

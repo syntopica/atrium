@@ -346,8 +346,18 @@
   3 workers). `cursor-agent` leaves an `index.js worker-server` orphan per call: 38 of them
   held 7.4 GB after an hour; fixed by running the CLI in its own session and killing the
   group after each call (`run_cursor_in_own_session`).
+  agy's retry at 08:59 hit the wall on its first call ("Resets in 22m43s"): the fixed
+  3 h cooldown outlasted the reset, so the loop now parses "Resets in" into the cooldown
+  (dotfiles `a1061dc`). Stopping that loop showed `timeout` runs the pass in its own
+  process group: the agy pass outlived the loop by 14 min beside the new cursor pass
+  (two producers at once, the thing the lock exists to prevent), and the killed pass
+  left its `cursor-agent` sessions with parent pid 1 because SIGTERM skips `finally`.
+  The loop's trap now kills the pass group and reaps those orphans after every pass
+  (`aa39731`, `1f803e9`).
   Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
-  per-episode cost; find why CodexBar lost the Antigravity windows (it read them on
+  per-episode cost; make a SIGTERM to `atrium synthesize` end its cursor-agent sessions
+  itself (a signal handler that kills the in-flight groups) so the reaping is not the
+  drip's job; find why CodexBar lost the Antigravity windows (it read them on
   2026-09-04) so agy can be gated again instead of walled.
 
 - [ ] **The drip loop is stopped and nothing will restart it.** Killed by process group

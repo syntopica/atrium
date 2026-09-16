@@ -129,8 +129,13 @@ def test_lexical_plan_constrains_fts_rowids_before_reading_bodies(corpus):
     query = next(statement for statement in statements if "WITH eligible" in statement)
     plan = connection.execute("EXPLAIN QUERY PLAN " + query).fetchall()
     assert any("MATERIALIZE eligible" in row[3] for row in plan)
-    # FTS5 '=' means rowid equality is pushed into the virtual table scan.
-    assert any("VIRTUAL TABLE INDEX" in row[3] and "=" in row[3] for row in plan)
+    # The scope reaches the FTS table as a join, never as `rowid IN (...)`.
+    # FTS5 answers a rowid-equality constraint by re-running the match query per
+    # candidate rowid, and the plan says so with `VIRTUAL TABLE INDEX 0:=M1`
+    # rather than `0:M1`: measured 13.57s against 0.04s for the same curated
+    # query on a 1,414,461-record index (2026-09-16).
+    assert not any("VIRTUAL TABLE INDEX 0:=" in row[3] for row in plan)
+    assert any("SCAN e" in row[3] or "SEARCH e" in row[3] for row in plan)
 
 
 def test_broad_terms_do_not_fetch_irrelevant_record_bodies(corpus):

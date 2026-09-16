@@ -45,6 +45,10 @@ def lexical_pages(  # noqa: PLR0913, PLR0917 -- one paging pass, fully parameter
         if not rows:
             return found
         offset += page_size
+        # A short page is the last page. Asking for the next one costs another
+        # full execution of the same statement -- measured at 0.32s against the
+        # curated scope on a 1,414,461-record index, for rows that cannot exist.
+        last_page = len(rows) < page_size
         for row in rows:
             hit = hits_from_rows([row])[0]
             if hit.record_id in seen:
@@ -67,3 +71,5 @@ def lexical_pages(  # noqa: PLR0913, PLR0917 -- one paging pass, fully parameter
             )
             if len(found) == limit:
                 return found
+        if last_page:
+            return found

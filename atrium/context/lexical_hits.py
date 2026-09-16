@@ -7,11 +7,13 @@ from atrium.context.lexical_pages import lexical_pages
 from atrium.retrieve.conjunctive_expression import conjunctive_expression
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.search_words import _match_expression, _verifiers
+from atrium.retrieve.selective_expression import selective_expression
 
-# The narrow pass gets the larger share because it is the one that usually
-# answers, and under the context scope it is not cheap: measured 2.2s for
-# `"stop" AND "hook" AND "json"` over 1,414,461 records with the workspace CTE,
-# which a 2s budget cut off mid-answer and reported as nothing found.
+# The narrow pass gets the larger share because it is the one that answers.
+# Measured on 1,417,899 records after the scope became a join: the same
+# `"stop" AND "hook" AND "json"` costs 0.31s against the curated scope and 0.00s
+# against a workspace, so 3s is headroom rather than a working budget. The broad
+# pass keeps the smaller share because it usually spends all of it.
 _NARROW_BUDGET = 3000
 _BROAD_BUDGET = 1200
 
@@ -43,8 +45,10 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
         )
         SELECT r.record_id, r.text, -bm25({table}), r.conversation_id,
                r.source_sha256, r.authored_at, r.provider, r.role
-        FROM {table} JOIN records r ON r.rowid = {table}.rowid
-        WHERE {table} MATCH ? AND {table}.rowid IN (SELECT rowid FROM eligible)
+        FROM {table}
+        JOIN eligible e ON e.rowid = {table}.rowid
+        JOIN records r ON r.rowid = {table}.rowid
+        WHERE {table} MATCH ?
         ORDER BY bm25({table}), r.record_id
         LIMIT ? OFFSET ?
     """  # noqa: S608 -- table is one of two hardcoded identifiers, data is bound
@@ -58,13 +62,20 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
     # what it has rather than in minutes with everything.
     found: list[Hit] = []
     conjunction = "" if lane == "substring" else conjunctive_expression(query)
+    if lane != "substring":
+        total = int(connection.execute("SELECT count(*) FROM records").fetchone()[0])
+        match = selective_expression(connection, table, query, total)
     # Both passes are budgeted here, unlike the unscoped `search_words` path:
-    # the scope CTE makes even the AND pass expensive -- measured at 8s for the
-    # history scope and 15s for the curated one on a 1,414,461-record index,
-    # against 0.36s for the same expression unscoped -- so an unbounded narrow
-    # pass would hand back the hang the broad one no longer has.
+    # the broad one still ranks a large match set even with its common terms
+    # dropped, and the narrow one is only cheap while the scope reaches the FTS
+    # table as a join (see the statement above).
     for expression, milliseconds in ((conjunction, _NARROW_BUDGET), (match, _BROAD_BUDGET)):
-        if not expression or len(found) == limit:
+        # The broad pass only runs when the narrow one found nothing. It costs
+        # its whole budget nearly every time -- an OR still ranks a large match
+        # set -- and measured across the curated scope it added no hit the
+        # narrow pass had missed. It stays for the query whose terms never
+        # co-occur, which is the only case it ever answered.
+        if not expression or found:
             continue
         found += lexical_pages(
             connection,
@@ -72,7 +83,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
             parameters,
             expression,
             table,
-            limit - len(found),
+            limit,
             verify=verify,
             verifiers=verifiers,
             seen=seen,

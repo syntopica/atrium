@@ -5,12 +5,13 @@ from typing import Any
 from atrium.session.refusal_reason import refusal_reason
 from atrium.session.stop_context import StopContext
 from atrium.session.stop_limits import MAX_ATTEMPTS
+from atrium.session.stop_refusal import stop_refusal
 from atrium.session.write_session_state import write_session_state
 
 
 def reissue_refusal(
     context: StopContext, pending: dict[str, Any], *, active: bool
-) -> dict[str, str] | None:
+) -> dict[str, object] | None:
     """Refuse again up to the budget, then go quiet; drop it at twice the budget.
 
     One ignored instruction must not count as completion, so the turn after
@@ -30,4 +31,4 @@ def reissue_refusal(
     context.state["pending"] = pending
     write_session_state(context.state_path, context.state)
     reason = refusal_reason(str(pending["id"]), pending.get("since"), retry=True)
-    return {"decision": "block", "reason": reason}
+    return stop_refusal(reason, str(pending["id"]), pending.get("since"), retry=True)

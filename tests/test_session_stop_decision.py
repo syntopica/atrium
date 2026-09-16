@@ -59,6 +59,9 @@ def test_refuses_above_the_byte_limit_and_freezes_the_boundary(tmp_path):
     assert pending["since"] == "2026-09-16T11:00:00.000Z"
     assert pending["model"] == "claude-fable-5-1"
     assert f"--checkpoint {pending['id']}" in decision["reason"]
+    assert decision["systemMessage"].startswith("atrium: recording")
+    assert pending["id"] in decision["systemMessage"]
+    assert decision["suppressOutput"] is True
     assert state["workspace"].endswith("/p/proj")
 
 

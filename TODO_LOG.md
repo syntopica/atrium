@@ -18,7 +18,7 @@
   `~/p/brain`, five probe queries, two runs each: `atrium context --lane words`
   0.21-1.53s (was 0.6-3.4s), `--lane auto` 1.02-2.26s (was 1.7-4.2s),
   `atrium search --words` 0.22s (was 0.6s), and no query reports
-  `lexical_budget_exhausted` any more. Verified by `uv run baseline-py gate`
+  `lexical_budget_exhausted` any more. Verified by `uv run codeality-py gate`
   (301 tests).
 - [x] 2026-09-16 — **The context lane's `rowid IN (...)` was the whole cost:**
   `atrium/context/lexical_hits.py` constrained the FTS scan with
@@ -36,7 +36,7 @@
   same eight now return 1-32 hits in 0.04-1.5s. Verified by
   `tests/test_lexical_paging.py`, `tests/test_selective_expression.py`, the
   rewritten plan assertion in `tests/test_context_safety.py`, and
-  `uv run baseline-py gate` (300 tests).
+  `uv run codeality-py gate` (300 tests).
 - [x] 2026-09-16 — **A local synthesis lane, off every quota:** `--producer local`
   calls Ollama on this machine (`qwen3.6:35b-mlx`, population
   `ollama-qwen3.6-35b-mlx`, atrium `d492df7`). Measured on the M4 Max against
@@ -482,13 +482,13 @@
 - [x] 2026-09-01 — **Tooling:** The quality-baseline adoption briefly made uv
   resolution unsatisfiable, taking the MCP server and hourly refresh down;
   fixed at the source by the baseline rollout session.
-  - Result: `busirocket-baseline-py` needed Python >=3.12 against this
+  - Result: `syntopica-codeality-py` needed Python >=3.12 against this
     project's >=3.11; every plain `uv run` failed, so `atrium-mcp` died at
-    connect and `atrium-refresh` failed after its export step. baseline-py
+    connect and `atrium-refresh` failed after its export step. codeality-py
     0.1.3 published with >=3.11, lock updated (`1e55c25`). Coordinated live
     with session baseline-5a: config files stay with the rollout;
     code-level ruff/mypy findings belong to this backlog. Never hand-edit
-    `.baseline-py-baseline.json`; `uv run baseline-py baseline update`.
+    `.codeality-py-baseline.json`; `uv run codeality-py baseline update`.
   - Evidence: `uv sync` clean; `uv run atrium status` works; refresh log shows
     a completed pass minutes after the fix.
 

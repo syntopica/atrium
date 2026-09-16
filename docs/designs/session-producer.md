@@ -247,7 +247,7 @@ timestamp-level backfill (the `session` field keeps the data for it).
 
 ## Verification
 
-`uv run baseline-py gate` green, plus tests for: conversation id equals the
+`uv run codeality-py gate` green, plus tests for: conversation id equals the
 exporter's; episode id stable per boundary and different across boundaries;
 job key independent of the batch prompt hash; re-key leaves a session record
 unchanged; payload validation rejects a missing key, an unknown key, a

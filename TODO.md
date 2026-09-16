@@ -340,6 +340,12 @@
   First live fall-over 2026-09-16 05:16: agy walled after 43 min and ~800 records (its
   5-hour window; ~390 on 2026-09-04), `walled-agy` written, cursor pass started one second
   later. Backlog counted the same day: 111,590 episodes, ~76,500 pending.
+  Cursor's third-party window (CodexBar `tertiary`, 100%) does gate gpt/gemini/claude
+  there: `gpt-5.3-codex-low` walled at 05:18 after 2.5 min; the lane runs the Cursor-native
+  `composer-2.5` since 05:21 (1 soft fabrication on 3 episodes, 21-28 s, ~5 episodes/min at
+  3 workers). `cursor-agent` leaves an `index.js worker-server` orphan per call: 38 of them
+  held 7.4 GB after an hour; fixed by running the CLI in its own session and killing the
+  group after each call (`run_cursor_in_own_session`).
   Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
   per-episode cost; find why CodexBar lost the Antigravity windows (it read them on
   2026-09-04) so agy can be gated again instead of walled.

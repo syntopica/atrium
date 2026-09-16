@@ -22,7 +22,7 @@ derived deterministically, so they converge without ever copying an index.
 
 ```bash
 atrium ingest ~/path/to/canonical-archive.jsonl   # index an archive
-atrium ingest-notes ~/p/wiki --exclude sources   # index a curated notes tree
+atrium ingest-notes ~/wiki --exclude sources      # index a curated notes tree
 atrium embed                                      # embed the semantic layer (notes, synthesis)
 atrium search "why was WAL reverted"              # adaptive: fuses lanes when both see the query
 atrium search "wal" --words                       # whole-word lexical lane alone

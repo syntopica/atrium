@@ -20,7 +20,7 @@
   gate limitations and measurements: `docs/evaluations/unified-context.md`.
 
 - [x] 2026-09-08 — **Ingest / Store:** **Session scratchpads are indexed as if they were projects.** Paths like
-  `/private/tmp/claude-501/-Users-cristiandeluxe-p-agents-tools/<uuid>/scratchpad`
+  `/private/tmp/<session>/scratchpad`
   carry a `workspace` and become their own workspaces in the index — found
   2026-09-01 while folding renames. They are per-session temporary directories,
   not projects: they inflate the workspace count that made coverage read 2.1%,
@@ -54,7 +54,7 @@
   is blind to it. The MCP half asserts the console script is declared, its module resolves and
   the `mcp` extra survived into the installed metadata, and says "declared, not started" --
   the server is stdio and the hosts spawn it in a different environment, so starting it here
-  would prove nothing. Live on this machine: `ok entrypoints <macbook-host>.local:
+  would prove nothing. Live on this machine: `ok entrypoints <host>:
   atrium resolves at ~/.local/bin/atrium; atrium-mcp is declared, not
   started`. 22 tests.
 

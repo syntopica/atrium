@@ -12,12 +12,13 @@ from atrium.session.over_stop_limits import over_stop_limits
 from atrium.session.read_stop_context import read_stop_context
 from atrium.session.refusal_reason import refusal_reason
 from atrium.session.reissue_refusal import reissue_refusal
+from atrium.session.stop_refusal import stop_refusal
 from atrium.session.write_session_state import write_session_state
 
 
 def session_stop_decision(
     payload: dict[str, Any], environ: Mapping[str, str], now: datetime | None = None
-) -> dict[str, str] | None:
+) -> dict[str, object] | None:
     """Return the ``{"decision": "block", "reason": ...}`` to print, or None.
 
     Silent (None) is the common answer: excluded sessions, nothing new, or a
@@ -60,4 +61,4 @@ def session_stop_decision(
     )
     write_session_state(context.state_path, context.state)
     reason = refusal_reason(checkpoint["id"], baseline_at, retry=False)
-    return {"decision": "block", "reason": reason}
+    return stop_refusal(reason, checkpoint["id"], baseline_at)

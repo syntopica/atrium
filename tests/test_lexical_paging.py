@@ -1,4 +1,4 @@
-"""A short page is the last page: the lane must not pay for the one after it."""
+"""One statement per pass: the lane streams the match, it does not page it."""
 
 from atrium.context.lexical_hits import lexical_hits
 from atrium.record import Record
@@ -22,16 +22,17 @@ def _record(record_id, text):
     )
 
 
-def test_a_short_page_ends_the_paging(tmp_path):
-    """The statement costs a full execution per page, and against the curated
-    scope that measured 0.31s on the live index -- paid twice for a query whose
-    every hit arrived in the first page."""
+def test_the_statement_runs_once_however_many_rows_match(tmp_path):
+    """Paging re-executed the whole sorted statement per page -- measured at
+    0.31s a page against the curated scope on the live index -- and asked for the
+    page after a short one. A rank-ordered read asks once and stops reading."""
     connection = open_store(tmp_path / "index.sqlite3")
     with connection:
-        write_conversation(connection, "c", [_record("note", "vault rotation runbook")])
+        records = [_record(f"note-{number}", "vault rotation runbook") for number in range(500)]
+        write_conversation(connection, "c", records)
     statements = []
     connection.set_trace_callback(statements.append)
     hits = lexical_hits(connection, "vault rotation", 8, "words", curated=True)
     connection.set_trace_callback(None)
-    assert [hit.record_id for hit in hits] == ["note"]
+    assert len(hits) == 8
     assert sum("WITH eligible" in statement for statement in statements) == 1

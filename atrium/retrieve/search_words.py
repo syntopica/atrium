@@ -20,11 +20,8 @@ SELECT r.record_id, r.text, -bm25(words) AS score, r.conversation_id,
 FROM words
 JOIN records r ON r.rowid = words.rowid
 WHERE words MATCH ?{scope}
-ORDER BY bm25(words), r.record_id
-LIMIT ? OFFSET ?
+ORDER BY words.rank
 """
-
-_PAGE = 200
 
 
 def search_words(

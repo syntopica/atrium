@@ -1,5 +1,7 @@
 """The two lexical lanes answer different questions and must not be merged."""
 
+import time
+
 from atrium.record import Record
 from atrium.retrieve.search_words import search_words
 from atrium.store.open_store import open_store
@@ -222,29 +224,36 @@ def test_the_broad_pass_still_answers_when_no_record_holds_every_term(tmp_path):
     assert sorted(hit.record_id for hit in hits) == ["one", "two"]
 
 
-def test_an_exhausted_budget_is_reported_rather_than_read_as_an_empty_index(tmp_path):
-    """An empty result must never be indistinguishable from "nothing indexed"."""
-    import sqlite3
+def test_an_exhausted_budget_keeps_what_it_read_and_says_so(tmp_path):
+    """The budget used to interrupt a statement that sorts before it returns a
+    single row, so an expired deadline meant an empty answer indistinguishable
+    from "nothing indexed". A streaming read keeps its hits and reports the
+    budget on top of them."""
+    from atrium.retrieve.ranked_hits import ranked_hits
 
-    from atrium.retrieve.bounded_rows import bounded_rows
-
-    connection = _store(tmp_path, [_record("one", "a stop hook")])
-    exhausted: set[str] = set()
-    # A statement long enough to reach the progress handler at all: the check
-    # runs every 10,000 virtual-machine instructions, so a one-row query beats
-    # any deadline by finishing first.
-    spin = """
-        WITH RECURSIVE counter(n) AS (
-            SELECT 1 UNION ALL SELECT n + 1 FROM counter WHERE n < ?
-        )
-        SELECT count(*) FROM counter
+    connection = _store(tmp_path, [_record(f"r-{number}", "a stop hook") for number in range(400)])
+    statement = """
+        SELECT r.record_id, r.text, -bm25(words), r.conversation_id,
+               r.source_sha256, r.authored_at, r.provider, r.role
+        FROM words JOIN records r ON r.rowid = words.rowid
+        WHERE words MATCH ?
+        ORDER BY words.rank
     """
-    rows = bounded_rows(connection, spin, (10_000_000,), exhausted, 1)
-    assert rows == []
+    exhausted: set[str] = set()
+    slow = []
+
+    def accept(hit):
+        # Spend the deadline inside the read rather than inside SQLite, which is
+        # what a verifier or a large row does on the live index.
+        time.sleep(0.002)
+        slow.append(hit)
+        return True
+
+    hits = ranked_hits(connection, statement, ('"hook"',), 400, 10, accept, exhausted)
     assert exhausted == {"lexical_budget_exhausted"}
-    # The connection survives the interruption and still answers.
-    assert connection.execute("SELECT count(*) FROM records").fetchone() == (1,)
-    assert isinstance(connection, sqlite3.Connection)
+    assert hits, "an interrupted read must keep the hits it already took"
+    assert len(hits) < 400
+    assert connection.execute("SELECT count(*) FROM records").fetchone() == (400,)
 
 
 def test_a_broken_index_is_not_reported_as_a_spent_budget(tmp_path):
@@ -253,12 +262,20 @@ def test_a_broken_index_is_not_reported_as_a_spent_budget(tmp_path):
 
     import pytest
 
-    from atrium.retrieve.bounded_rows import bounded_rows
+    from atrium.retrieve.ranked_hits import ranked_hits
 
     connection = _store(tmp_path, [_record("one", "a stop hook")])
     exhausted: set[str] = set()
     with pytest.raises(sqlite3.OperationalError):
-        bounded_rows(connection, "SELECT * FROM a_table_that_is_not_here", (), exhausted)
+        ranked_hits(
+            connection,
+            "SELECT * FROM a_table_that_is_not_here",
+            (),
+            5,
+            2000,
+            lambda _: True,
+            exhausted,
+        )
     assert exhausted == set()
 
 

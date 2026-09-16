@@ -296,7 +296,7 @@
     exports. It is set to `99999` in both profiles — verified live and in the
     dotfiles source (`claude/settings.json`, landed `87c097d`, 2026-08-28,
     three days *after* the loss and by auto-sync rather than by decision).
-    `~/.claude-second-profile/settings.json` symlinks to the personal file, so one
+    the second profile's `settings.json` symlinks to the personal file, so one
     value covers both quotas.
   - **Measured evidence that nothing is deleting today**: the oldest surviving
     Claude transcript is 2026-04-01 (five months, far past the 30-day default);
@@ -540,9 +540,8 @@
     `$CLAUDE_CONFIG_DIR/.claude.json` when it is set, so pointing it at
     `~/.claude` starts a fresh empty profile and every MCP server silently
     disappears. Parked at `~/.claude-retired/` rather than deleted, because it
-    carries auth. The two real profiles are **busirocket**
-    (`info@busirocket.com`, plain `claude`) and **favish**
-    (`<work-account>`, `CLAUDE_CONFIG_DIR=~/.claude-second-profile`).
+    carries auth. The two real profiles are the personal one
+    (plain `claude`) and the work one (its own `CLAUDE_CONFIG_DIR`).
   - `~/.claude/rules/claude-profiles.md` rewritten to name both profiles, their
     accounts, how each is started and which file each uses; to forbid
     `CLAUDE_CONFIG_DIR=~/.claude` with the reason; to record that an MCP

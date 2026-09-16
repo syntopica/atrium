@@ -12,6 +12,7 @@ from atrium.ingest.to_note_records import to_note_records
 from atrium.ingest.to_records import to_records
 from atrium.ingest.workspace_aliases import workspace_aliases
 from atrium.record import Record
+from atrium.session.record_session_contract import RECORD_SESSION_CONTRACT
 from atrium.state.archive_path import archive_path
 from atrium.state.state_directory import state_directory
 from atrium.store.delete_absent_conversations import delete_absent_conversations
@@ -129,7 +130,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
     )
     record_session = subcommands.add_parser(
-        "record-session", help="Write the running session's own synthesis for a frozen checkpoint"
+        "record-session",
+        help="Write the running session's own synthesis for a frozen checkpoint",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        description=RECORD_SESSION_CONTRACT,
     )
     record_session.add_argument("--checkpoint", required=True, metavar="ID")
     record_session.add_argument(

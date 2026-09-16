@@ -6,6 +6,12 @@
 
 ### 2026-09
 
+- [x] 2026-09-16 — **History rewritten for the public repository:** `git
+  filter-repo` dropped `TODO_HISTORY_INDEX.jsonl` from every commit and
+  replaced home paths, the work email, the second Claude profile name and the
+  laptop host name across all blobs (141 commits, tree unchanged, `main`
+  force-pushed as `150f06d`). Backup: `~/backups/git-rewrite-2026-09-16/<repo>.bundle` (all refs before the rewrite) plus the filter-repo expression files under `expr/`. Commit hashes quoted in this log before 2026-09-16 no longer resolve; look them up by message in the bundle. Every other clone (the Mac mini) must `git fetch origin && git reset --hard origin/main`, not pull. GitHub may still serve the old commits by SHA from its cache until support purges them.
+
 - [x] 2026-09-15 — **Unified operational context and origin preservation:**
   `atrium context` and MCP `atrium_context` now combine scoped history, curated
   notes and bounded indexed links with provenance, trust, freshness and budgets.

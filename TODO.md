@@ -337,6 +337,9 @@
   cursor takes the passes, then agy again. The first cursor pass lost 7 of 8 failed
   conversations to the transcript-first prompt order (the model performed the security
   review the transcript asked for); fixed in `0b449d1`, 1 failure in the next 35.
+  First live fall-over 2026-09-16 05:16: agy walled after 43 min and ~800 records (its
+  5-hour window; ~390 on 2026-09-04), `walled-agy` written, cursor pass started one second
+  later. Backlog counted the same day: 111,590 episodes, ~76,500 pending.
   Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
   per-episode cost; find why CodexBar lost the Antigravity windows (it read them on
   2026-09-04) so agy can be gated again instead of walled.

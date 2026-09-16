@@ -59,6 +59,11 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                     response["route"][f"{name}_lane"] = "words"
                     response["warnings"].append(f"{name}_vectors_missing_lexical_fallback")
         active_embedder = embedder if embedder is not None else LazyEmbedder()
+        # The word lane's broad pass runs under a wall-clock budget, and an
+        # exhausted budget returns nothing. Reported, that is "retrieval ran out
+        # of time"; unreported, it is indistinguishable from "this is not in the
+        # index", which is the one thing a memory must never say by accident.
+        exhausted: set[str] = set()
         try:
             notes = context_hits(
                 connection,
@@ -67,6 +72,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 response["route"]["curated_lane"],
                 active_embedder,
                 curated=True,
+                exhausted=exhausted,
             )
             history = context_hits(
                 connection,
@@ -76,19 +82,29 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 active_embedder,
                 curated=False,
                 workspace=workspace,
+                exhausted=exhausted,
             )
         except (OSError, RuntimeError, ValueError):
             if lane not in ("auto", "dense"):
                 raise
-            notes = context_hits(connection, query, depth, "words", None, curated=True)
+            notes = context_hits(
+                connection, query, depth, "words", None, curated=True, exhausted=exhausted
+            )
             history = context_hits(
-                connection, query, depth, "words", None, curated=False, workspace=workspace
+                connection,
+                query,
+                depth,
+                "words",
+                None,
+                curated=False,
+                workspace=workspace,
+                exhausted=exhausted,
             )
             response["route"]["curated_lane"] = "words"
             response["route"]["history_lane"] = "words"
             response["warnings"].append("semantic_unavailable_lexical_fallback")
         links, warnings = linked_hits(connection, notes[:limit], depth)
-        response["warnings"].extend(warnings)
+        response["warnings"].extend(sorted(exhausted) + warnings)
         response["steps"] = [
             {
                 "pass": "history",

@@ -23,13 +23,30 @@ def context_hits(  # noqa: PLR0913 -- shared scope and lane contract
     *,
     curated: bool,
     workspace: str | None = None,
+    exhausted: set[str] | None = None,
 ) -> list[Hit]:
     """Preserve 70/30 fusion and its 60-candidate depth without global starvation."""
     if lane in ("words", "substring"):
-        return lexical_hits(connection, query, limit, lane, curated=curated, workspace=workspace)
+        return lexical_hits(
+            connection,
+            query,
+            limit,
+            lane,
+            curated=curated,
+            workspace=workspace,
+            exhausted=exhausted,
+        )
     depth = max(_FUSION_DEPTH, limit)
     lexical = (
-        lexical_hits(connection, query, depth, "words", curated=curated, workspace=workspace)
+        lexical_hits(
+            connection,
+            query,
+            depth,
+            "words",
+            curated=curated,
+            workspace=workspace,
+            exhausted=exhausted,
+        )
         if lane == "auto"
         else []
     )

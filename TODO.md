@@ -246,8 +246,8 @@
 - [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly
   refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
   rewrite filed under Ingest / Store); recall fires in both Claude profiles
-  (`~/.claude-favish/projects` is a symlink into `~/.claude/projects`, so Favish sessions are
-  captured); the Mac mini's sessions reach the archive through the daily `sync-all-safe`
+  (the second Claude profile's projects directory is a symlink into the first, so its
+  sessions are captured); the Mac mini's sessions reach the archive through the daily `sync-all-safe`
   leg (verified on mini-only sessions of 09-03 and 09-04). Fixed the same day: the Mac mini
   now runs Atrium with its own index and hourly refresh, MemPalace is gone from it, and its
   copy of the synthesis registry is the second disk the Durability item asked for (see

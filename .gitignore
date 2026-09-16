@@ -7,3 +7,4 @@ __pycache__/
 atrium.egg-info/
 *.egg-info/
 .coverage
+TODO_HISTORY_INDEX.jsonl

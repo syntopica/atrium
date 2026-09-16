@@ -9,13 +9,19 @@ from typing import Any
 
 from atrium.synthesize.parsed_json_object import parsed_json_object
 
-# Measured 2026-09-16 on an M4 Max (64 GB) against real episodes: this MLX
-# build answers a median (~6k token) episode in 15-16 s, prefilling at
-# 1,000-1,600 tok/s and generating at 90-110 tok/s. The GGUF build of the same
-# model takes 23-28 s for the same work, so the speed is worth losing Ollama's
-# schema enforcement -- MLX builds answer `format` with 501 "structured output
-# is unavailable", and the model returned valid JSON on every episode anyway.
-LOCAL_DEFAULT_MODEL = "qwen3.6:35b-mlx"
+# The GGUF build, not the MLX one, because only it can be handed a grammar.
+# Measured 2026-09-17 on an M4 Max (64 GB), the two builds alternating on the
+# same six real episodes so neither reuses the other's KV cache: MLX answered
+# 5 of 6 (one reply arrived without a single required key) in 138.0 s, and this
+# build under `format` answered 6 of 6 in 86.4 s -- it generates more slowly
+# (79.6 against 105.0 tok/s) and prefills far faster (1,024 against 347 tok/s).
+# The earlier reading that MLX was the quicker of the two came from runs that
+# shared a cache: whichever variant ran second reported ~59,000 tok/s of
+# prefill, and the same GGUF build measured 55.9 and 95.5 tok/s of generation
+# in two consecutive batches, which is more spread than any difference between
+# the builds. The constraint matters most on a small model: ornith-1.5:9b on
+# the M1 Mac mini answered 2 of 5 unconstrained and 5 of 5 with the grammar.
+LOCAL_DEFAULT_MODEL = "qwen3.6:35b"
 # The episode ceiling is 32k tokens; the window has to hold the transcript,
 # the instruction and the answer.
 _NUM_CTX = 40_960
@@ -57,12 +63,17 @@ def local_lane_call(
         "No prose, no code fence:\n"
         f"{json.dumps(schema)}"
     )
+    # The schema is sent twice on purpose: as `format`, which llama.cpp turns
+    # into a grammar the sampler cannot leave, and inside the prompt, which is
+    # all an MLX build has -- those answer `format` with "structured output is
+    # unavailable" and keep going, so pinning one still works.
     body = json.dumps(
         {
             "model": model,
             "messages": [{"role": "user", "content": prompt}],
             "stream": False,
             "think": False,
+            "format": schema,
             "options": {"num_ctx": _NUM_CTX, "temperature": 0.2},
         }
     ).encode()

@@ -86,6 +86,29 @@ the transcript as material rather than instructions, and restates the JSON
 contract after it, which is the order the Codex lane uses with 0 failed
 conversations on its bounded pass.
 
+## The third-party window does gate, and composer-2.5 replaces codex-low
+
+Two and a half minutes into its first fall-over pass (05:16-05:18), the lane
+walled: "You've hit your usage limit ... Switch to a different model or set a
+Spend Limit to continue with this model. Your usage limits will reset when
+your monthly cycle ends on 10/10/2026." So the "Third Party" window CodexBar
+shows at 100% is exactly what gates `gpt-5.3-codex-low`, and the earlier
+paragraph saying it does not was wrong: the bench and the first pass ran on
+whatever slack the enforcement lags by. Cursor's own models spend the "Cursor"
+window instead (99% left), so the same three episodes went through
+`composer-2.5` with the instructions-first prompt:
+
+| model | wall time / episode | fabrications | character |
+| --- | --- | --- | --- |
+| `composer-2.5` | 21-28 s | 1 | as rich as codex-low; called the session's working directory "the data repository verified" when the verification ran in a scratch instance |
+| `cursor-grok-4.6-low` | 41-46 s | 2 | from the first bench |
+
+**Decision:** the Cursor lane runs `composer-2.5`, population
+`cursor-composer-2.5`, appended last in `active-recipe.json`. The
+`cursor-gpt-5.3-codex-low` records already produced stay and keep their rank.
+What the "Cursor" window is worth in episodes is to be read off CodexBar after
+the first day.
+
 ## How much is left, counted rather than estimated
 
 `atrium synthesize --dry-run` over the whole archive on 2026-09-16 04:48:

@@ -22,8 +22,15 @@ _BACKOFF_SECONDS = 20.0
 _ARGV_CEILING = 700_000
 
 
-def agy_lane_call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+def agy_lane_call(
+    system_text: str, user_text: str, tool: dict[str, Any], model: str = AGY_MODEL_ID
+) -> dict[str, Any]:
     """Return {"input": ..., "model": ..., "usage": ...} from one agy print run.
+
+    ``model`` is any id `agy models` lists. Antigravity meters Gemini and the
+    Claude/GPT models on separate windows (seen 2026-09-16: Gemini 5-hour at
+    100 % while Claude/GPT 5-hour sat at 0 %), so a Gemini wall does not
+    close the lane, only the model.
 
     Gemini prompting inverts the usual order: the transcript goes FIRST and
     the instructions last, anchored to it -- instructions ahead of a large
@@ -56,7 +63,7 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict[str, Any]) -> dic
                 "agy",
                 f"--print={prompt}",
                 "--model",
-                AGY_MODEL_ID,
+                model,
                 "--disable-slash-commands",
                 "--print-timeout",
                 "10m",
@@ -91,7 +98,7 @@ def agy_lane_call(system_text: str, user_text: str, tool: dict[str, Any]) -> dic
         if missing:
             last_error = f"agy output missing required keys: {missing}"
             continue
-        return {"input": output, "model": AGY_MODEL_ID, "usage": {}}
+        return {"input": output, "model": model, "usage": {}}
     raise RuntimeError(last_error)
 
 

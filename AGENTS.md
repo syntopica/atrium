@@ -7,9 +7,9 @@ over content it does not own, and serves retrieval to agents.
 
 | layer | owner | holds |
 | --- | --- | --- |
-| 1. capture and canonical archive | `~/p/agents` | the truth: redacted, SHA-256-verified conversations |
+| 1. capture and canonical archive | the agents repository | the truth: redacted, SHA-256-verified conversations |
 | 2. index, retrieval, synthesis | **this repo** | nothing irreplaceable |
-| 3. curated judgment | `~/p/wiki` | hand-written notes, single human writer |
+| 3. curated judgment | the wiki | hand-written notes, single human writer |
 
 **The rule that governs every decision here: the source is canonical, the index is
 disposable.** Anything Atrium cannot rebuild from layer 1 or layer 3 is a design defect.

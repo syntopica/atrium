@@ -14,29 +14,16 @@
 
 ## Retrieval
 
-- [~] The word lane no longer hangs on a natural-language sentence, and what it
-  still costs is the scope CTE, not the terms. Fixed 2026-09-16: the lane asks
-  the AND question first and keeps OR as a budgeted fallback
-  (`atrium/retrieve/conjunctive_expression.py`, `bounded_rows.py`,
-  `atrium/context/lexical_pages.py`). Measured on the live index (1,414,461
-  records), `atrium context "why does the stop hook fire on a status turn"
-  --lane words --project ~/p/brain` went from over 120s (timeout, no answer) to
-  8.2s, and reports `lexical_budget_exhausted` instead of an empty result that
-  reads as "nothing indexed". Remaining: the context scope CTE dominates what is
-  left -- the same AND expression costs 0.36s unscoped, 8s under the history
-  scope and 15s under the curated one, because `role NOT IN ('source','note')`
-  cannot use `records_context_workspace_role` and `ORDER BY bm25` sorts every
-  match. Smallest step: measure a positive role predicate (an explicit IN list
-  of history roles) against the existing index, then decide whether the CTE
-  should be replaced by a join. Re-measured 2026-09-16 after the AND-first
-  change: the CTE is already the faster shape -- 2.21s against 4.99s for the
-  same predicate written as a plain join -- so what is left is `ORDER BY bm25`
-  over the whole match set, not the CTE. The per-pass budgets in
-  `atrium/context/lexical_hits.py` are 3000ms narrow and 1200ms broad because a
-  scoped AND pass measured 2.2s and a 2000ms budget cut it off, reporting
-  `lexical_budget_exhausted` on a query that does have an answer. `--lane auto`
-  therefore costs up to ~10s on this corpus, which is why the UserPromptSubmit
-  hook asks for `--lane dense`.
+- [ ] The broad OR pass is what the context lane still spends its time on: it
+  costs its whole 1200ms budget on the curated scope and usually returns
+  nothing, because FTS5 ranks every row the expression matches whatever the
+  scope is. It now runs only when the narrow AND pass found nothing and asks a
+  frequency-pruned expression (`atrium/retrieve/selective_expression.py`), which
+  is what took `atrium context "why does the stop hook fire on a status turn"
+  --lane words --project ~/p/brain` from 0 hits to 16. Smallest next step:
+  measure whether a second FTS table over the curated notes alone (4,865 of
+  1,417,899 records) makes the broad pass cheap enough to drop its budget, since
+  the cost is the corpus-wide match set and not the notes.
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

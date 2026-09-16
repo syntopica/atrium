@@ -6,6 +6,23 @@
 
 ### 2026-09
 
+- [x] 2026-09-16 — **The context lane's `rowid IN (...)` was the whole cost:**
+  `atrium/context/lexical_hits.py` constrained the FTS scan with
+  `words.rowid IN (SELECT rowid FROM eligible)`, and FTS5 answers a
+  rowid-equality constraint by re-running the match per candidate rowid — the
+  plan says `VIRTUAL TABLE INDEX 0:=M1` rather than `0:M1`. Measured on the live
+  index (1,417,899 records), the curated pass of `"stop" AND "hook" AND "json"`
+  cost 13.57s as `IN`, 0.04s as a join on the same materialized CTE. Joining
+  `eligible` instead, stopping the paging on a short page (each extra page is a
+  full re-execution, 0.31s of it), and running the broad OR pass only when the
+  narrow one found nothing took `atrium context ... --lane words --project .`
+  from 8.5s to 0.6-3.4s and `--lane auto` from 9.4s to 1.7-4.2s. The recall
+  matters more than the clock: at the previous commit every one of eight probe
+  queries exhausted both budgets and returned zero hits in ~4.2s per pass; the
+  same eight now return 1-32 hits in 0.04-1.5s. Verified by
+  `tests/test_lexical_paging.py`, `tests/test_selective_expression.py`, the
+  rewritten plan assertion in `tests/test_context_safety.py`, and
+  `uv run baseline-py gate` (300 tests).
 - [x] 2026-09-16 — **A local synthesis lane, off every quota:** `--producer local`
   calls Ollama on this machine (`qwen3.6:35b-mlx`, population
   `ollama-qwen3.6-35b-mlx`, atrium `d492df7`). Measured on the M4 Max against

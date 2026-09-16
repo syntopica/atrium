@@ -29,6 +29,31 @@ atrium search "wal" --words                       # whole-word lexical lane alon
 atrium search "wal" --substring                   # fragment retrieval, a separate lane
 atrium search "that indexing outage" --dense      # semantic lane alone
 atrium status                                     # what the index holds
+atrium session-stop < hook.json                   # Claude Code Stop hook: refuse when a record is owed
+atrium record-session --checkpoint ID < synth.json  # the running session writes its own episode
+```
+
+## Recording from the session
+
+The batch lanes (`atrium synthesize --producer ...`) are cold readers: they
+infer what mattered from a transcript they were not part of, and they need a
+quota of their own. The agent that did the work already knows, and already
+runs on the account you pay for. `hooks/claude-code/stop-record-episode.sh`,
+registered under `Stop` in `~/.claude/settings.json`, asks `atrium
+session-stop` after every turn whether the session owes a record; when it
+does (32 KiB of new transcript, or 4 KiB left unrecorded for 30 minutes), the
+hook freezes a transcript boundary and refuses the stop with the whole
+recording instruction. The model answers with one JSON object through
+`atrium record-session --checkpoint ID`, which validates it, redacts secrets
+the way the archive does, writes the record into the same registry the batch
+lanes fill, and prints the accepted record so the transcript keeps it. Batch
+lanes then skip that conversation. Design and the review that shaped it:
+`docs/designs/session-producer.md`.
+
+```json
+{"type": "command",
+ "command": "SYNTOPICA_DATA=/path/to/instance sh /path/to/atrium/hooks/claude-code/stop-record-episode.sh",
+ "timeout": 30}
 ```
 
 ## One context call for agents

@@ -13,7 +13,7 @@ test-max-file-lines = 300
 # A role states what a file is. Prefer a role over a suppression: it explains
 # the file instead of silencing an alarm.
 [roles]
-data = []
+data = ["atrium/session/session_segmentation.py", "atrium/session/stop_limits.py"]
 registry = []
 entrypoint = []
 generated = []

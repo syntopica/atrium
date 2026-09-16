@@ -353,7 +353,11 @@
   (two producers at once, the thing the lock exists to prevent), and the killed pass
   left its `cursor-agent` sessions with parent pid 1 because SIGTERM skips `finally`.
   The loop's trap now kills the pass group and reaps those orphans after every pass
-  (`aa39731`, `1f803e9`).
+  (`aa39731`, `1f803e9`). Second agy window of the day: 10:14-11:01, ~450 records, then
+  "Resets in 4h13m47s"; this time the three in-flight calls sat ~10 min (the
+  `--print-timeout`) before answering the wall, so the pass outlived the box and the
+  loop's time-box branch skipped the wall check: agy was picked again at 11:14 against
+  its wall. Wall check now precedes the box branch (`95c547f`).
   Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
   per-episode cost; make a SIGTERM to `atrium synthesize` end its cursor-agent sessions
   itself (a signal handler that kills the in-flight groups) so the reaping is not the

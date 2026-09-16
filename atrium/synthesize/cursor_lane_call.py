@@ -9,10 +9,12 @@ from atrium.synthesize.cursor_json_payload import cursor_json_payload
 from atrium.synthesize.cursor_result_envelope import cursor_result_envelope
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 
-# The model the lane runs when none is pinned. Chosen by the bench in
-# docs/studies/cursor-lane-bench.md; a different model is a different
-# population, because the model name enters the job key.
-CURSOR_DEFAULT_MODEL = "gpt-5.3-codex-low"
+# The model the lane runs when none is pinned. Chosen by the benches in
+# docs/studies/cursor-lane-bench.md: a Cursor-native model, because the
+# third-party ones (gpt-5.3-codex, gemini, claude) wall on the account's
+# "Third Party" window, which was spent within minutes of the first drip. A
+# different model is a different population, because the name enters the job key.
+CURSOR_DEFAULT_MODEL = "composer-2.5"
 
 # The prompt rides on stdin, not argv, and the pipe still has a cliff: the
 # clips pipeline measured 640 KB answering and 800 KB returning an empty

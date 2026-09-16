@@ -56,6 +56,25 @@ lanes then skip that conversation. Design and the review that shaped it:
  "timeout": 30}
 ```
 
+## Retrieving before the session answers
+
+`SessionStart` recall lists the project's episode titles, which only tells a
+session that ground was covered; it still has to decide to ask, and largely did
+not. `hooks/claude-code/user-prompt-context.sh`, registered under
+`UserPromptSubmit`, does the asking: it runs `atrium context` on the submitted
+prompt and injects the evidence found. The dense lane, because a prompt is a
+sentence and the word lane ORs its common terms across the whole corpus (see
+`TODO.md`). It is silent on failure, on a timeout, on a slash command and on a
+prompt under 24 characters -- a hook that cannot answer must never delay a turn.
+`ATRIUM_PROMPT_CONTEXT=off` disables it without unregistering it;
+`_LIMIT`, `_CHARS`, `_LANE` and `_TIMEOUT` tune it.
+
+```json
+{"type": "command",
+ "command": "SYNTOPICA_DATA=/path/to/instance sh /path/to/atrium/hooks/claude-code/user-prompt-context.sh",
+ "timeout": 15}
+```
+
 ## One context call for agents
 
 Use `atrium_context` through MCP for questions that depend on project history

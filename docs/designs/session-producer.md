@@ -133,8 +133,13 @@ session, a transcript, a path or an identity. Writes are atomic
 
 ## `atrium session-stop`
 
-Stdin: the hook payload. Stdout: `{"decision": "block", "reason": ...}` or
-nothing. Always exit 0: a broken hook must cost the feature, never the
+Stdin: the hook payload. Stdout: `{"decision": "block", "reason": ...,
+"systemMessage": ..., "suppressOutput": true}` or nothing. `reason` is the
+instruction the model acts on; `systemMessage` is the one line Claude Code
+renders for the person ("atrium: recording this session's memory record since
+10:21 UTC (checkpoint ...)"), because the terminal otherwise prints the whole
+reason as "Stop hook error". `suppressOutput` keeps the JSON out of the
+transcript view. Always exit 0: a broken hook must cost the feature, never the
 session. Order of checks:
 
 1. Silent when `ATRIUM_NO_SESSION_RECORD` is set; when `cwd` or the

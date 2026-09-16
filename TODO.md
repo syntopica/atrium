@@ -309,6 +309,14 @@
   entirely. It needs to either resolve deterministically, or fail loudly
   enough that someone looks. Cross-project: dotfiles.
 
+- [x] **The drip runs under launchd and the local lane waits for an empty desk.** 2026-09-16:
+  `com.cristian.atrium-drip` runs `drip-launch.sh` (guard, then the loop), restarting the
+  pair after a crash but not after a clean finish. The `local` lane leads `LANES` but is
+  gated on `IDLE_ONLY`: `HIDIdleTime` over `IDLE_START` (600 s) and AC power to start, and
+  a watcher cuts the pass by process group under `IDLE_RESUME` (120 s). Proved with
+  `IDLE_START=1 IDLE_RESUME=99999`: pass admitted, cut 20 s later, exit 143, lane rechosen,
+  no orphan. dotfiles `21e0279`.
+
 - [ ] **The drip's stall guard kills any other synthesize pass on the machine.**
   `drip-guard.sh` finds its target with `pgrep -f "atrium synthesize"`, which matches *any*
   pass, and judges it against the drip's own `run.log`. While the drip sleeps against a quota

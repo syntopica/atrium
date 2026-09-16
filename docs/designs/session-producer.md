@@ -167,14 +167,16 @@ session. Order of checks:
    as the residual loss below.
 6. Freeze the checkpoint, then print the refusal.
 
-The refusal text is the whole contract, because the model reading it has
-no other context: record the episode since `<since>` by running
+The refusal text is three sentences, because Claude Code prints it whole in
+the terminal as "Stop hook error: ..." (seen on the first live refusal,
+2026-09-16 12:0x): record the episode since `<since>` by running
 
     atrium record-session --checkpoint <id> <<'JSON'
     {"title": ..., "summary": ..., "facts": [...], "open_ends": [...]}
     JSON
 
-the schema verbatim, the rules the batch prompt already states (the
+the four keys in one line, the rules in one sentence (the full schema and
+rules are `atrium record-session --help`), that is, the rules the batch prompt already states (the
 episode's dominant language; names, versions, paths, commands and numbers
 exactly as they appeared; outcomes not narration; `open_ends` for what was
 left unfinished; nothing invented); `--nothing-durable` when the interval

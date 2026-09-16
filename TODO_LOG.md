@@ -6,6 +6,13 @@
 
 ### 2026-09
 
+- [x] 2026-09-16 — **A local synthesis lane, off every quota:** `--producer local`
+  calls Ollama on this machine (`qwen3.6:35b-mlx`, population
+  `ollama-qwen3.6-35b-mlx`, atrium `d492df7`). Measured on the M4 Max against
+  real episodes: 15-16 s per median (~6k token) episode, prefill 1,000-1,600
+  tok/s, generation 90-110 tok/s, valid JSON on every episode; the GGUF build
+  with enforced schema takes 23-28 s and four parallel slots are slower than
+  one. About 14 days of idle time for the ~75,000-episode backlog.
 - [x] 2026-09-16 — **`~/p/brain` sessions no longer filed as wiki memory:** the alias
   file accepts `{"to": ..., "until": "YYYY-MM-DD"}` and `canonical_workspace` skips a
   dated alias for a conversation started on or after the date (`startedAt`); the wiki

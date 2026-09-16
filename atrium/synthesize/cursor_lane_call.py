@@ -1,13 +1,13 @@
 """One structured synthesis call through the Cursor CLI's monthly quota."""
 
 import json
-import subprocess
 import tempfile
 from typing import Any
 
 from atrium.synthesize.cursor_json_payload import cursor_json_payload
 from atrium.synthesize.cursor_result_envelope import cursor_result_envelope
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
+from atrium.synthesize.run_cursor_in_own_session import run_cursor_in_own_session
 
 # The model the lane runs when none is pinned. Chosen by the benches in
 # docs/studies/cursor-lane-bench.md: a Cursor-native model, because the
@@ -60,7 +60,7 @@ def cursor_lane_call(
     if len(prompt.encode("utf-8")) > _PROMPT_CEILING_BYTES:
         raise RuntimeError(f"prompt too large for cursor-agent ({len(prompt)} chars)")
     with tempfile.TemporaryDirectory(prefix="atrium-cursor-") as scratch:
-        completed = subprocess.run(  # noqa: PLW1510 -- returncode handled below
+        completed = run_cursor_in_own_session(
             [
                 "cursor-agent",
                 "-p",
@@ -74,11 +74,9 @@ def cursor_lane_call(
                 scratch,
                 "--trust",
             ],
-            input=prompt,
-            capture_output=True,
-            text=True,
-            timeout=_TIMEOUT_SECONDS,
-            cwd=scratch,
+            prompt,
+            scratch,
+            _TIMEOUT_SECONDS,
         )
     streams = f"{completed.stdout}\n{completed.stderr}".strip()
     envelope = cursor_result_envelope(completed.stdout)

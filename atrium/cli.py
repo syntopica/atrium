@@ -20,7 +20,7 @@ from atrium.store.write_conversation import UNCHANGED, write_conversation
 from atrium.synthesize.default_registry import default_registry
 
 
-def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one flat parser and one return per subcommand; a dispatch table would hide the arg wiring this makes greppable
+def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR0915 -- one flat parser and one return per subcommand; a dispatch table would hide the arg wiring this makes greppable
     """Parse one subcommand and run it; the adapters wrap this, never each other."""
     parser = argparse.ArgumentParser(prog="atrium", description=__doc__)
     # Resolved here, not at import: the instance is chosen by the environment
@@ -115,7 +115,28 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
         "nothing else can reconstruct",
     )
 
+    synthesize.add_argument(
+        "--include-session-covered",
+        action="store_true",
+        help="Also synthesize conversations the session producer already recorded "
+        "(skipped by default: the author's record is there, paying a cold reader "
+        "for the same conversation is the one thing the registry exists to avoid)",
+    )
+
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
+    subcommands.add_parser(
+        "session-stop",
+        help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
+    )
+    record_session = subcommands.add_parser(
+        "record-session", help="Write the running session's own synthesis for a frozen checkpoint"
+    )
+    record_session.add_argument("--checkpoint", required=True, metavar="ID")
+    record_session.add_argument(
+        "--nothing-durable",
+        action="store_true",
+        help="Consume the checkpoint without a record: the interval produced nothing to keep",
+    )
 
     doctor = subcommands.add_parser(
         "doctor", help="Check whether the memory would answer from a world that still exists"
@@ -215,9 +236,20 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
             args.effort,
             args.project,
             args.workspace,
+            include_session_covered=args.include_session_covered,
         )
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
+    if args.command == "session-stop":
+        from atrium.session.run_session_stop_cli import run_session_stop_cli
+
+        return run_session_stop_cli()
+    if args.command == "record-session":
+        from atrium.session.run_record_session_cli import run_record_session_cli
+
+        return run_record_session_cli(
+            args.checkpoint, default_registry(), nothing_durable=args.nothing_durable
+        )
     if args.command == "rekey-synthesis":
         return _rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
@@ -434,7 +466,7 @@ def _embed(index: Path) -> int:
     return 0
 
 
-def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each argument is one flag
+def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface: each argument is one flag
     archive: Path,
     limit: int | None,
     dry_run: bool,
@@ -444,6 +476,8 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
     effort: str | None = None,
     project: Path | None = None,
     workspace: str | None = None,
+    *,
+    include_session_covered: bool = False,
 ) -> int:
     """Synthesize episodes newest-first; resumable, so interruption is cheap.
 
@@ -534,9 +568,18 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
         call = agy_lane_call
         model_id = AGY_MODEL_ID
 
+    from atrium.session.session_covered_conversations import session_covered_conversations
     from atrium.synthesize.synthesis_registry import read_records
 
-    done_episodes = {record["episode_id"] for record in read_records(default_registry())}
+    done_episodes: set[str] = set()
+    covered: set[str] = set()
+    session_records = []
+    for record in read_records(default_registry()):
+        done_episodes.add(record["episode_id"])
+        if record.get("segmentation") == "session-self-v1":
+            session_records.append(record)
+    if not include_session_covered:
+        covered = session_covered_conversations(session_records)
     made = skipped = failed = 0
     total = len(conversations)
     # Once the quota window is spent nothing left in the pass can succeed:
@@ -548,6 +591,9 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
         position, conversation = item
         if quota_wall.is_set():
             return {"synthesized": 0, "skipped": 0, "failed": 1}
+        if conversation["id"] in covered:
+            # The session that lived it already recorded it.
+            return {"synthesized": 0, "skipped": 1, "failed": 0}
         try:
             result = synthesize_conversation(
                 conversation, call, model_id, default_registry(), done_episodes
@@ -643,6 +689,7 @@ def _ingest_synthesis(index: Path) -> int:
     serves, so coexistence in the registry never becomes a duplicate -- or a
     primary-key collision -- in the index.
     """
+    from atrium.ingest.canonical_workspace import canonical_workspace
     from atrium.ingest.conversation_workspaces import conversation_workspaces
     from atrium.ingest.to_synthesis_records import to_synthesis_records
     from atrium.synthesize.active_recipe import active_recipe_priority
@@ -663,7 +710,11 @@ def _ingest_synthesis(index: Path) -> int:
         workspaces = conversation_workspaces(connection)
         by_conversation: dict[str, list[Record]] = {}
         for record in chosen.values():
-            workspace = workspaces.get(record["conversation_id"])
+            # A session record names its own project: its conversation is
+            # not archived yet, so the archive's map cannot know it.
+            workspace = workspaces.get(record["conversation_id"]) or canonical_workspace(
+                record.get("workspace")
+            )
             for row in to_synthesis_records(record, workspace):
                 by_conversation.setdefault(row.conversation_id, []).append(row)
         with connection:

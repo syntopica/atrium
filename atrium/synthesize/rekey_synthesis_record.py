@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from atrium.session.session_segmentation import SESSION_SEGMENTATION
 from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
 from atrium.synthesize.job_identity import job_identity
@@ -19,6 +20,10 @@ def rekey_synthesis_record(record: dict[str, Any]) -> dict[str, Any]:
     so a re-run costs nothing and an interrupted pass can simply be repeated.
     """
     if record.get("event_id_schema") == EVENT_ID_SCHEMA:
+        return record
+    # A session-cut record is keyed on a transcript boundary, not on archive
+    # events; it has no event ids to re-qualify and nothing here applies.
+    if record.get("segmentation") == SESSION_SEGMENTATION:
         return record
 
     conversation_id = record["conversation_id"]

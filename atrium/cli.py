@@ -75,18 +75,19 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0915 -- one
     synthesize.add_argument("--dry-run", action="store_true")
     synthesize.add_argument(
         "--producer",
-        choices=("agy", "codex", "max"),
+        choices=("agy", "codex", "cursor", "max"),
         default="agy",
         help="agy: Gemini bulk quota via the Antigravity CLI (default -- the "
         "standing routing rule for whole-corpus passes); codex: the Codex "
-        "CLI's quota; max: the Claude Max OAuth lane",
+        "CLI's quota; cursor: the Cursor CLI's monthly quota, read-only ask "
+        "mode; max: the Claude Max OAuth lane",
     )
     synthesize.add_argument("--workers", type=_positive_limit, default=3)
     synthesize.add_argument(
         "--model",
         default=None,
-        help="Codex lane only: pin the model instead of the account default. It "
-        "enters the job key, so a different model is a different population",
+        help="Codex and cursor lanes: pin the model instead of the lane default. "
+        "It enters the job key, so a different model is a different population",
     )
     synthesize.add_argument(
         "--effort",
@@ -517,6 +518,16 @@ def _synthesize(  # noqa: PLR0913, PLR0917, PLR0915 -- the CLI surface: each arg
             return codex_lane_call(system_text, user_text, tool, model, effort)
 
         model_id = codex_lane_model_id(model, effort)
+    elif producer == "cursor":
+        from atrium.synthesize.cursor_lane_call import CURSOR_DEFAULT_MODEL, cursor_lane_call
+        from atrium.synthesize.cursor_lane_model_id import cursor_lane_model_id
+
+        cursor_model = model or CURSOR_DEFAULT_MODEL
+
+        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+            return cursor_lane_call(system_text, user_text, tool, cursor_model)
+
+        model_id = cursor_lane_model_id(cursor_model)
     else:
         from atrium.synthesize.agy_lane_call import AGY_MODEL_ID, agy_lane_call
 

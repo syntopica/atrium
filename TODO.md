@@ -328,11 +328,23 @@
   `db873a466347eb3a`, and `record-session` wrote `355ed3ffdcd616e7544e850820a9e9eb`
   (population `session-claude-fable-5-1`, workspace `[HOME]/p/brain`). Registered in
   `~/.claude/settings.json` under `Stop` (dotfiles `claude-export` carries it per host).
-  Remaining: watch the next interactive session cross the limits and confirm Claude Code
-  fires the hook and the model obeys (the retry accounting has only unit tests); decide
+  **Live at 12:0x the same day:** Claude Code fired the hook in an unrelated interactive
+  session (portfolio repo), the model obeyed, record `42b23dcc6f5cb41cf1dd4378959adb57`
+  (12 facts, 5 open ends, workspace `[HOME]/p/cristian-deluxe-developer-portfolio`).
+  The terminal shows the whole reason as "Stop hook error: ..." so the reason was cut
+  to three sentences and the contract moved to `record-session --help` (recipe-2).
+  Remaining: the retry accounting has only unit tests; decide
   whether `claude -p` sessions should be excluded outright (they are `entrypoint: cli`);
   put `session-*` populations first in `active-recipe.json` once a few exist; document
   the hook in the syntopica hub's install procedure for single-account users.
+
+- [ ] **Sessions in `~/p/brain` (the engine since 2026-09-14) are indexed as `[HOME]/p/wiki`.**
+  `workspace-aliases.json` maps `[HOME]/p/brain` to `[HOME]/p/wiki` because the wiki lived
+  there until the rename; the alias has no date, so the engine's own sessions (archive
+  workspace `[HOME]/p/brain`, e.g. conversation `06eea4d6...` of 2026-09-16) become wiki
+  memory, and `atrium recall --cwd ~/p/brain` answers nothing while `--cwd ~/p/wiki` lists
+  them. Smallest step: apply the alias only to conversations started before 2026-09-14
+  (aliases need a `since`/`until`), or drop it and re-alias the old ones by date once.
 
 - [ ] **One episode in 28 is a bare "structured output delivered" acknowledgement and
   still costs a full synthesis call.** Measured over the 3,165 records the drip wrote on

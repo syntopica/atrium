@@ -320,6 +320,20 @@
   name pattern. Smallest fix: have `drip-loop.sh` pass its pass pid to the guard and have the
   guard `kill -0` that pid, so the guard is scoped to the pass it armed for.
 
+- [~] **The session producer is built and registered; its first hook-driven record is
+  still to be observed.** 2026-09-16: `atrium session-stop` and `atrium record-session`
+  (`7e646ed`, `368720a`), design `docs/designs/session-producer.md` (revision 2 after a
+  17-finding Codex review). Verified by hand: the hook answered a real Stop payload for
+  the building session in 0.43 s with a `block` decision, froze checkpoint
+  `db873a466347eb3a`, and `record-session` wrote `355ed3ffdcd616e7544e850820a9e9eb`
+  (population `session-claude-fable-5-1`, workspace `[HOME]/p/brain`). Registered in
+  `~/.claude/settings.json` under `Stop` (dotfiles `claude-export` carries it per host).
+  Remaining: watch the next interactive session cross the limits and confirm Claude Code
+  fires the hook and the model obeys (the retry accounting has only unit tests); decide
+  whether `claude -p` sessions should be excluded outright (they are `entrypoint: cli`);
+  put `session-*` populations first in `active-recipe.json` once a few exist; document
+  the hook in the syntopica hub's install procedure for single-account users.
+
 - [ ] **One episode in 28 is a bare "structured output delivered" acknowledgement and
   still costs a full synthesis call.** Measured over the 3,165 records the drip wrote on
   2026-09-16 between 04:30 and 11:45: 111 have no facts, and their titles are variations of

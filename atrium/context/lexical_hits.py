@@ -3,8 +3,10 @@
 import sqlite3
 
 from atrium.context.context_scope import context_scope
+from atrium.context.lexical_pages import lexical_pages
+from atrium.retrieve.conjunctive_expression import conjunctive_expression
 from atrium.retrieve.hit import Hit
-from atrium.retrieve.search_words import _fold, _hits, _match_expression, _verifiers
+from atrium.retrieve.search_words import _match_expression, _verifiers
 
 
 def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
@@ -15,6 +17,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
     *,
     curated: bool,
     workspace: str | None = None,
+    exhausted: set[str] | None = None,
 ) -> list[Hit]:
     """Use existing lexical token rules with a role filter inside the query."""
     table = "substrings" if lane == "substring" else "words"
@@ -39,36 +42,34 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
         LIMIT ? OFFSET ?
     """  # noqa: S608 -- table is one of two hardcoded identifiers, data is bound
     verifiers, plain = _verifiers(query)
-    hits = []
-    offset = 0
-    page_size = max(limit, 200)
-    while True:
-        rows = connection.execute(statement, (*parameters, match, page_size, offset)).fetchall()
-        if not rows:
-            break
-        offset += page_size
-        for row in rows:
-            hit = _hits([row])[0]
-            if (
-                lane != "substring"
-                and verifiers
-                and not plain
-                and not any(rx.search(_fold(hit.text)) for rx in verifiers)
-            ):
-                continue
-            hits.append(
-                Hit(
-                    hit.record_id,
-                    hit.text,
-                    hit.score,
-                    table,
-                    hit.conversation_id,
-                    hit.source_sha256,
-                    hit.authored_at,
-                    hit.provider,
-                    hit.role,
-                )
-            )
-            if len(hits) == limit:
-                return hits
-    return hits
+    verify = lane != "substring" and bool(verifiers) and not plain
+    seen: set[str] = set()
+    # The narrow pass first. A context query is usually a sentence, and ORing a
+    # sentence's terms ranks most of a large index: measured at over 120s where
+    # the same nine terms joined by AND took 0.36s (`conjunctive_expression`).
+    # The broad pass then runs budgeted, so the lane answers in seconds with
+    # what it has rather than in minutes with everything.
+    found: list[Hit] = []
+    conjunction = "" if lane == "substring" else conjunctive_expression(query)
+    # Both passes are budgeted here, unlike the unscoped `search_words` path:
+    # the scope CTE makes even the AND pass expensive -- measured at 8s for the
+    # history scope and 15s for the curated one on a 1,414,461-record index,
+    # against 0.36s for the same expression unscoped -- so an unbounded narrow
+    # pass would hand back the hang the broad one no longer has.
+    for expression in (conjunction, match):
+        if not expression or len(found) == limit:
+            continue
+        found += lexical_pages(
+            connection,
+            statement,
+            parameters,
+            expression,
+            table,
+            limit - len(found),
+            verify=verify,
+            verifiers=verifiers,
+            seen=seen,
+            exhausted=exhausted if exhausted is not None else set(),
+            bounded=True,
+        )
+    return found

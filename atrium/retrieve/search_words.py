@@ -5,7 +5,10 @@ import sqlite3
 import unicodedata
 from typing import Any
 
+from atrium.retrieve.bounded_rows import bounded_rows
+from atrium.retrieve.conjunctive_expression import conjunctive_expression
 from atrium.retrieve.hit import Hit
+from atrium.retrieve.query_terms import query_terms
 from atrium.retrieve.workspace_scope import workspace_clause
 
 # FTS5 bm25() returns MORE NEGATIVE values for better matches. Negating it here
@@ -38,8 +41,19 @@ def search_words(
     statement = _QUERY.format(scope=scope)
     verifiers, has_plain_term = _verifiers(query)
     if has_plain_term or not verifiers:
-        parameters = (match, *scope_parameters, limit, 0)
-        return _hits(connection.execute(statement, parameters).fetchall())[:limit]
+        # Narrow pass first, then the broad one under a budget: see
+        # `conjunctive_expression` for the measurement that put it there.
+        found: list[Hit] = []
+        conjunction = conjunctive_expression(query)
+        if conjunction:
+            parameters = (conjunction, *scope_parameters, limit, 0)
+            found = _hits(connection.execute(statement, parameters).fetchall())
+        if len(found) >= limit:
+            return found[:limit]
+        seen = {hit.record_id for hit in found}
+        rows = bounded_rows(connection, statement, (match, *scope_parameters, limit, 0))
+        found.extend(hit for hit in _hits(rows) if hit.record_id not in seen)
+        return found[:limit]
     # Every term is punctuated, so every candidate must pass an adjacency
     # check. Paginate until enough verified hits or the candidates run out: a
     # fixed oversample cannot guarantee recall -- with 60 spaced `3 7 0` rows
@@ -76,33 +90,8 @@ def _hits(rows: list[Any]) -> list[Hit]:
 
 
 def _match_expression(query: str) -> str:
-    """Build an FTS5 MATCH expression that survives identifiers and versions.
-
-    The index tokenizer splits on punctuation, so `3.7.0` is stored as the three
-    adjacent tokens `3 7 0`. Dropping the punctuated term -- or worse, dropping
-    every fragment shorter than two characters -- makes a version search return
-    nothing at all, in the one lane whose entire purpose is exact recall of
-    versions, identifiers and names.
-
-    So a term whose parts were joined by punctuation becomes a PHRASE, which
-    matches only where those tokens are adjacent in that order. `3.7.0` finds
-    `3.7.0` and not a document that merely mentions 3, 7 and 0 apart.
-
-    Everything is quoted, so a query like `memstore_delete_drawers()` is a
-    search rather than an FTS5 syntax error.
-    """
-    expressions = []
-    for raw_term in query.split():
-        parts = re.findall(r"[^\W_]+", raw_term, flags=re.UNICODE)
-        if not parts:
-            continue
-        if len(parts) > 1:
-            expressions.append('"' + " ".join(parts) + '"')
-        elif len(parts[0]) > 1 or len(raw_term) > len(parts[0]):
-            # A one-character part is kept only when punctuation was stripped
-            # from around it, which is what distinguishes `C#` from a stray `a`.
-            expressions.append(f'"{parts[0]}"')
-    return " OR ".join(expressions)
+    """Join the query's terms with OR -- the lane's recall semantics."""
+    return " OR ".join(query_terms(query))
 
 
 def _verifiers(query: str) -> tuple[list[re.Pattern[str]], bool]:

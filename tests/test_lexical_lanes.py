@@ -193,3 +193,55 @@ def test_a_scope_narrows_before_the_limit_not_after(tmp_path):
     scoped = search_words(connection, "sentinel", 5, "[HOME]/p/mine")
     connection.close()
     assert [hit.record_id for hit in scoped] == ["r60"]
+
+
+def test_the_narrow_pass_ranks_a_record_holding_every_term_first(tmp_path):
+    """AND before OR: the intersection is both cheaper and the better answer.
+
+    The measurement that put it there is in `conjunctive_expression`; this fixes
+    the semantics, which is that a record matching every term outranks a record
+    matching one, whatever bm25 makes of a two-record corpus.
+    """
+    connection = _store(
+        tmp_path,
+        [
+            _record("one", "the stop hook fires on a status turn"),
+            _record("two", "status " * 200),
+        ],
+    )
+    hits = search_words(connection, "stop hook status", limit=2)
+    assert [hit.record_id for hit in hits] == ["one", "two"]
+
+
+def test_the_broad_pass_still_answers_when_no_record_holds_every_term(tmp_path):
+    connection = _store(
+        tmp_path,
+        [_record("one", "a stop hook"), _record("two", "a status turn")],
+    )
+    hits = search_words(connection, "hook turn", limit=5)
+    assert sorted(hit.record_id for hit in hits) == ["one", "two"]
+
+
+def test_an_exhausted_budget_is_reported_rather_than_read_as_an_empty_index(tmp_path):
+    """An empty result must never be indistinguishable from "nothing indexed"."""
+    import sqlite3
+
+    from atrium.retrieve.bounded_rows import bounded_rows
+
+    connection = _store(tmp_path, [_record("one", "a stop hook")])
+    exhausted: set[str] = set()
+    # A statement long enough to reach the progress handler at all: the check
+    # runs every 10,000 virtual-machine instructions, so a one-row query beats
+    # any deadline by finishing first.
+    spin = """
+        WITH RECURSIVE counter(n) AS (
+            SELECT 1 UNION ALL SELECT n + 1 FROM counter WHERE n < ?
+        )
+        SELECT count(*) FROM counter
+    """
+    rows = bounded_rows(connection, spin, (10_000_000,), exhausted, 1)
+    assert rows == []
+    assert exhausted == {"lexical_budget_exhausted"}
+    # The connection survives the interruption and still answers.
+    assert connection.execute("SELECT count(*) FROM records").fetchone() == (1,)
+    assert isinstance(connection, sqlite3.Connection)

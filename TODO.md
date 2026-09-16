@@ -14,26 +14,21 @@
 
 ## Retrieval
 
-- [ ] The word lane is unusable on a natural-language sentence at full corpus
-  scale. Measured 2026-09-16 against the live index (1,414,461 records):
-  `atrium context "why does the stop hook fire on a status turn" --lane words`
-  did not finish in 120s, because `_match_expression` ORs every term and the
-  common ones dominate -- `the` alone is in 483,947 records, `on` 228,399,
-  `status` 120,498 -- and `ORDER BY bm25` then ranks the whole match set. One
-  200-row page of that OR costs 34-42s; dropping the stopwords leaves 16s; two
-  mid-frequency terms (`stop OR hook`, ~90k rows) still cost 2.5-8s. The same
-  query on `--lane dense` answers in 1-3s, which is why the new
-  UserPromptSubmit hook is dense-only. Smallest step: prune terms by document
-  frequency before building the MATCH expression (an `fts5vocab(main, words,
-  'row')` lookup is ~7ms per term, 167ms for `the`), keeping every punctuated
-  phrase term and never pruning below two terms; then re-measure the sentence
-  above.
-- [ ] `baseline-py baseline check` reports two BPY001 findings that predate the
-  state-directory work (verified 2026-09-15 by stashing it: still 2 new on a clean
-  HEAD): `atrium/embed/model_repo.py` has no declaration and
-  `atrium/ingest/decode_workspace_segment.py` carries `_descend` beside its unit.
-  Smallest step: declare `model_repo.py` a data module in `baseline-py.toml` and
-  move `_descend` to its own file, then re-run the gate.
+- [~] The word lane no longer hangs on a natural-language sentence, and what it
+  still costs is the scope CTE, not the terms. Fixed 2026-09-16: the lane asks
+  the AND question first and keeps OR as a budgeted fallback
+  (`atrium/retrieve/conjunctive_expression.py`, `bounded_rows.py`,
+  `atrium/context/lexical_pages.py`). Measured on the live index (1,414,461
+  records), `atrium context "why does the stop hook fire on a status turn"
+  --lane words --project ~/p/brain` went from over 120s (timeout, no answer) to
+  8.2s, and reports `lexical_budget_exhausted` instead of an empty result that
+  reads as "nothing indexed". Remaining: the context scope CTE dominates what is
+  left -- the same AND expression costs 0.36s unscoped, 8s under the history
+  scope and 15s under the curated one, because `role NOT IN ('source','note')`
+  cannot use `records_context_workspace_role` and `ORDER BY bm25` sorts every
+  match. Smallest step: measure a positive role predicate (an explicit IN list
+  of history roles) against the existing index, then decide whether the CTE
+  should be replaced by a join.
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

@@ -1,4 +1,4 @@
-# baseline-py configuration - https://github.com/BusiRocket/baseline
+# codeality-py configuration - https://github.com/BusiRocket/baseline
 schema-version = 1
 source-roots = ["atrium"]
 test-roots = ["tests"]

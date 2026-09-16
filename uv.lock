@@ -49,13 +49,13 @@ mcp = [
 
 [package.dev-dependencies]
 quality = [
-    { name = "busirocket-baseline-py" },
     { name = "deptry" },
     { name = "mypy" },
     { name = "pip-audit" },
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "ruff" },
+    { name = "syntopica-codeality-py" },
 ]
 
 [package.metadata]
@@ -70,13 +70,13 @@ provides-extras = ["mcp"]
 
 [package.metadata.requires-dev]
 quality = [
-    { name = "busirocket-baseline-py", specifier = ">=0.1,<1" },
     { name = "deptry", specifier = ">=0.20,<1" },
     { name = "mypy", specifier = ">=1.11,<2" },
     { name = "pip-audit", specifier = ">=2.7,<3" },
     { name = "pytest", specifier = ">=8,<10" },
     { name = "pytest-cov", specifier = ">=5,<8" },
     { name = "ruff", specifier = ">=0.15,<1" },
+    { name = "syntopica-codeality-py", specifier = ">=0.1,<1" },
 ]
 
 [[package]]
@@ -95,19 +95,6 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/c4/cf/85379f13b76f3a69bca86b60237978af17d6aa0bc5998978c3b8cf05abb2/boolean_py-5.0.tar.gz", hash = "sha256:60cbc4bad079753721d32649545505362c754e121570ada4658b852a3a318d95", size = 37047, upload-time = "2025-04-03T10:39:49.734Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/ca/78d423b324b8d77900030fa59c4aa9054261ef0925631cd2501dd015b7b7/boolean_py-5.0-py3-none-any.whl", hash = "sha256:ef28a70bd43115208441b53a045d1549e2f0ec6e3d08a9d142cbc41c1938e8d9", size = 26577, upload-time = "2025-04-03T10:39:48.449Z" },
-]
-
-[[package]]
-name = "busirocket-baseline-py"
-version = "0.1.12"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "click" },
-    { name = "tomlkit" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/e2/df/8d8ba4f1b9cf5e704032332c1f9fc520fe53307a34dc62fb3080121b9814/busirocket_baseline_py-0.1.12.tar.gz", hash = "sha256:f548a0ccbb2a84449cfde29273101099c2a246dcc1f6f372e4d1dbe14b319fdd", size = 126696, upload-time = "2026-09-02T01:26:21.536Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/8f/67/eabefc323cae3b363704a3c3076c5df125c141502b4d2d34489b02dfe382/busirocket_baseline_py-0.1.12-py3-none-any.whl", hash = "sha256:2571c982874a40f530009a7da4800a90f46187a43adf674cf8e9f4a4c1cbbdaa", size = 94016, upload-time = "2026-09-02T01:26:20.11Z" },
 ]
 
 [[package]]
@@ -1998,6 +1985,19 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/b5/b4/205b0d5241d934e8add0c38aa924c4f9fb7330834ff11e5444db964ec3f9/starlette-1.6.0.tar.gz", hash = "sha256:d4e3ac5e546444960c710297a3c9fc3f7ebae1b7e963f3d36173b49da535be9b", size = 2716969, upload-time = "2026-08-08T18:27:57.512Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/c8/cb/6a6a47d5b464bd08695d254f3da6e7986cc70c9fa5d778eda57538edfe56/starlette-1.6.0-py3-none-any.whl", hash = "sha256:a86dd39d14bb45f85a3d18525215a9ef0cfd1f192ac793220e72598c90335f0c", size = 75969, upload-time = "2026-08-08T18:27:56.196Z" },
+]
+
+[[package]]
+name = "syntopica-codeality-py"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "click" },
+    { name = "tomlkit" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/53/73/54aaa59dd20e9f6a70350c2d32c939b98af4115b05b3fd8b365e19064197/syntopica_codeality_py-0.2.0.tar.gz", hash = "sha256:315364856f996ec030b9c0fa093a322acbaa0e4a9907cdd32b455df85d33c72b", size = 126928, upload-time = "2026-09-16T23:49:39.971Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c9/2d/9887f4c50681bd2608c738cad3f4390cd78768fa64bef0c4c9d44fb847cc/syntopica_codeality_py-0.2.0-py3-none-any.whl", hash = "sha256:a4582be692c6f8e44e1978eba6810864449561262aee21dbf87c69a514934044", size = 94533, upload-time = "2026-09-16T23:49:38.77Z" },
 ]
 
 [[package]]

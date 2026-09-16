@@ -462,13 +462,13 @@ not found at /opt/homebrew/Cellar/ollama/0.34.0/libexec/lib/ollama/mlx_metal_v3/
 
 ## Quality gate
 
-- [ ] `baseline-py baseline check` reports two BPY001 findings that predate the
+- [ ] `codeality-py baseline check` reports two BPY001 findings that predate the
       state-directory work (verified 2026-09-15 by stashing it: still 2 new on a
       clean HEAD, and still 2 on 2026-09-16): `atrium/embed/model_repo.py` has no
       declaration and `atrium/ingest/decode_workspace_segment.py` carries `_descend`
       beside its unit. Every session reports the gate as "green except these two",
       which is how a real finding would hide. Smallest step: declare
-      `model_repo.py` a data module in `baseline-py.toml` and move `_descend` to its
+      `model_repo.py` a data module in `codeality-py.toml` and move `_descend` to its
       own file, then re-run the gate. Recovered from the Mac mini's checkout, whose
       branch had diverged since 2026-08-27.
 

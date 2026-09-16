@@ -13,7 +13,7 @@ untrusted. Every context response requires live verification of current outcomes
 ```bash
 uv run --extra mcp --group quality pytest tests/ -q
 uv run --extra mcp --group quality pytest tests/test_context_protocol.py -q
-uv run --extra mcp --group quality baseline-py gate --json
+uv run --extra mcp --group quality codeality-py gate --json
 uv lock --check
 git diff --check
 ```

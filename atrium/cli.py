@@ -87,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     synthesize.add_argument(
         "--model",
         default=None,
-        help="Codex and cursor lanes: pin the model instead of the lane default. "
+        help="Codex, cursor and agy lanes: pin the model instead of the lane default. "
         "It enters the job key, so a different model is a different population",
     )
     synthesize.add_argument(
@@ -573,9 +573,14 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         model_id = cursor_lane_model_id(cursor_model)
     else:
         from atrium.synthesize.agy_lane_call import AGY_MODEL_ID, agy_lane_call
+        from atrium.synthesize.agy_lane_model_id import agy_lane_model_id
 
-        call = agy_lane_call
-        model_id = AGY_MODEL_ID
+        agy_model = model or AGY_MODEL_ID
+
+        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+            return agy_lane_call(system_text, user_text, tool, agy_model)
+
+        model_id = agy_lane_model_id(agy_model)
 
     from atrium.session.session_covered_conversations import session_covered_conversations
     from atrium.synthesize.synthesis_registry import read_records

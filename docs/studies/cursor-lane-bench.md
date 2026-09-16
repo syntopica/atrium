@@ -86,6 +86,16 @@ the transcript as material rather than instructions, and restates the JSON
 contract after it, which is the order the Codex lane uses with 0 failed
 conversations on its bounded pass.
 
+## How much is left, counted rather than estimated
+
+`atrium synthesize --dry-run` over the whole archive on 2026-09-16 04:48:
+**47,515 conversations -> 111,590 episodes**, against 35,037 registry records,
+so about **76,500 episodes pending**. The producer bench's "~150,000
+remaining" extrapolated 5.5 episodes per conversation from the 300 newest
+conversations, which are the long ones; the corpus average is 2.3. At the
+measured lane rates the backlog is about two days of wall-clock and two to
+three months of subscription quota.
+
 ## What this does not settle
 
 n=3, as before. Whether Cursor rate-limits parallel workers the way agy does,

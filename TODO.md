@@ -358,6 +358,17 @@
   `output.facts == []` from that window; the agy lane records `usage` as zeros, so its
   cost for these is not measurable.
 
+- [ ] **The agy lane's Claude models cost 15x what Gemini does per record.** Antigravity
+  meters Gemini and Claude/GPT on separate 5-hour and weekly windows, so a Gemini wall
+  leaves `claude-sonnet-4-6` runnable (`--producer agy --model ...`, population
+  `agy-claude-sonnet-4-6`, `df710f6`). One measured pass, 2026-09-16 13:08-13:14, wrote
+  30 records and took the Claude/GPT weekly window from 19% to 54.7% -- ~1.2 points per
+  record, where a Gemini pass buys ~450 records before walling -- out of the same budget
+  interactive Antigravity work spends. The lane is off `LANES` (dotfiles `7196e6f`) and
+  each lane now gates on its own windows via `QUOTA_WINDOWS`. Open question: whether
+  those 30 records are enough better than Gemini's to justify a bounded run; nothing
+  compares them yet, which is the acceptance-set gap again.
+
 - [ ] **Bulk synthesis moved off Codex onto the Cursor lane, 2026-09-16.** Operator
   directive: the Codex account's quota is for interactive work and must not be spent
   here; the lanes are Cursor and agy. `--producer cursor` was added (`4844757`):

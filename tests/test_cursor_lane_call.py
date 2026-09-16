@@ -56,6 +56,9 @@ def test_the_prompt_rides_on_stdin_in_read_only_mode(monkeypatch: pytest.MonkeyP
     assert call["args"][:3] == ["cursor-agent", "-p", "--mode"]
     assert "ask" in call["args"] and "--force" not in call["args"]
     assert "TRANSCRIPT" in call["input"] and "SYSTEM" in call["input"]
+    # Instructions before the transcript: a transcript that is itself an
+    # imperative outranked instructions placed after it on the first pass.
+    assert call["input"].index("SYSTEM") < call["input"].index("TRANSCRIPT")
     assert not any("TRANSCRIPT" in part for part in call["args"])
 
 

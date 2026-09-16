@@ -74,6 +74,18 @@ it serves only episodes no paid-for population already covers.
 Workers start at 3, the agy lane's measured optimum; Cursor's server-side rate
 limiting has not been measured and nothing here argues for more.
 
+## First production pass, same day
+
+The drip's first 31 conversations produced 125 episodes at about 15 a minute
+and **8 failed conversations**, 7 of them one shape: the model carried out the
+task the transcript described (a security review, complete with headings and
+"if you want, I can...") instead of synthesizing it. The bench ran with the
+Gemini lane's transcript-first prompt order, and none of its three episodes
+were themselves imperatives. The lane now puts the instructions first, fences
+the transcript as material rather than instructions, and restates the JSON
+contract after it, which is the order the Codex lane uses with 0 failed
+conversations on its bounded pass.
+
 ## What this does not settle
 
 n=3, as before. Whether Cursor rate-limits parallel workers the way agy does,

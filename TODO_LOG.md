@@ -6,6 +6,20 @@
 
 ### 2026-09
 
+- [x] 2026-09-16 — **The lexical lane streams in rank order instead of sorting
+  the corpus:** every lexical statement ends in `ORDER BY <table>.rank` with no
+  LIMIT, and `atrium/retrieve/ranked_hits.py` reads it until the limit is met,
+  through the cutoff tie group. That is FTS5's rank optimisation: measured on
+  1,417,899 records, `"stop" OR "hook" OR "json"` unscoped took 17.6s sorted and
+  0.18s streamed, and a five-term OR that never finished in 30s streams its top
+  20 in 0.57s, with identical rows wherever the sorted form completed. Paging
+  (`lexical_pages`) and `bounded_rows` are gone with it, and an expired budget
+  now keeps the hits it already took instead of returning nothing. End to end on
+  `~/p/brain`, five probe queries, two runs each: `atrium context --lane words`
+  0.21-1.53s (was 0.6-3.4s), `--lane auto` 1.02-2.26s (was 1.7-4.2s),
+  `atrium search --words` 0.22s (was 0.6s), and no query reports
+  `lexical_budget_exhausted` any more. Verified by `uv run baseline-py gate`
+  (301 tests).
 - [x] 2026-09-16 — **The context lane's `rowid IN (...)` was the whole cost:**
   `atrium/context/lexical_hits.py` constrained the FTS scan with
   `words.rowid IN (SELECT rowid FROM eligible)`, and FTS5 answers a

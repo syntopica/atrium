@@ -14,16 +14,17 @@
 
 ## Retrieval
 
-- [ ] The broad OR pass is what the context lane still spends its time on: it
-  costs its whole 1200ms budget on the curated scope and usually returns
-  nothing, because FTS5 ranks every row the expression matches whatever the
-  scope is. It now runs only when the narrow AND pass found nothing and asks a
-  frequency-pruned expression (`atrium/retrieve/selective_expression.py`), which
-  is what took `atrium context "why does the stop hook fire on a status turn"
-  --lane words --project ~/p/brain` from 0 hits to 16. Smallest next step:
-  measure whether a second FTS table over the curated notes alone (4,865 of
-  1,417,899 records) makes the broad pass cheap enough to drop its budget, since
-  the cost is the corpus-wide match set and not the notes.
+- [ ] A notes-only FTS table is the remaining lexical idea, and it is now an
+  optimisation rather than a fix. A second-opinion run built one over the 4,865
+  curated notes (513ms, 11.34 MB) and measured its unpruned broad query at a
+  0.345ms median against 1,078ms for the shared table, with candidates for 12/12
+  probe questions instead of 6/12. Since then the rank-ordered read took the
+  shared table's broad pass to 0.15-0.85s with no budget exhaustion, so what is
+  left to win is the frequency pruning: a notes-only table can afford the
+  unpruned OR. Cost is maintenance -- a second index to build, refresh and keep
+  consistent with `records` -- and the bm25 statistics change, so the ranking
+  would have to be compared against the current one on the same questions before
+  this is worth it. Measurements in the review directory's `notes-summary.json`.
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

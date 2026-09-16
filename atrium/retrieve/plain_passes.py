@@ -3,9 +3,14 @@
 import sqlite3
 from typing import Any
 
-from atrium.retrieve.bounded_rows import bounded_rows
 from atrium.retrieve.hit import Hit
-from atrium.retrieve.hits_from_rows import hits_from_rows
+from atrium.retrieve.ranked_hits import ranked_hits
+
+# The narrow pass is an intersection and answers in milliseconds; the broad one
+# streams in rank order, which is what took a sentence's OR from over 120s to
+# under a second. The budget is here for the match set large enough that even
+# streaming it takes seconds.
+_BUDGET_MILLISECONDS = 2000
 
 
 def plain_passes(  # noqa: PLR0913, PLR0917 -- one pass pair, fully parameterised
@@ -20,16 +25,30 @@ def plain_passes(  # noqa: PLR0913, PLR0917 -- one pass pair, fully parameterise
     """Answer from the intersection first, then widen under a budget.
 
     See `conjunctive_expression` for the measurement: ORing a sentence's terms
-    ranks most of a large corpus, while the same terms intersected do not.
+    matches most of a large corpus, while the same terms intersected do not.
     """
     found: list[Hit] = []
+    seen: set[str] = set()
+
+    def accept(hit: Hit) -> bool:
+        if hit.record_id in seen:
+            return False
+        seen.add(hit.record_id)
+        return True
+
     if conjunction:
-        found = hits_from_rows(
-            connection.execute(statement, (conjunction, *scope, limit, 0)).fetchall()
+        found = ranked_hits(
+            connection, statement, (conjunction, *scope), limit, _BUDGET_MILLISECONDS, accept
         )
     if len(found) >= limit:
         return found[:limit]
-    seen = {hit.record_id for hit in found}
-    rows = bounded_rows(connection, statement, (match, *scope, limit, 0), exhausted)
-    found.extend(hit for hit in hits_from_rows(rows) if hit.record_id not in seen)
+    found += ranked_hits(
+        connection,
+        statement,
+        (match, *scope),
+        limit - len(found),
+        _BUDGET_MILLISECONDS,
+        accept,
+        exhausted,
+    )
     return found[:limit]

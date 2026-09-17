@@ -100,10 +100,10 @@ def test_a_scratchpad_under_another_temp_root_is_still_a_scratchpad(home: Path):
 
 def test_a_rename_is_still_folded_after_the_decode(home: Path):
     """The scratchpad decodes to the old name, and the alias must still apply."""
-    (home / "p" / "provertly").mkdir()
-    workspace = _scratchpad(home / "p" / "provertly")
-    aliases = {"[HOME]/p/provertly": "[HOME]/p/verticagtm"}
-    assert canonical_workspace(workspace, home, aliases) == "[HOME]/p/verticagtm"
+    (home / "p" / "project-before").mkdir()
+    workspace = _scratchpad(home / "p" / "project-before")
+    aliases = {"[HOME]/p/project-before": "[HOME]/p/project-after"}
+    assert canonical_workspace(workspace, home, aliases) == "[HOME]/p/project-after"
 
 
 def test_an_unrecoverable_scratchpad_is_dropped(home: Path):

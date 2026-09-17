@@ -17,8 +17,8 @@ _WORKTREE = re.compile(r"(?:/\.claude/worktrees/[^/]+|\.worktrees/[^/]+)(?:/.*)?
 def project_workspace(cwd: str | Path, home: str | Path | None = None) -> str | None:
     """Return the stored-workspace prefix for the project containing ``cwd``.
 
-    A session opened in `p/intelifactu/apps/web` is working on intelifactu and
-    must recall intelifactu, so the answer is the project root, not the cwd.
+    A session opened in `p/wide-project/apps/web` is working on wide-project and
+    must recall wide-project, so the answer is the project root, not the cwd.
     The root is the nearest enclosing directory holding a `.git` -- the same
     boundary the person is working inside. Callers match that prefix and
     everything under it, so a session at the root and a session three

@@ -7,7 +7,7 @@ from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.state.state_directory import state_directory
 
 # Small, hand-maintained, and deliberately not derivable: only a person knows
-# that `p/provertly` became `p/verticagtm` rather than being deleted while an
+# that `p/project-before` became `p/project-after` rather than being deleted while an
 # unrelated project appeared. Kept beside the index rather than inside it
 # because a rebuild must not lose it -- it is a few lines a human wrote, so the
 # right place for the copy of record is the operator's dotfiles.
@@ -24,8 +24,8 @@ def workspace_aliases(path: Path | None = None) -> dict[str, WorkspaceAlias]:
     instance selected by the environment and working directory.
 
     A rename splits a project's memory in two exactly as a missed redaction
-    does, and more quietly: `p/provertly` holds 558 conversations from
-    2026-06-14 to 2026-07-10 and `p/verticagtm` picks up on 2026-07-12, so a
+    does, and more quietly: `p/project-before` holds 558 conversations from
+    2026-06-14 to 2026-07-10 and `p/project-after` picks up on 2026-07-12, so a
     session in the project today recalls nothing from its first month.
 
     An unreadable or malformed file returns no aliases rather than raising: the

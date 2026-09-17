@@ -1,7 +1,7 @@
 """A renamed project keeps its memory, under the name it has now.
 
-`p/provertly` holds 558 conversations from 2026-06-14 to 2026-07-10 and
-`p/verticagtm` picks up on 2026-07-12 -- the same project, renamed. Without
+`p/project-before` holds 558 conversations from 2026-06-14 to 2026-07-10 and
+`p/project-after` picks up on 2026-07-12 -- the same project, renamed. Without
 folding the two, a session there recalls nothing from the project's first
 month.
 """
@@ -12,25 +12,27 @@ from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.ingest.workspace_aliases import workspace_aliases
 
-ALIASES = {"[HOME]/p/provertly": "[HOME]/p/verticagtm"}
+ALIASES = {"[HOME]/p/project-before": "[HOME]/p/project-after"}
 HOME = "/Users/someone"
 
 
 def test_the_old_name_becomes_the_current_one():
-    assert canonical_workspace("[HOME]/p/provertly", HOME, ALIASES) == "[HOME]/p/verticagtm"
+    assert canonical_workspace("[HOME]/p/project-before", HOME, ALIASES) == "[HOME]/p/project-after"
 
 
 def test_subdirectories_of_the_old_name_move_too():
     """Worktrees and tool directories carry the old root as a prefix."""
     assert (
-        canonical_workspace("[HOME]/p/provertly/.playwright-mcp", HOME, ALIASES)
-        == "[HOME]/p/verticagtm/.playwright-mcp"
+        canonical_workspace("[HOME]/p/project-before/.playwright-mcp", HOME, ALIASES)
+        == "[HOME]/p/project-after/.playwright-mcp"
     )
 
 
 def test_a_missed_redaction_is_aliased_after_being_folded_home():
     """The unredacted spelling of the old name must reach the new one too."""
-    assert canonical_workspace(f"{HOME}/p/provertly", HOME, ALIASES) == "[HOME]/p/verticagtm"
+    assert (
+        canonical_workspace(f"{HOME}/p/project-before", HOME, ALIASES) == "[HOME]/p/project-after"
+    )
 
 
 def test_an_unrelated_project_is_untouched():
@@ -39,8 +41,8 @@ def test_an_unrelated_project_is_untouched():
 
 def test_a_name_prefix_neighbour_is_not_renamed():
     assert (
-        canonical_workspace("[HOME]/p/provertly-archive", HOME, ALIASES)
-        == "[HOME]/p/provertly-archive"
+        canonical_workspace("[HOME]/p/project-before-archive", HOME, ALIASES)
+        == "[HOME]/p/project-before-archive"
     )
 
 
@@ -63,7 +65,9 @@ def test_a_hand_edited_file_that_does_not_parse_never_stops_an_ingest(tmp_path):
 def test_a_valid_file_is_read(tmp_path):
     path = tmp_path / "aliases.json"
     path.write_text(json.dumps(ALIASES))
-    assert workspace_aliases(path) == {"[HOME]/p/provertly": WorkspaceAlias("[HOME]/p/verticagtm")}
+    assert workspace_aliases(path) == {
+        "[HOME]/p/project-before": WorkspaceAlias("[HOME]/p/project-after")
+    }
 
 
 def test_a_dated_alias_stops_at_its_date(tmp_path):

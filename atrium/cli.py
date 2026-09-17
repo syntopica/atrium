@@ -113,7 +113,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         "--workspace",
         default=None,
         metavar="PREFIX",
-        help="Same, by stored workspace (e.g. '[HOME]/p/provertly'). The one that "
+        help="Same, by stored workspace (e.g. '[HOME]/p/project-before'). The one that "
         "works for a project no longer on disk -- which is precisely the memory "
         "nothing else can reconstruct",
     )
@@ -589,8 +589,8 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     )
     if target is not None:
         # The same aliases the ingest applies, or this filter would miss exactly
-        # the renamed history that makes a project whole: verticagtm's first
-        # month is archived under `p/provertly`.
+        # the renamed history that makes a project whole: project-after's first
+        # month is archived under `p/project-before`.
         aliases = workspace_aliases()
         conversations = [
             conversation

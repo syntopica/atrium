@@ -26,11 +26,11 @@ def test_a_live_cwd_is_written_the_way_the_exporter_redacted_it(tmp_path):
 
 def test_a_subdirectory_recalls_its_project_not_itself(tmp_path):
     """A session in apps/web is working on the project, and needs its memory."""
-    home, root = _project(tmp_path, "p", "intelifactu")
+    home, root = _project(tmp_path, "p", "wide-project")
     (root / ".git").mkdir()
     deep = root / "apps" / "web"
     deep.mkdir(parents=True)
-    assert project_workspace(deep, home) == "[HOME]/p/intelifactu"
+    assert project_workspace(deep, home) == "[HOME]/p/wide-project"
 
 
 def test_both_worktree_layouts_belong_to_their_project(tmp_path):

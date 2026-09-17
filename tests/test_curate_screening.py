@@ -140,11 +140,11 @@ def test_a_string_of_facts_is_one_fact_not_a_hundred_letters(tmp_path: Path) -> 
 
 
 def test_restating_where_the_session_ran_is_not_a_claim() -> None:
-    """Measured: `Repository: ~/p/verticagtm` led the corpus at 59 episodes."""
-    assert runtime_debris("Repository: `/Users/cristiandeluxe/p/verticagtm`.") == (
+    """Measured: `Repository: ~/p/project-after` led the corpus at 59 episodes."""
+    assert runtime_debris("Repository: `/Users/operator/p/project-after`.") == (
         "context_restatement"
     )
-    assert runtime_debris("Project path: `/Users/cristiandeluxe/p/verticagtm`") == (
+    assert runtime_debris("Project path: `/Users/operator/p/project-after`") == (
         "context_restatement"
     )
     # A sentence that merely starts with the same word keeps its place.
@@ -221,7 +221,7 @@ def test_folding_still_collapses_markup_and_case() -> None:
     ("fact", "reason"),
     [
         ("Session working directory: [HOME]/p/rocket-agents", "context_restatement"),
-        ("Updated `[HOME]/p/verticagtm/src/lib/report-pdf/builders.ts`.", "file_touched"),
+        ("Updated `[HOME]/p/project-after/src/lib/report-pdf/builders.ts`.", "file_touched"),
         (
             "Plan 4a1220e8 generation job monitor: total=0 succeeded=0 running=0 queued=0.",
             "empty_metric",

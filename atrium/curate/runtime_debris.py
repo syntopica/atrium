@@ -20,7 +20,7 @@ _PATTERNS = (
     ("session_mechanics", re.compile(r"\bsession cwd\b|\bexit code\b|\bcwd (was|remains)\b", re.I)),
     # Where the session ran is provenance the record already carries. Left in,
     # these dominate the ledger by repetition alone: "Repository:
-    # `~/p/verticagtm`" was the most repeated claim in the corpus at 59
+    # `~/p/project-after`" was the most repeated claim in the corpus at 59
     # episodes, ahead of every real finding.
     # Graded by hand over 60 extracted claims on 2026-09-17: 12% of what
     # reached stage two was still this shape, and repetition does not save it

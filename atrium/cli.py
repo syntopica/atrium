@@ -131,6 +131,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         "curate-screen",
         help="Screen the synthesis registry into a deterministic claim candidate ledger",
     )
+    extract = subcommands.add_parser(
+        "curate-extract",
+        help="Structure a stratified sample of the claim candidate ledger with the local model",
+    )
+    extract.add_argument("--size", type=int, default=500, help="Working sample size")
+    extract.add_argument("--holdout", type=int, default=100, help="Held-out sample size")
+    extract.add_argument("--model", default=None, help="Ollama model to extract with")
+
     subcommands.add_parser(
         "session-stop",
         help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
@@ -260,6 +268,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         from atrium.curate.run_curate_screen_cli import run_curate_screen_cli
 
         return run_curate_screen_cli(state_directory() / "synthesis")
+    if args.command == "curate-extract":
+        from atrium.curate.run_curate_extract_cli import run_curate_extract_cli
+        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
+
+        return run_curate_extract_cli(args.size, args.holdout, args.model or LOCAL_DEFAULT_MODEL)
     if args.command == "session-stop":
         from atrium.session.run_session_stop_cli import run_session_stop_cli
 
@@ -578,13 +591,14 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
 
         model_id = codex_lane_model_id(model, effort)
     elif producer == "local":
+        from atrium.synthesize.lane_prompt import LanePrompt
         from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL, local_lane_call
         from atrium.synthesize.local_lane_model_id import local_lane_model_id
 
         local_model = model or LOCAL_DEFAULT_MODEL
 
         def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return local_lane_call(system_text, user_text, tool, local_model)
+            return local_lane_call(LanePrompt(system_text, user_text), tool, local_model)
 
         model_id = local_lane_model_id(local_model)
     elif producer == "cursor":

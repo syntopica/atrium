@@ -38,10 +38,28 @@ _PATTERNS = (
     (
         "context_restatement",
         re.compile(
-            r"^\s*(the\s+)?(repository|repo|project (path|directory|root)|working directory|"
+            r"^\s*(the\s+)?(session|current)?\s*"
+            r"(repository|repo|project (path|directory|root)|working directory|"
             r"directory|path|account|user|branch|workspace)\s*[:=]\s*\S+\s*\.?\s*$",
             re.I,
         ),
+    ),
+    # A sentence that is a verb and a path records that a file was touched.
+    # Which file changed is in the diff; a claim has to say what changed.
+    (
+        "file_touched",
+        re.compile(
+            r"^\s*(updated|created|modified|added|deleted|removed|touched|escrito|"
+            r"actualizado|creado|modificado)\s+`?[~.\[\w/][^\s`]*/[^\s`]*`?\s*\.?\s*$",
+            re.I,
+        ),
+    ),
+    # A counter line whose every value is zero, and a monitor snapshot, say
+    # that nothing happened. They are the shape a progress log has, not a
+    # finding: "total=0 succeeded=0 running=0 failed=0 queued=0".
+    (
+        "empty_metric",
+        re.compile(r"(\b\w+\s*[:=]\s*0\b[\s,;]*){3,}|\bjob monitor\b", re.I),
     ),
     # Order matters: `Project path: <path>` belongs to the class above, which
     # names why it is worthless, so the generic pointer is tried last.
@@ -55,7 +73,7 @@ _PATTERNS = (
         "path_pointer",
         re.compile(
             r"^[^.]{0,60}?\b(is (located|documented|available) at|reside en|se encuentra en|"
-            r"ruta( de \w+)?|task (brief|report)|path)\b\s*[:=]?\s*`?[~.\[\w/][^\s`]*/[^\s`]*`?\s*\.?\s*$",
+            r"ruta( de \w+)?|task (brief|report)|path|consultad[oa]|de referencia)\b\s*[:=]?\s*`?[~.\[\w/][^\s`]*/[^\s`]*`?\s*\.?\s*$",
             re.I,
         ),
     ),

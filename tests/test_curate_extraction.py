@@ -84,9 +84,23 @@ def test_an_empty_answer_becomes_none(value: str | None) -> None:
 
 
 def test_a_worktree_belongs_to_its_repository() -> None:
-    assert project_of_workspace("/home/me/p/bot/.worktrees/repo-keeper") == "bot"
-    assert project_of_workspace("/home/me/p/atrium") == "atrium"
+    assert project_of_workspace("[HOME]/p/bot/.worktrees/repo-keeper") == "bot"
+    assert project_of_workspace("[HOME]/p/atrium") == "atrium"
     assert project_of_workspace(None) is None
+
+
+@pytest.mark.parametrize(
+    "workspace",
+    [
+        "[HOME]",
+        "/var/folders/k2/T/atrium-codex-2tn05jjb",
+        "/tmp/scratch",
+        "[HOME]/.consumer-y-work/evaldiscrim/out-v19/_codex",
+    ],
+)
+def test_a_workspace_with_no_project_says_so(workspace: str) -> None:
+    """A page named after a scratch directory is named after nothing."""
+    assert project_of_workspace(workspace) is None
 
 
 def test_the_dominant_workspace_wins(tmp_path: Path) -> None:

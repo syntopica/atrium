@@ -148,7 +148,7 @@ def test_a_project_directory_that_is_a_symlink_still_decodes(tmp_path: Path) -> 
     The obvious guard against the encoded-prefix ambiguity -- resolving the
     decoded path and asserting it is still under home -- rejects exactly this
     case, and `~/p/client-site -> /Volumes/archive-volume/client-site` is a live
-    example on this machine. `_descend` walks only real children of home, so
+    example on this machine. `descend_encoded_segment` walks only real children of home, so
     the result is under home by construction and the guard buys nothing.
     """
     home = tmp_path / "home"

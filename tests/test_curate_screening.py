@@ -215,3 +215,33 @@ def test_a_sign_a_comparison_and_a_separator_are_not_punctuation(first: str, sec
 
 def test_folding_still_collapses_markup_and_case() -> None:
     assert normalized_claim("Ran at `7.4 GB`") == normalized_claim("ran at 7.4 gb")
+
+
+@pytest.mark.parametrize(
+    ("fact", "reason"),
+    [
+        ("Session working directory: [HOME]/p/rocket-agents", "context_restatement"),
+        ("Updated `[HOME]/p/consumer-g/src/lib/report-pdf/builders.ts`.", "file_touched"),
+        (
+            "Plan 4a1220e8 generation job monitor: total=0 succeeded=0 running=0 queued=0.",
+            "empty_metric",
+        ),
+        ("Código fuente de referencia consultado: ~/p/consumer-z/plugins/dmxusb/src/", "path_pointer"),
+    ],
+)
+def test_the_second_grading_pass_debris_is_named(fact: str, reason: str) -> None:
+    """Each shape passed the first pattern set and was found grading 30 claims again."""
+    assert runtime_debris(fact) == reason
+
+
+@pytest.mark.parametrize(
+    "fact",
+    [
+        "Updated the pnpm pin to 12.4.2 in package.json so the lockfile records the dependency.",
+        "La suite de pruebas ejecutó 102 tests con 102 pasados, 0 fallados y tsc-exit=0.",
+        "`matrix_step_count.py` overrides continuous Plasma and Noise with PLASMA_STEPS = 40.",
+    ],
+)
+def test_a_claim_that_reports_a_change_or_a_count_survives(fact: str) -> None:
+    """`file_touched` and `empty_metric` must not eat a change that says what changed."""
+    assert runtime_debris(fact) is None

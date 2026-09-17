@@ -8,7 +8,7 @@ wrap.
 
 | layer | repo | holds |
 | --- | --- | --- |
-| 1. capture and canonical archive | `rocket-agents` | the truth: redacted, SHA-256-verified conversations from every provider |
+| 1. capture and canonical archive | [`agents`](https://github.com/syntopica/agents) | the truth: redacted, SHA-256-verified conversations from every provider |
 | 2. index, retrieval, synthesis | **atrium** | nothing irreplaceable |
 | 3. curated judgment | `brain` | hand-written notes, single human writer |
 
@@ -20,9 +20,38 @@ derived deterministically, so they converge without ever copying an index.
 
 ## Usage
 
+Atrium is a checkout, not a command the hub installs for you. Create an
+instance with the hub's `brain` and `atrium` components first; the commands
+below run from that instance directory, where `engines/atrium` is the checkout
+and `pages` is the page directory named in `syntopica.config.json`.
+
+The shortest thing that works reads your own wiki pages, with no conversation
+export and no embedding model:
+
+```bash
+uv run --project engines/atrium atrium ingest-notes pages --exclude sources
+uv run --project engines/atrium atrium search onboarding --words
+```
+
+That indexes notes and retrieves lexically. It establishes neither a
+conversation archive nor a refresh, so the two conversation checks in
+`atrium doctor` still fail until you export one - layer 1 above, and a
+deliberate step: it copies your agent transcripts into the instance.
+
+```bash
+data="$PWD"
+(cd engines/agents && pnpm conversations:export \
+  --output "$data/conversations/archive.jsonl" --source claude-code)
+uv run --project engines/atrium atrium ingest "$data/conversations/archive.jsonl"
+```
+
+The rest of the surface, written as the bare command the MCP server and the
+skill use - `uv run --project engines/atrium` in front of each one, or install
+it on PATH with `uv tool install "git+https://github.com/syntopica/atrium#egg=atrium[mcp]"`:
+
 ```bash
 atrium ingest ~/path/to/canonical-archive.jsonl   # index an archive
-atrium ingest-notes ~/wiki --exclude sources      # index a curated notes tree
+atrium ingest-notes ~/path/to/notes --exclude sources  # index a curated notes tree
 atrium embed                                      # embed the semantic layer (notes, synthesis)
 atrium search "why was WAL reverted"              # adaptive: fuses lanes when both see the query
 atrium search "wal" --words                       # whole-word lexical lane alone

@@ -13,9 +13,19 @@ NOW = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
 
 
 @pytest.fixture(autouse=True)
-def _tmp_is_not_scratch(monkeypatch):
-    """pytest's tmp_path lives under /var/folders, which the scratch rule excludes."""
-    monkeypatch.setattr("atrium.session.is_scratch_path._ROOTS", ("/private/tmp", "/tmp"))
+def _tmp_is_not_scratch(monkeypatch, tmp_path):
+    """Drop the temporary root pytest itself is using from the scratch rule.
+
+    Which root that is depends on the platform - /var/folders on macOS, /tmp on
+    Linux - so a hard-coded tuple passed here and silenced every decision on CI.
+    The other roots stay, which is what keeps the explicit scratch case honest.
+    """
+    from atrium.session.is_scratch_path import _ROOTS
+
+    monkeypatch.setattr(
+        "atrium.session.is_scratch_path._ROOTS",
+        tuple(root for root in _ROOTS if not str(tmp_path).startswith(root + "/")),
+    )
 
 
 def _session(tmp_path, entrypoint="cli"):
@@ -96,7 +106,7 @@ def test_silent_for_scratch_sdk_subagent_and_opted_out_sessions(tmp_path):
     assert session_stop_decision(payload, {**environ, "ATRIUM_NO_SESSION_RECORD": "1"}, NOW) is None
     assert session_stop_decision({**payload, "agent_id": "x"}, environ, NOW) is None
     assert (
-        session_stop_decision({**payload, "cwd": "/private/tmp/claude-1/x"}, environ, NOW) is None
+        session_stop_decision({**payload, "cwd": "/var/folders/claude-1/x"}, environ, NOW) is None
     )
     scratch = tmp_path / "-private-tmp-x" / "t.jsonl"
     scratch.parent.mkdir()

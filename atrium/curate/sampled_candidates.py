@@ -33,11 +33,22 @@ def sampled_candidates(
     total = sum(len(entries) for entries in index.values())
     wanted = min(size + holdout, total)
     quotas = stratum_quotas({stratum: len(entries) for stratum, entries in index.items()}, wanted)
-    drawn: list[tuple[str, int]] = []
-    for stratum, entries in index.items():
+    working: list[tuple[str, int]] = []
+    held: list[tuple[str, int]] = []
+    for stratum, entries in sorted(index.items()):
         entries.sort()
-        drawn.extend(entries[: quotas[stratum]])
-    drawn.sort()
-    records = records_at_offsets(path, [offset for _, offset in drawn])
-    split = min(size, len(records))
-    return records[:split], records[split:]
+        drawn = entries[: quotas[stratum]]
+        # Split inside the stratum, not across the concatenation. Ranks are
+        # hashes, and a small stratum's smallest ten ranks are far larger than a
+        # large stratum's smallest two hundred, so a global sort puts every rare
+        # stratum at the end: the first run of this sampler sent 33 of the 40
+        # repeated claims into the holdout and left 7 to work with.
+        cut = round(len(drawn) * size / wanted) if wanted else 0
+        working.extend(drawn[:cut])
+        held.extend(drawn[cut:])
+    working.sort()
+    held.sort()
+    return (
+        records_at_offsets(path, [offset for _, offset in working]),
+        records_at_offsets(path, [offset for _, offset in held]),
+    )

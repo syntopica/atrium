@@ -56,7 +56,10 @@ def run_curate_extract_cli(size: int, holdout: int, model: str = LOCAL_DEFAULT_M
             continue
         if done % 25 == 0 or done == len(pending):
             rate = done / max(time.monotonic() - started, 1e-9)
-            print(f"  [{done}/{len(pending)}] {rate * 3600:,.0f} claims/hour, {failed} failed")
+            print(
+                f"  [{done}/{len(pending)}] {rate * 3600:,.0f} claims/hour, {failed} failed",
+                flush=True,
+            )
     print(f"  claims {claims}")
     print(f"  holdout {directory / HOLDOUT}")
     return 0

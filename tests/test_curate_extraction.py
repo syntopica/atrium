@@ -134,3 +134,13 @@ def test_a_truncated_last_line_does_not_stop_a_resume(tmp_path: Path) -> None:
     path = tmp_path / "claims.jsonl"
     path.write_text('{"candidate_id": "aa"}\n{"candidate_id": "bb"}\n{"candidate_i')
     assert done_claim_ids(path) == {"aa", "bb"}
+
+
+def test_a_rare_stratum_is_split_like_every_other(tmp_path: Path) -> None:
+    """The split has to happen inside each stratum, or the rare one lands in the holdout."""
+    records = [_candidate(index) for index in range(5_000)]
+    records += [_candidate(index, episodes=3) for index in range(5_000, 5_050)]
+    ledger = _ledger(tmp_path / "candidates.jsonl", records)
+    working, holdout = sampled_candidates(ledger, 500, 100)
+    assert sum(1 for record in working if record["episodes"] > 1) >= 6
+    assert sum(1 for record in holdout if record["episodes"] > 1) <= 4

@@ -21,7 +21,7 @@ def project_of_workspace(workspace: str | None) -> str | None:
     page rather than on a page named after a branch that no longer exists.
 
     A hidden directory is refused rather than guessed at: the deepest component
-    of `<home>/.consumer-y-work/evaldiscrim/out-v19/_codex` is `_codex`, which
+    of `<home>/.wide-project-work/evaldiscrim/out-v19/_codex` is `_codex`, which
     names nothing, and there is no honest way to read a project out of it.
     """
     if not workspace:

@@ -95,7 +95,7 @@ def test_a_worktree_belongs_to_its_repository() -> None:
         "[HOME]",
         "/var/folders/k2/T/atrium-codex-2tn05jjb",
         "/tmp/scratch",
-        "[HOME]/.consumer-y-work/evaldiscrim/out-v19/_codex",
+        "[HOME]/.wide-project-work/evaldiscrim/out-v19/_codex",
     ],
 )
 def test_a_workspace_with_no_project_says_so(workspace: str) -> None:

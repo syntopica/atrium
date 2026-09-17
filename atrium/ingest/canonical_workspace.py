@@ -32,7 +32,7 @@ def canonical_workspace(
     spellings, and 4,053 conversations sat under the unredacted one. Since
     project-scoped recall and `--project` search both ask for the `[HOME]`
     form, that half of each project was invisible to them -- 1,331 of
-    consumer-y's conversations, a third of it, unreachable from inside the
+    wide-project's conversations, a third of it, unreachable from inside the
     project itself.
 
     A scratchpad returns None when its encoded path names nothing under the

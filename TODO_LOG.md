@@ -274,19 +274,19 @@
   - **Detection matters as much as the mechanism.** Timestamp contiguity alone
     is useless — it proposes the cross-product of every dead project ending
     near every live one starting, including `project-after-enrichment-backfill ->
-    brain`. What works is content: the known-true rename shows `consumer-pv`
-    mentioned **7,522 times** by `consumer-g` against 46 by the runner-up, a
+    brain`. What works is content: the known-true rename shows `project-before`
+    mentioned **7,522 times** by `project-after` against 46 by the runner-up, a
     163:1 dominance. Weaker ratios (2:1 to 4:1) are suggestive only, so the
     candidates were put to the operator with their evidence rather than
     applied. `smart-sales` was offered and declined — the signal came only from
     `brain`, which documents everything.
-  - Folded, confirmed by the operator: `consumer-pv -> consumer-g`,
-    `agents-tools -> rocket-agents`, `consumer-y2 -> consumer-y`,
+  - Folded, confirmed by the operator: `project-before -> project-after`,
+    `agents-tools -> rocket-agents`, `wide-project-before -> wide-project`,
     `project-after-enrichment-backfill -> project-after`.
   - Result after re-ingest of both raw and synthesis records: rocket-agents'
     history starts 2026-06-26 instead of 2026-08-19 and its episodes reach back
-    to 2026-08-13; consumer-y starts 2026-01-16 instead of 2026-04-14;
-    consumer-g 2026-06-14 instead of 2026-07-12; project-after gained a 1,017-
+    to 2026-08-13; wide-project starts 2026-01-16 instead of 2026-04-14;
+    project-after 2026-06-14 instead of 2026-07-12; project-after gained a 1,017-
     conversation day. No old name survives anywhere in the index.
   - Evidence: `tests/test_workspace_aliases.py` (9 tests); suite 149 passed.
 
@@ -319,8 +319,8 @@
     existed in the index under both `[HOME]/p/x` and `/Users/<name>/p/x`, with
     **4,053 conversations under the unredacted spelling**. `project_workspace`
     resolves a live cwd to the `[HOME]` form and every lane prefix-matches on
-    it, so that half answered nothing — 1,331 of consumer-y's conversations,
-    a third of the project, invisible from inside consumer-y.
+    it, so that half answered nothing — 1,331 of wide-project's conversations,
+    a third of the project, invisible from inside wide-project.
   - Cause is upstream: the exporter's `[HOME]` redaction missed those
     conversations, which also put the real username into a field the redaction
     existed to clear. The archive is canonical and is not rewritten, so the fix

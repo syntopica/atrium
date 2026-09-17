@@ -5,7 +5,7 @@ import subprocess
 import time
 
 # One keychain service per Claude Code profile. The same three the
-# consumer-g/consumer-y Max-lane scripts rotate through: a heavy session may
+# project-after/wide-project Max-lane scripts rotate through: a heavy session may
 # have rate-limited one account while another still has headroom.
 _SERVICES = (
     "Claude Code-credentials",

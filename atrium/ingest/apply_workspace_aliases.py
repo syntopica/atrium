@@ -13,13 +13,13 @@ def apply_workspace_aliases(
     """Return ``workspace`` under its current name, subdirectories included.
 
     A rename splits memory the same way a missed redaction does, and more
-    quietly: `p/consumer-pv` runs to 2026-07-10 and `p/consumer-g` starts
+    quietly: `p/project-before` runs to 2026-07-10 and `p/project-after` starts
     2026-07-12, so the project's first month answered nothing from inside the
     project.
 
     Longest alias first, so a nested rename cannot be shadowed by a shorter one
     that also matches, and the boundary is a path separator, so
-    `p/consumer-pv-archive` is its own project rather than part of the rename.
+    `p/project-before-archive` is its own project rather than part of the rename.
 
     A dated alias applies only to conversations started before its ``until``;
     with no start date known it applies, as an undated one does.

@@ -3,8 +3,8 @@
 Measured 2026-09-01: 29 projects sat in the index under both `[HOME]/p/x` and
 `/Users/<name>/p/x`, with 4,053 conversations under the unredacted spelling.
 Project recall and `--project` search ask for the `[HOME]` form, so that half
-answered nothing -- a third of consumer-y was invisible from inside
-consumer-y.
+answered nothing -- a third of wide-project was invisible from inside
+wide-project.
 """
 
 from atrium.ingest.canonical_workspace import canonical_workspace
@@ -15,11 +15,11 @@ LONG = "a sentinel passage long enough not to be an acknowledgement"
 
 
 def test_a_missed_redaction_is_folded_back():
-    assert canonical_workspace(f"{HOME}/p/consumer-y", HOME) == "[HOME]/p/consumer-y"
+    assert canonical_workspace(f"{HOME}/p/wide-project", HOME) == "[HOME]/p/wide-project"
 
 
 def test_an_already_redacted_workspace_is_untouched():
-    assert canonical_workspace("[HOME]/p/consumer-y", HOME) == "[HOME]/p/consumer-y"
+    assert canonical_workspace("[HOME]/p/wide-project", HOME) == "[HOME]/p/wide-project"
 
 
 def test_the_home_directory_itself_folds_to_the_marker():
@@ -48,9 +48,9 @@ def test_ingest_stamps_the_canonical_spelling(monkeypatch):
     conversation = {
         "id": "conv",
         "source": "pi",
-        "workspace": f"{HOME}/p/consumer-y",
+        "workspace": f"{HOME}/p/wide-project",
         "provenance": {"contentSha256": "sha"},
         "events": [{"id": "e", "kind": "message", "role": "user", "text": LONG}],
     }
     records = list(to_records(conversation))
-    assert [r.workspace for r in records] == ["[HOME]/p/consumer-y"]
+    assert [r.workspace for r in records] == ["[HOME]/p/wide-project"]

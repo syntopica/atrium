@@ -14,6 +14,7 @@ from atrium.ingest.workspace_aliases import workspace_aliases
 from atrium.record import Record
 from atrium.session.record_session_contract import RECORD_SESSION_CONTRACT
 from atrium.state.archive_path import archive_path
+from atrium.state.record_refresh import record_refresh
 from atrium.state.state_directory import state_directory
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.open_store import open_store
@@ -218,9 +219,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
 
     args = parser.parse_args(argv)
     if args.command == "ingest":
-        return _ingest(args.index, args.archive, sweep=not args.partial)
+        ingested = _ingest(args.index, args.archive, sweep=not args.partial)
+        if ingested == 0:
+            record_refresh(refresh_stamp)
+        return ingested
     if args.command == "ingest-notes":
-        return _ingest_notes(
+        ingested = _ingest_notes(
             args.index,
             args.root,
             args.provider,
@@ -228,6 +232,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             sweep=not args.partial,
             role="source" if args.third_party else "note",
         )
+        if ingested == 0:
+            record_refresh(refresh_stamp)
+        return ingested
     if args.command == "embed":
         return _embed(args.index)
     if args.command == "synthesize":

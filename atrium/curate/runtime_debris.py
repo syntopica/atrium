@@ -22,11 +22,40 @@ _PATTERNS = (
     # these dominate the ledger by repetition alone: "Repository:
     # `~/p/verticagtm`" was the most repeated claim in the corpus at 59
     # episodes, ahead of every real finding.
+    # Graded by hand over 60 extracted claims on 2026-09-17: 12% of what
+    # reached stage two was still this shape, and repetition does not save it
+    # -- "The shell working directory was reset to `<path>`" carried 7
+    # episodes, more than any real finding in the same sample.
+    (
+        "session_mechanics",
+        re.compile(
+            r"\b(shell )?working directory was reset\b|"
+            r"\bcommits? locales sin push\b|\b(local )?commits? (not|un)pushed\b|"
+            r"\bfinal review verdicts?\b|\bspec compliance\b",
+            re.I,
+        ),
+    ),
     (
         "context_restatement",
         re.compile(
             r"^\s*(the\s+)?(repository|repo|project (path|directory|root)|working directory|"
             r"directory|path|account|user|branch|workspace)\s*[:=]\s*\S+\s*\.?\s*$",
+            re.I,
+        ),
+    ),
+    # Order matters: `Project path: <path>` belongs to the class above, which
+    # names why it is worthless, so the generic pointer is tried last.
+    # A sentence whose whole content is "<something> is at <path>" states
+    # where a file is and nothing about it. The path is in the transcript the
+    # record already cites, so the claim adds a name and loses the content.
+    # Pure location claims are caught too ("`selectQuoteMatch` reside en
+    # `src/lib/.../selectQuoteMatch.ts`"): a symbol's location is what
+    # codegraph answers from the live tree, where it cannot go stale.
+    (
+        "path_pointer",
+        re.compile(
+            r"^[^.]{0,60}?\b(is (located|documented|available) at|reside en|se encuentra en|"
+            r"ruta( de \w+)?|task (brief|report)|path)\b\s*[:=]?\s*`?[~.\[\w/][^\s`]*/[^\s`]*`?\s*\.?\s*$",
             re.I,
         ),
     ),

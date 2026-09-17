@@ -3,6 +3,8 @@
 import json
 from pathlib import Path
 
+import pytest
+
 from atrium.curate.candidate_identity import candidate_identity
 from atrium.curate.normalized_claim import normalized_claim
 from atrium.curate.runtime_debris import runtime_debris
@@ -150,3 +152,46 @@ def test_restating_where_the_session_ran_is_not_a_claim() -> None:
         runtime_debris("Repository `~/p/atrium` refuses a push whose lockfile pin has drifted")
         is None
     )
+
+
+@pytest.mark.parametrize(
+    ("fact", "reason"),
+    [
+        ("The shell working directory was reset to `[HOME]/p/busirocket`.", "session_mechanics"),
+        ("21 commits locales sin push al cierre del episodio.", "session_mechanics"),
+        (
+            "Final review verdicts: `SPEC COMPLIANCE`, `TASK QUALITY: Approved`. No findings.",
+            "session_mechanics",
+        ),
+        (
+            "Task report is documented at [HOME]/p/inbox-companion/sdd/task-7-report.md.",
+            "path_pointer",
+        ),
+        (
+            "Ruta de estado: clips/needs-claude/2026/07/2026-07-30-pub-towardsai-net.",
+            "path_pointer",
+        ),
+        (
+            "`selectQuoteMatch` reside en `src/lib/findings/selectors/selectQuoteMatch.ts`.",
+            "path_pointer",
+        ),
+    ],
+)
+def test_the_debris_graded_by_hand_is_now_named(fact: str, reason: str) -> None:
+    """Each of these reached stage two in the 60-claim hand grading of 2026-09-17."""
+    assert runtime_debris(fact) == reason
+
+
+@pytest.mark.parametrize(
+    "fact",
+    [
+        "scripts/deploy-nova.sh deploys the SaaS to a cPanel account via rsync to /home/x/build.",
+        "The `familia con dueño` rule is implemented in `checks/rule_family_owner.py`, using"
+        " `family_frames.py`, and wired into `checks/run.py`.",
+        "El cliente HTTP se creó en `services/sales/deleteSalesDraft.ts` y ejecuta"
+        " `DELETE /api/sales/drafts/${invoiceId}`.",
+    ],
+)
+def test_a_claim_that_says_something_about_a_path_survives(fact: str) -> None:
+    """The pointer patterns must not eat a claim whose content happens to be a path."""
+    assert runtime_debris(fact) is None

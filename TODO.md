@@ -248,10 +248,20 @@
 
 ## Promotion pipeline
 
-- [x] Stage one, `atrium curate-screen`: 46,517 records and 295,426 facts into
-      279,864 distinct candidates in 21 s, 11,221 quarantined by named reason.
-      Exact deduplication recovers only 5%, so the repetition in the corpus is
-      paraphrase and the semantic merge is the expensive stage, not this one.
+- [x] Stage one, `atrium curate-screen`: 47,753 records and 306,212 facts into
+      288,844 distinct candidates, 12,693 quarantined by named reason.
+      **Exact deduplication removes 1.59%, not the 5% first reported** -- the
+      5% divided by all facts instead of the eligible ones, so it counted the
+      quarantine as deduplication. 293,519 eligible occurrences become 288,844
+      candidates. The corrected figure says the same thing more sharply: the
+      repetition in this corpus is paraphrase, and the semantic merge is the
+      expensive stage.
+- [x] `normalized_claim` collapsed a sign, a comparison and a version
+      separator: "retention limit -3 days" matched "retention limit 3 days",
+      "x >= 3" matched "x < 3", "version 1.2" matched "version 1-2". Found by
+      a second opinion, reproduced here, fixed in `protected_symbols`
+      (`c18515c`), ledger rebuilt. Keeping digits was never enough; the symbols
+      around them carry the meaning.
 - [x] Stage two, `atrium curate-extract`: 498 claims structured against
       qwen3.6:35b at 1,484/hour under drip contention and 2,392/hour without,
       0 failures, off every quota. The whole ledger would take about 190 hours
@@ -275,7 +285,13 @@
       quoted identifiers, which is what a merge actually needs, and keeping the
       sentence as the claim. Decide after the stage-three design lands, because
       the merge algorithm is what says which fields it needs.
-- [ ] Spend the 102-claim holdout once, on stage three's acceptance, not on
+- [x] The first holdout was not untouched: 29 of its 102 rows were already in
+      `claims.jsonl`, because the sampler fix moved members between the two
+      sets and the resume had already extracted the old draw. Both files are
+      kept under `curation/superseded/` and the evaluation set was redrawn from
+      the rebuilt ledger. A holdout is only untouched if nothing has ever
+      extracted it -- record its hash when it is drawn.
+- [ ] Spend the new 100-claim holdout once, on stage three's acceptance, not on
       stage two. Two failure shapes are already visible and neither is
       fixed by prompt-fiddling: a sentence carrying two assertions loses one
       (the Apache 503 claim kept "contains maintenance downtime" and dropped

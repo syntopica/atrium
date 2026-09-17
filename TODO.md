@@ -256,8 +256,27 @@
       qwen3.6:35b at 1,484/hour under drip contention and 2,392/hour without,
       0 failures, off every quota. The whole ledger would take about 190 hours
       on this lane alone, so a full pass is a scheduling decision, not a run.
-- [ ] Measure stage two against the 102-claim holdout before tuning anything
-      on the working set. Two failure shapes are already visible and neither is
+- [x] Graded 60 claims of the working set by hand, 2026-09-17. Scope 83%
+      correct (10 wrong, every error in one direction: a project claim called
+      `general`, or the operator's own code called a `tool`), durability 93%
+      correct, and **25% of claims lost an assertion or came back with an empty
+      value** because the sentence carried more than one. 12% were session
+      debris stage one had passed, now quarantined (`0afffad`). About 37% of
+      the sample is durable and specific enough to be worth publishing.
+- [-] Deriving `scope` from code tokens in the sentence: measured and rejected.
+  It flips only 7 of 67 `general` claims and misfires (an IBAN and a Slack
+  timestamp read as code, while `lefthook`, `prettier` and `WP-CLI` are
+  genuine tools that quote paths). `project`, resolved from the index, is
+  the strong routing signal; `scope` is a weak one and stage three should
+  treat it as such.
+- [ ] The subject/predicate/value triple is the suspect part of the claim
+      schema: it degrades a quarter of the sample and adds nothing the sentence
+      does not already carry. Consider replacing it with an `entities` list of
+      quoted identifiers, which is what a merge actually needs, and keeping the
+      sentence as the claim. Decide after the stage-three design lands, because
+      the merge algorithm is what says which fields it needs.
+- [ ] Spend the 102-claim holdout once, on stage three's acceptance, not on
+      stage two. Two failure shapes are already visible and neither is
       fixed by prompt-fiddling: a sentence carrying two assertions loses one
       (the Apache 503 claim kept "contains maintenance downtime" and dropped
       "now reads the title first"), and a claim whose sentence names no file or

@@ -148,6 +148,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     cluster.add_argument("--budget", type=int, default=1000, help="Maximum pairs adjudicated")
     cluster.add_argument("--model", default=None, help="Ollama model to adjudicate with")
 
+    neighbours = subcommands.add_parser(
+        "curate-neighbours",
+        help="Embed the whole candidate ledger and count its near-duplicate pairs",
+    )
+    neighbours.add_argument("--threshold", type=float, default=0.80, help="Cosine floor")
+    neighbours.add_argument("--neighbours", type=int, default=5, help="Neighbours per candidate")
+
     subcommands.add_parser(
         "session-stop",
         help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
@@ -289,6 +296,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         return run_curate_cluster_cli(
             args.threshold, args.neighbours, args.budget, args.model or LOCAL_DEFAULT_MODEL
         )
+    if args.command == "curate-neighbours":
+        from atrium.curate.run_curate_neighbours_cli import run_curate_neighbours_cli
+
+        return run_curate_neighbours_cli(args.threshold, args.neighbours)
     if args.command == "session-stop":
         from atrium.session.run_session_stop_cli import run_session_stop_cli
 

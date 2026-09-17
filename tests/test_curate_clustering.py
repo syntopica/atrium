@@ -7,8 +7,10 @@ from typing import Any
 import numpy as np
 import pytest
 
+from atrium.curate import claim_publishability as claim_publishability_module
 from atrium.curate import pair_relation as pair_relation_module
 from atrium.curate.claim_pairs import claim_pairs
+from atrium.curate.claim_publishability import claim_publishability
 from atrium.curate.embedded_ledger import embedded_ledger
 from atrium.curate.equivalence_clusters import equivalence_clusters
 from atrium.curate.near_duplicate_pairs import near_duplicate_pairs
@@ -141,3 +143,19 @@ def test_a_matrix_longer_than_its_ledger_is_refused(tmp_path: Path) -> None:
     matrix_path.write_bytes(b"\0" * (384 * 4 * 3))
     with pytest.raises(RuntimeError, match="delete it to re-embed"):
         embedded_ledger(ledger, matrix_path, tmp_path / "ids.jsonl", _Embedder())
+
+
+def test_the_publishability_verdict_is_passed_through(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The judge reports what the model said; nothing here second-guesses it."""
+
+    def fake_call(*_: Any, **__: Any) -> dict[str, Any]:
+        return {
+            "input": {"verdict": "session_mechanics", "asserted": ""},
+            "model": "test-model",
+            "usage": {},
+        }
+
+    monkeypatch.setattr(claim_publishability_module, "local_lane_call", fake_call)
+    verdict, fields = claim_publishability("Session working directory: /somewhere")
+    assert verdict == "session_mechanics"
+    assert fields["asserted"] == ""

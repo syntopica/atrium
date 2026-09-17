@@ -6,6 +6,29 @@
 
 ### 2026-09
 
+- [x] 2026-09-17 — **The local lane takes the GGUF build and hands Ollama the
+  schema as a grammar:** `local_lane_call` now sends `format` with the synthesis
+  schema and defaults to `qwen3.6:35b` instead of `qwen3.6:35b-mlx`, because an
+  MLX build answers `format` with "structured output is unavailable" and samples
+  freely. Measured with the two builds alternating on the same six real
+  episodes, so neither reused the other's KV cache: MLX answered 5 of 6, losing
+  one reply that arrived with none of the required keys, in 138.0 s; the GGUF
+  build under the grammar answered 6 of 6 in 86.4 s, generating more slowly
+  (79.6 against 105.0 tok/s) and prefilling far faster (1,024 against 347
+  tok/s). The constraint decides the outcome on a small model: `ornith-1.5:9b`
+  on the M1 Mac mini answered 2 of 5 unconstrained -- extra data after the
+  object, a truncated string, one reply with no required key -- and 5 of 5 with
+  the grammar. Two earlier readings were wrong and are recorded so they are not
+  re-derived: a prefill of ~59,000 tok/s belongs to whichever variant runs
+  second, because it reuses the cache, and the same GGUF build measured 55.9 and
+  95.5 tok/s of generation in two consecutive batches, which is more spread than
+  any difference between the builds. Verified by a real pass: 29 records written
+  with `model_requested: ollama-qwen3.6-35b`, exit 0, and `codeality-py gate`
+  green except the two known BPY001 findings. `lane.env` and
+  `~/p/wiki/atrium/synthesis/active-recipe.json` point at the new population,
+  listed above the MLX one so the 523 existing MLX records still serve. The lane
+  change itself landed inside another session's `0b835d2`.
+
 - [x] 2026-09-16 — **The lexical lane streams in rank order instead of sorting
   the corpus:** every lexical statement ends in `ORDER BY <table>.rank` with no
   LIMIT, and `atrium/retrieve/ranked_hits.py` reads it until the limit is met,

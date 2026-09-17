@@ -88,16 +88,6 @@
 
 ## Synthesis
 
-- [ ] The local ollama lane runs `qwen3.6:35b-mlx` without grammar-constrained
-      output: the server logs `Structured output is unavailable ... xgrammar library
-not found at /opt/homebrew/Cellar/ollama/0.34.0/libexec/lib/ollama/mlx_metal_v3/libollama_xgrammar.dylib`
-      (4 occurrences, ollama 0.34.0, 2026-09-16). The 523 records the lane produced
-      that day parsed anyway, but the schema is enforced by the prompt alone, so a
-      malformed answer is a lost job rather than a retry. Smallest next step: compare
-      a pass on the non-MLX `qwen3.6:35b` build, which has the xgrammar library, against
-      the MLX one on parse-failure rate and tokens per second, and pin whichever wins
-      in `~/p/wiki/atrium/synthesis/active-recipe.json`.
-
 - [ ] Episode-level synthesis is the heart of the system, not phase 2: dense
       vectors cover only synthesized content, so synthesis quality _is_ semantic
       search quality. Measured: 69.3% of sessions contain at least one topic jump,

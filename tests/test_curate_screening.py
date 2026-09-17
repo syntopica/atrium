@@ -195,3 +195,23 @@ def test_the_debris_graded_by_hand_is_now_named(fact: str, reason: str) -> None:
 def test_a_claim_that_says_something_about_a_path_survives(fact: str) -> None:
     """The pointer patterns must not eat a claim whose content happens to be a path."""
     assert runtime_debris(fact) is None
+
+
+@pytest.mark.parametrize(
+    ("first", "second"),
+    [
+        ("retention limit -3 days", "retention limit 3 days"),
+        ("the check is x >= 3", "the check is x < 3"),
+        ("the check is x != 3", "the check is x = 3"),
+        ("pnpm version 1.2 pinned", "pnpm version 1-2 pinned"),
+        ("coverage floor is 54%", "coverage floor is 54"),
+        ("the window is 12:30 long", "the window is 12.30 long"),
+    ],
+)
+def test_a_sign_a_comparison_and_a_separator_are_not_punctuation(first: str, second: str) -> None:
+    """All six collided in the shipped normalizer, found by a second opinion 2026-09-17."""
+    assert normalized_claim(first) != normalized_claim(second)
+
+
+def test_folding_still_collapses_markup_and_case() -> None:
+    assert normalized_claim("Ran at `7.4 GB`") == normalized_claim("ran at 7.4 gb")

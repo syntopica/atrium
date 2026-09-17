@@ -1,5 +1,7 @@
 """Stage three: the numeric veto, the pair judge and clique-only clustering."""
 
+import json
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -7,7 +9,9 @@ import pytest
 
 from atrium.curate import pair_relation as pair_relation_module
 from atrium.curate.claim_pairs import claim_pairs
+from atrium.curate.embedded_ledger import embedded_ledger
 from atrium.curate.equivalence_clusters import equivalence_clusters
+from atrium.curate.near_duplicate_pairs import near_duplicate_pairs
 from atrium.curate.numeric_signature import numeric_signature
 from atrium.curate.pair_relation import pair_relation
 
@@ -93,3 +97,47 @@ def test_pairs_are_emitted_once_and_ordered_by_similarity() -> None:
 
 def test_no_claims_means_no_pairs() -> None:
     assert claim_pairs([], _Embedder(), 0.75, 5) == []
+
+
+def test_the_scan_emits_each_close_pair_once() -> None:
+    matrix = np.zeros((6, 4), dtype=np.float32)
+    matrix[0, 0] = matrix[1, 0] = 1.0
+    matrix[4, 3] = matrix[5, 3] = 1.0
+    matrix[2, 1] = matrix[3, 2] = 1.0
+    pairs = near_duplicate_pairs(matrix, 0.9, 3)
+    assert pairs == [(0, 1, 1.0), (4, 5, 1.0)]
+
+
+def test_embedding_resumes_from_a_partial_matrix(tmp_path: Path) -> None:
+    """A killed pass must continue, not re-embed 288,844 rows."""
+    ledger = tmp_path / "candidates.jsonl"
+    ledger.write_text(
+        "".join(
+            json.dumps({"candidate_id": f"{index:024x}", "text": f"claim {index}"}) + "\n"
+            for index in range(5)
+        )
+    )
+    calls: list[int] = []
+
+    class _Counting:
+        def embed(self, texts: list[str]) -> np.ndarray:
+            calls.append(len(texts))
+            rows = np.zeros((len(texts), 384), dtype=np.float32)
+            rows[:, 0] = 1.0
+            return rows
+
+    matrix_path = tmp_path / "candidates.f32"
+    ids_path = tmp_path / "ids.jsonl"
+    embedded_ledger(ledger, matrix_path, ids_path, _Counting())
+    assert calls == [5]
+    embedded_ledger(ledger, matrix_path, ids_path, _Counting())
+    assert calls == [5]
+
+
+def test_a_matrix_longer_than_its_ledger_is_refused(tmp_path: Path) -> None:
+    ledger = tmp_path / "candidates.jsonl"
+    ledger.write_text(json.dumps({"candidate_id": "a" * 24, "text": "one claim"}) + "\n")
+    matrix_path = tmp_path / "candidates.f32"
+    matrix_path.write_bytes(b"\0" * (384 * 4 * 3))
+    with pytest.raises(RuntimeError, match="delete it to re-embed"):
+        embedded_ledger(ledger, matrix_path, tmp_path / "ids.jsonl", _Embedder())

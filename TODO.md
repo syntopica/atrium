@@ -246,6 +246,38 @@
     divergence error, never resolved by timestamps.
     Only user-approved notes are proposed to brain (a tray, not a dump).
 
+## Promotion pipeline
+
+- [x] Stage one, `atrium curate-screen`: 46,517 records and 295,426 facts into
+      279,864 distinct candidates in 21 s, 11,221 quarantined by named reason.
+      Exact deduplication recovers only 5%, so the repetition in the corpus is
+      paraphrase and the semantic merge is the expensive stage, not this one.
+- [x] Stage two, `atrium curate-extract`: 498 claims structured against
+      qwen3.6:35b at 1,484/hour under drip contention and 2,392/hour without,
+      0 failures, off every quota. The whole ledger would take about 190 hours
+      on this lane alone, so a full pass is a scheduling decision, not a run.
+- [ ] Measure stage two against the 102-claim holdout before tuning anything
+      on the working set. Two failure shapes are already visible and neither is
+      fixed by prompt-fiddling: a sentence carrying two assertions loses one
+      (the Apache 503 claim kept "contains maintenance downtime" and dropped
+      "now reads the title first"), and a claim whose sentence names no file or
+      repository is classified `general` even when it is plainly about one
+      project (`/findings expects to be an array`, in vexa). 64 of 498 came
+      back `general`; that is the number to check by hand.
+- [ ] 276 of 498 claims are `situational` -- true of one run, one session, one
+      transient state. They are the population stage three must not publish,
+      and the ratio says over half the extracted corpus is not brain material
+      at all. Confirm the label is right before trusting it as a filter.
+- [ ] Stage three: semantic merge and page proposal. Inputs are the claims
+      ledger plus the entity lifecycle question (a claim about a renamed or
+      replaced tool is worse than no claim). It writes proposals only:
+      `AGENTS.md:24` forbids writing the curated layer, and the pilot that did
+      so had to be reverted with `git checkout`.
+- [ ] The claim ledger stores `project` as resolved at extraction time. It is
+      derived from the index and cheap to recompute, so if the resolution rule
+      changes again, rewrite the field rather than re-calling the model -- the
+      first two rules changed 42 of 527 rows between them.
+
 ## Observability
 
 - [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly

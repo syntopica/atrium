@@ -3,12 +3,14 @@
 from pathlib import PurePosixPath
 
 WORKTREES = ".worktrees"
+# A project needs a root and a name: "/atrium" alone is a path, not a project.
+_SHORTEST_PROJECT_PATH = 2
 # Where work happens that belongs to no project: the home directory itself, and
 # the scratch roots a delegated run is given. Measured on this index, the bare
 # home accounts for 4,047 records and the temporary roots for the runs whose
 # directory is named `atrium-codex-<random>` -- a project page named after one
 # of those would be named after a directory that no longer exists.
-TEMPORARY_ROOTS = ("/tmp", "/private/tmp", "/var/folders", "/private/var/folders")
+TEMPORARY_ROOTS = ("/tmp", "/private/tmp", "/var/folders", "/private/var/folders")  # noqa: S108
 
 
 def project_of_workspace(workspace: str | None) -> str | None:
@@ -29,8 +31,8 @@ def project_of_workspace(workspace: str | None) -> str | None:
     parts = PurePosixPath(workspace).parts
     if WORKTREES in parts:
         index = parts.index(WORKTREES)
-        return parts[index - 1] if index > 1 else None
-    if len(parts) < 2:
+        return parts[index - 1] if index >= _SHORTEST_PROJECT_PATH - 1 else None
+    if len(parts) < _SHORTEST_PROJECT_PATH:
         return None
     name = parts[-1]
     if name.startswith((".", "_")) or any(part.startswith(".") for part in parts[1:]):

@@ -139,6 +139,15 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     extract.add_argument("--holdout", type=int, default=100, help="Held-out sample size")
     extract.add_argument("--model", default=None, help="Ollama model to extract with")
 
+    cluster = subcommands.add_parser(
+        "curate-cluster",
+        help="Adjudicate the near pairs of the claim ledger into clusters and contradictions",
+    )
+    cluster.add_argument("--threshold", type=float, default=0.75, help="Cosine floor for a pair")
+    cluster.add_argument("--neighbours", type=int, default=5, help="Neighbours kept per claim")
+    cluster.add_argument("--budget", type=int, default=1000, help="Maximum pairs adjudicated")
+    cluster.add_argument("--model", default=None, help="Ollama model to adjudicate with")
+
     subcommands.add_parser(
         "session-stop",
         help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
@@ -273,6 +282,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
         return run_curate_extract_cli(args.size, args.holdout, args.model or LOCAL_DEFAULT_MODEL)
+    if args.command == "curate-cluster":
+        from atrium.curate.run_curate_cluster_cli import run_curate_cluster_cli
+        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
+
+        return run_curate_cluster_cli(
+            args.threshold, args.neighbours, args.budget, args.model or LOCAL_DEFAULT_MODEL
+        )
     if args.command == "session-stop":
         from atrium.session.run_session_stop_cli import run_session_stop_cli
 

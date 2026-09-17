@@ -16,16 +16,23 @@ def publishability_tool() -> dict[str, Any]:
                     "type": "string",
                     "enum": list(VERDICTS),
                     "description": (
-                        "durable_knowledge: it states how something IS or WORKS and would still "
-                        "be worth reading months from now. A statement about what a script, a "
-                        "service, a function or a configuration DOES is durable knowledge even "
-                        "though it describes an action -- 'deploy.sh copies the build to the "
-                        "server' is how the system works. incident_evidence: it reports what "
-                        "happened in one run -- a result, a count, a failure, a step taken -- "
-                        "true but tied to that moment. session_mechanics: it is about the working "
-                        "session rather than the subject: where it ran, which file it edited, "
-                        "what it was asked to do, what a command printed, how many commits it "
-                        "left behind."
+                        "durable_knowledge: it would still be true tomorrow and is worth "
+                        "knowing again. How a system behaves, what a setting or an identifier "
+                        "IS, what a script or a service DOES, a technique and when to use it, a "
+                        "constraint, a defect that exists until someone fixes it, a rename or a "
+                        "replacement. Learning it in one session does not make it temporary. "
+                        "incident_evidence: it reports the outcome of one run and nothing that "
+                        "outlives it -- a test count, a duration, a byte size, a file that was "
+                        "edited, a step that was taken. session_mechanics: it is about the "
+                        "working session rather than any subject: where it ran, which file was "
+                        "read next, what a command printed, what it was asked to do, how many "
+                        "commits it left behind.\n"
+                        "A bare fact is durable knowledge too: <thing> is <value> -- an "
+                        "identifier, an address, a version a project pins, a setting, a status "
+                        "-- because someone will ask that question again. What the session's "
+                        "own machine happened to be running is not that.\n"
+                        "When a statement holds both -- a run that revealed how something "
+                        "behaves -- classify by what survives the run."
                     ),
                 },
                 "asserted": {

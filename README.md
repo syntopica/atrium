@@ -8,7 +8,7 @@ wrap.
 
 | layer | repo | holds |
 | --- | --- | --- |
-| 1. capture and canonical archive | [`agents`](https://github.com/syntopica/agents) | the truth: redacted, SHA-256-verified conversations from every provider |
+| 1. capture and canonical archive | `agents` | the truth: redacted, SHA-256-verified conversations from every provider |
 | 2. index, retrieval, synthesis | **atrium** | nothing irreplaceable |
 | 3. curated judgment | `brain` | hand-written notes, single human writer |
 

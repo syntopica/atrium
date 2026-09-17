@@ -84,7 +84,9 @@ def test_silent_under_the_limits_and_without_a_prompt(tmp_path):
     # Aged but tiny: still silent; aged and over the small limit: refused.
     transcript.append(T.answer("a2", "x" * 5_000, "2026-09-16T11:59:02Z"))
     assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
-    later = datetime(2026, 9, 16, 12, 40, tzinfo=UTC)
+    # Past the hour the age rule waits: the limits count prompts, and a
+    # single-prompt interval is recorded only once it has aged.
+    later = datetime(2026, 9, 16, 13, 5, tzinfo=UTC)
     assert session_stop_decision(_payload(cwd, transcript), environ, later) is not None
 
 

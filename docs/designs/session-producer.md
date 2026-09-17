@@ -165,8 +165,14 @@ session. Order of checks:
 5. Baseline = the consumed checkpoint's offset and time, else the transcript's
    first record. Silent unless at least one `user` prompt arrived after the
    baseline (finding 13: the recording bookkeeping must not trigger the next
-   reminder). Then refuse when `new_bytes >= 32 KiB`, or when `new_bytes >=
-   4 KiB` and `now - baseline_at >= 1800 s`. These are reminder limits, not
+   reminder). Then refuse when three prompts have arrived, or when
+   `new_bytes >= 4 KiB` and `now - baseline_at >= 3600 s`. Size is not a
+   trigger: one turn of tool-heavy work writes hundreds of kilobytes of
+   eligible records -- measured 89 KB to 690 KB per interval on 2026-09-17,
+   at 1 or 2 prompts each -- so the original 32 KiB limit refused the stop
+   after every turn, and the person read a red "Stop says" line each time.
+   Replayed over that session, the byte rule refuses 48 stops for 56 prompts
+   and this one refuses 20. These are reminder limits, not
    episode semantics (finding 9): a session that ends under them is left to
    the batch lanes, which is exactly what those lanes are for, and is stated
    as the residual loss below.
@@ -235,7 +241,8 @@ few duplicate titles in recall during the transition, and no lost record.
   with none it is uncovered until they add one.
 - Work after the last consumed checkpoint is not recorded by the session
   and, because the conversation is then skipped by the batch lanes, not by
-  them either. The limits keep this tail under 32 KiB of transcript.
+  them either. The limits keep this tail under two prompts, or under an hour
+  when the conversation is one long prompt.
 - After compaction the model records what it still knows of the interval.
 
 ## Not in this revision

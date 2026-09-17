@@ -128,6 +128,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
 
     subcommands.add_parser("ingest-synthesis", help="Index every synthesis record in the registry")
     subcommands.add_parser(
+        "curate-screen",
+        help="Screen the synthesis registry into a deterministic claim candidate ledger",
+    )
+    subcommands.add_parser(
         "session-stop",
         help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
     )
@@ -252,6 +256,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         )
     if args.command == "ingest-synthesis":
         return _ingest_synthesis(args.index)
+    if args.command == "curate-screen":
+        from atrium.curate.run_curate_screen_cli import run_curate_screen_cli
+
+        return run_curate_screen_cli(state_directory() / "synthesis")
     if args.command == "session-stop":
         from atrium.session.run_session_stop_cli import run_session_stop_cli
 

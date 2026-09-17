@@ -3,6 +3,8 @@
 import re
 from pathlib import Path
 
+from atrium.ingest.descend_encoded_segment import descend_encoded_segment
+
 # The segment is an absolute path with every character that is not a letter or
 # a digit replaced by a hyphen, so `/Users/me/p/inbox-companion` and
 # `/Users/me/p/inbox/companion` encode identically, and
@@ -31,7 +33,7 @@ def decode_workspace_segment(segment: str, home: str | Path) -> str | None:
     The prefix test below compares encoded strings, where the separator is the
     same hyphen that appears inside names, so `<home>-old/p/vexa` encodes
     exactly as `<home>/old/p/vexa` does. That ambiguity is not resolvable here
-    and no post-check removes it: `_descend` walks only real children of
+    and no post-check removes it: `descend_encoded_segment` walks only real children of
     ``root``, so its result is under ``root`` by construction and re-encodes to
     the whole segment by construction too. A `resolve()`-based guard is worse
     than none -- it drops a project directory that is a symlink to another
@@ -43,30 +45,7 @@ def decode_workspace_segment(segment: str, home: str | Path) -> str | None:
         return str(root)
     if not segment.startswith(encoded_root + "-"):
         return None
-    found = _descend(root, segment[len(encoded_root) + 1 :])
+    found = descend_encoded_segment(root, segment[len(encoded_root) + 1 :])
     if len(found) != 1:
         return None
     return found[0]
-
-
-def _descend(base: Path, encoded: str) -> list[str]:
-    """Walk ``encoded`` down the real tree, returning every directory it can name.
-
-    Every branch is followed rather than the longest one only: a branch that
-    consumes the segment but leaves no directory behind is abandoned, and when
-    two survive the segment is ambiguous and the caller must not choose.
-    """
-    if not encoded:
-        return [str(base)]
-    try:
-        entries = [entry for entry in base.iterdir() if entry.is_dir()]
-    except OSError:
-        return []
-    found: list[str] = []
-    for entry in entries:
-        name = _SEPARATOR.sub("-", entry.name)
-        if encoded == name:
-            found.append(str(entry))
-        elif encoded.startswith(name + "-"):
-            found.extend(_descend(entry, encoded[len(name) + 1 :]))
-    return found

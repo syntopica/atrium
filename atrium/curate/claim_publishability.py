@@ -24,6 +24,18 @@ def claim_publishability(text: str, model: str = LOCAL_DEFAULT_MODEL) -> tuple[s
     next grading pass found four more. Asking what a claim asserts scales to
     shapes nobody has seen, and a claim whose assertion comes back empty
     answers the question by itself.
+
+    What this pass CANNOT do, measured rather than assumed: decide whether a
+    durable claim is wiki material. Stage four placed 200 of these claims on a
+    page and refused 70; re-judging both sets here returns `durable_knowledge`
+    for 68 of 70 on each side - no separation at all. Adding a rule that a
+    statement the source code already makes is not knowledge moves it to 66 and
+    63, which buys three points of separation for two true positives and is not
+    worth the prompt. The discrimination belongs where the candidate pages are
+    visible: a fact is wiki material when some page wants it, and that question
+    cannot be answered from the claim alone. This pass stays as the cheap
+    pre-filter it is good at - 492 claims to 270, dropping session mechanics
+    and one-run evidence - and placement decides the rest.
     """
     answer = local_lane_call(
         LanePrompt(_SYSTEM, text, _INSTRUCTION, "STATEMENT"),

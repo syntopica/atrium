@@ -3,6 +3,9 @@
 import sqlite3
 from pathlib import Path
 
+import numpy as np
+
+from atrium.curate.load_page_library import load_page_library
 from atrium.curate.page_descriptor import page_descriptor
 from atrium.curate.page_shortlist import page_shortlist
 from atrium.curate.proposal_review import proposal_review
@@ -26,30 +29,33 @@ def test_a_page_descriptor_falls_back_to_the_path(tmp_path: Path) -> None:
 
 
 class _Embedder:
-    def embed(self, texts: list[str]) -> list[list[float]]:
-        return [[0.0, 0.0] for _ in texts]
+    def embed(self, texts: list[str]) -> np.ndarray:
+        return np.zeros((len(texts), 2), dtype=np.float32)
 
 
 def test_the_inbox_is_not_a_destination() -> None:
     """Unreviewed material is where claims come from, not a page they can join."""
     connection = sqlite3.connect(":memory:")
     connection.executescript(
-        "CREATE TABLE records (rowid INTEGER PRIMARY KEY, record_id TEXT, conversation_id TEXT,"
-        " title TEXT, text TEXT, provider TEXT);"
-        "CREATE VIRTUAL TABLE words USING fts5(text);"
+        "CREATE TABLE records (record_id TEXT, conversation_id TEXT, title TEXT,"
+        " text TEXT, provider TEXT);"
         "CREATE TABLE vectors (record_id TEXT, vector BLOB);"
     )
-    for rowid, path in enumerate(["brain/inbox/raw-note.md", "brain/topics/pipelines.md"], start=1):
+    # A third page keeps the shared terms rare enough to score: a word every
+    # chunk carries has zero inverse document frequency and ranks nothing.
+    pages = [
+        ("brain/inbox/raw-note.md", "pipelines merge claims into pages"),
+        ("brain/topics/pipelines.md", "pipelines merge claims into pages"),
+        ("brain/topics/unrelated.md", "invoices and quarterly taxes"),
+    ]
+    for record_id, (path, text) in enumerate(pages, 1):
         connection.execute(
-            "INSERT INTO records (rowid, record_id, conversation_id, title, text, provider)"
-            " VALUES (?, ?, ?, ?, ?, 'brain')",
-            (rowid, str(rowid), path, "Pipelines", "pipelines merge claims into pages"),
+            "INSERT INTO records (record_id, conversation_id, title, text, provider)"
+            " VALUES (?, ?, ?, ?, 'brain')",
+            (str(record_id), path, "Pipelines", text),
         )
-        connection.execute(
-            "INSERT INTO words (rowid, text) VALUES (?, ?)",
-            (rowid, "pipelines merge claims into pages"),
-        )
-    shortlist = page_shortlist(connection, _Embedder(), "pipelines merge claims into pages")
+    library = load_page_library(connection, _Embedder(), Path("/nowhere"))
+    shortlist = page_shortlist(library, "pipelines merge claims into pages")
     assert [hit.path for hit in shortlist] == ["brain/topics/pipelines.md"]
 
 

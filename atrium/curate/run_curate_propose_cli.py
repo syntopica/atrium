@@ -8,7 +8,7 @@ from atrium.curate.claim_destination import claim_destination
 from atrium.curate.claims_ledger_path import claims_ledger_path
 from atrium.curate.curation_directory import curation_directory
 from atrium.curate.jsonl_rows import jsonl_rows
-from atrium.curate.page_library import PageLibrary
+from atrium.curate.load_page_library import load_page_library
 from atrium.curate.proposal_directory import proposal_directory
 from atrium.curate.proposal_review import proposal_review
 from atrium.embed.embedder import Embedder
@@ -50,7 +50,7 @@ def run_curate_propose_cli(budget: int, model: str = LOCAL_DEFAULT_MODEL) -> int
         return 1
     # The index lives in the instance's derived state, not beside its pages:
     # `data` is the wiki root the page paths resolve against.
-    library = PageLibrary(
+    library = load_page_library(
         open_store(state_directory() / "index.sqlite3", read_only=True), Embedder(), data
     )
     placed: dict[str, list[dict[str, Any]]] = {}

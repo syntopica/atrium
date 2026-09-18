@@ -1,52 +1,42 @@
 """The exact-recall lane over curated pages: identifiers, paths, proper names."""
 
+import math
 import re
-import sqlite3
 
 from atrium.curate.page_candidate import PageCandidate
+from atrium.curate.page_library import PageLibrary
 from atrium.retrieve.fold import fold
 
-# Pages are indexed as chunks under provider `brain`, one record per chunk,
-# with the page's relative path in `conversation_id`. Nothing else in the index
-# is a curated page, so the provider is the whole scope.
-_QUERY = """
-SELECT r.conversation_id, r.title, -bm25(words) AS score, r.text
-FROM words
-JOIN records r ON r.rowid = words.rowid
-WHERE words MATCH ? AND r.provider = 'brain'
-ORDER BY words.rank
-LIMIT ?
-"""
-# A claim is a sentence, not a query: ANDing its words matches nothing, and
-# feeding all of them to OR drowns the rare token that carries the identity.
-# The longest terms are the discriminating ones (`selectPendingDrafts`,
-# `wrangler.jsonc`), so the expression keeps those and drops the rest.
-_TERMS = 12
+# A claim is a sentence, not a query: its common words match every page, so the
+# score is inverse document frequency summed over the terms a chunk contains.
+# The rare ones - `selectPendingDrafts`, `wrangler.jsonc` - carry the identity.
 _MIN_LENGTH = 4
+_WORD = re.compile(r"[a-z0-9_]+")
 
 
-def lexical_page_hits(
-    connection: sqlite3.Connection, claim: str, limit: int = 20
-) -> list[PageCandidate]:
-    """Return curated pages whose text shares rare words with the claim."""
-    # Words only, never the raw split: a claim quotes code, and `@types/react`
-    # or a path fed to FTS5 fails the whole query with a syntax error rather
-    # than matching nothing.
-    terms = sorted(
-        {
-            term
-            for term in re.findall(r"[a-z0-9_]+", fold(claim).lower())
-            if len(term) >= _MIN_LENGTH
-        },
-        key=len,
-        reverse=True,
-    )[:_TERMS]
-    if not terms:
+def lexical_page_hits(library: PageLibrary, claim: str, limit: int = 20) -> list[PageCandidate]:
+    """Return curated chunks sharing rare words with ``claim``, best first."""
+    terms = {term for term in _WORD.findall(fold(claim).lower()) if len(term) >= _MIN_LENGTH}
+    weights = {}
+    for term in terms:
+        count = sum(1 for words in library.words if term in words)
+        if count:
+            weights[term] = math.log(len(library.words) / count)
+    if not weights:
         return []
-    match = " OR ".join(f'"{term}"' for term in terms)
+    scored = [
+        (sum(weight for term, weight in weights.items() if term in words), index)
+        for index, words in enumerate(library.words)
+    ]
+    scored.sort(key=lambda pair: (-pair[0], pair[1]))
     return [
         PageCandidate(
-            path=row[0], title=row[1], score=float(row[2]), lane="lexical", excerpt=row[3]
+            path=library.paths[index],
+            title=library.titles[index],
+            score=score,
+            lane="lexical",
+            excerpt=library.texts[index],
         )
-        for row in connection.execute(_QUERY, (match, limit)).fetchall()
+        for score, index in scored[:limit]
+        if score > 0
     ]

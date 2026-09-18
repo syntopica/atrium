@@ -34,9 +34,7 @@ def claim_destination(
     times, the project page 5, and refused 14 - so the join is a useful
     candidate and a poor default.
     """
-    shortlist = [
-        hit.path for hit in page_shortlist(library.connection, library.embedder, claim, _SHORTLIST)
-    ]
+    shortlist = [hit.path for hit in page_shortlist(library, claim, _SHORTLIST)]
     if project_page and project_page not in shortlist and (library.root / project_page).is_file():
         shortlist.append(project_page)
     if not shortlist:

@@ -162,6 +162,13 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     publishable.add_argument("--budget", type=int, default=1000, help="Maximum claims judged")
     publishable.add_argument("--model", default=None, help="Ollama model to judge with")
 
+    propose = subcommands.add_parser(
+        "curate-propose",
+        help="Place each durable claim on a curated page and write proposals for review",
+    )
+    propose.add_argument("--budget", type=int, default=1000, help="Maximum claims placed")
+    propose.add_argument("--model", default=None, help="Ollama model to place with")
+
     subcommands.add_parser(
         "session-stop",
         help="Claude Code Stop hook decision: refuse the stop when the session owes a record",
@@ -312,6 +319,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
         return run_curate_publishable_cli(args.budget, args.model or LOCAL_DEFAULT_MODEL)
+    if args.command == "curate-propose":
+        from atrium.curate.run_curate_propose_cli import run_curate_propose_cli
+        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
+
+        return run_curate_propose_cli(args.budget, args.model or LOCAL_DEFAULT_MODEL)
     if args.command == "session-stop":
         from atrium.session.run_session_stop_cli import run_session_stop_cli
 

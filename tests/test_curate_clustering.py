@@ -16,6 +16,8 @@ from atrium.curate.equivalence_clusters import equivalence_clusters
 from atrium.curate.near_duplicate_pairs import near_duplicate_pairs
 from atrium.curate.numeric_signature import numeric_signature
 from atrium.curate.pair_relation import pair_relation
+from atrium.curate.relation_row import relation_row
+from atrium.curate.time_separated_conflict import time_separated_conflict
 
 
 class _Embedder:
@@ -54,8 +56,11 @@ def test_a_reordered_paraphrase_keeps_its_signature() -> None:
     )
 
 
-def test_the_signature_overrules_an_equivalent_verdict(monkeypatch: pytest.MonkeyPatch) -> None:
-    """A model calling two different measurements the same must not merge them."""
+def test_the_signature_blocks_the_merge_without_calling_it_a_contradiction(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Two measurements of Node taken on different runs must not merge, and must not
+    be reported as a contradiction: both were true when they were taken."""
 
     def fake_call(*_: Any, **__: Any) -> dict[str, Any]:
         return {
@@ -66,8 +71,8 @@ def test_the_signature_overrules_an_equivalent_verdict(monkeypatch: pytest.Monke
 
     monkeypatch.setattr(pair_relation_module, "local_lane_call", fake_call)
     relation, fields = pair_relation("Node v26.5.1 was used", "Node v26.5.0 was used")
-    assert relation == "conflicting"
-    assert fields["vetoed_by"] == "numeric_signature"
+    assert relation == "equivalent"
+    assert fields["merge_blocked"] == "numeric_signature"
 
 
 def test_the_signature_leaves_a_true_paraphrase_alone(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -81,7 +86,7 @@ def test_the_signature_leaves_a_true_paraphrase_alone(monkeypatch: pytest.Monkey
     monkeypatch.setattr(pair_relation_module, "local_lane_call", fake_call)
     relation, fields = pair_relation("38 orphans held 7.4 GB", "7.4 GB were held by 38 orphans")
     assert relation == "equivalent"
-    assert "vetoed_by" not in fields
+    assert "merge_blocked" not in fields
 
 
 def test_a_cluster_needs_every_pair_not_a_path() -> None:
@@ -159,3 +164,28 @@ def test_the_publishability_verdict_is_passed_through(monkeypatch: pytest.Monkey
     verdict, fields = claim_publishability("Session working directory: /somewhere")
     assert verdict == "session_mechanics"
     assert fields["asserted"] == ""
+
+
+def test_the_decided_relation_survives_the_model_answer() -> None:
+    """The veto decides what the row says; the model's own key must not overwrite it."""
+    row = relation_row(
+        "a",
+        "b",
+        0.9876,
+        "equivalent",
+        {"relation": "equivalent", "shared_subject": "Node", "merge_blocked": "numeric_signature"},
+    )
+    assert row["relation"] == "equivalent"
+    assert row["merge_blocked"] == "numeric_signature"
+    assert row["similarity"] == 0.9876
+
+
+def test_a_conflict_across_disjoint_sightings_is_not_a_contradiction() -> None:
+    """69 shell scripts in September and 79 a week later is growth, not disagreement."""
+    assert time_separated_conflict("2026-09-01", "2026-09-01", "2026-09-08", "2026-09-08")
+    assert time_separated_conflict("2026-09-08", "2026-09-08", "2026-09-01", "2026-09-01")
+
+
+def test_a_conflict_inside_one_window_survives() -> None:
+    assert not time_separated_conflict("2026-06-17", "2026-06-17", "2026-06-17", "2026-06-17")
+    assert not time_separated_conflict("2026-06-01", "2026-06-20", "2026-06-15", "2026-06-30")

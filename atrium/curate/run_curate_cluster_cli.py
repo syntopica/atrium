@@ -9,6 +9,8 @@ from atrium.curate.curation_directory import curation_directory
 from atrium.curate.equivalence_clusters import equivalence_clusters
 from atrium.curate.pair_relation import pair_relation
 from atrium.curate.publishable_claims import publishable_claims
+from atrium.curate.relation_row import relation_row
+from atrium.curate.time_separated_conflict import time_separated_conflict
 from atrium.embed.embedder import Embedder
 from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
@@ -40,16 +42,24 @@ def run_curate_cluster_cli(
     equivalent: list[tuple[int, int]] = []
     for done, (left, right, score) in enumerate(pairs[:budget], start=1):
         relation, fields = pair_relation(claims[left]["text"], claims[right]["text"], model=model)
+        if relation == "conflicting" and time_separated_conflict(
+            str(claims[left]["first_seen"]),
+            str(claims[left]["last_seen"]),
+            str(claims[right]["first_seen"]),
+            str(claims[right]["last_seen"]),
+        ):
+            # Same thing, two moments: supersession or growth, not disagreement.
+            relation = "superseded"
         relations.append(
-            {
-                "left": claims[left]["candidate_id"],
-                "right": claims[right]["candidate_id"],
-                "similarity": round(score, 4),
-                "relation": relation,
-                **{key: fields[key] for key in sorted(fields)},
-            }
+            relation_row(
+                str(claims[left]["candidate_id"]),
+                str(claims[right]["candidate_id"]),
+                score,
+                relation,
+                fields,
+            )
         )
-        if relation == "equivalent":
+        if relation == "equivalent" and "merge_blocked" not in fields:
             equivalent.append((left, right))
         if done % 25 == 0 or done == min(len(pairs), budget):
             rate = done / max(time.monotonic() - started, 1e-9)

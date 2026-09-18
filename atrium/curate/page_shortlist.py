@@ -1,11 +1,9 @@
 """Shortlist the curated pages a claim could belong to, by page rather than chunk."""
 
-import sqlite3
-
 from atrium.curate.dense_page_hits import dense_page_hits
 from atrium.curate.lexical_page_hits import lexical_page_hits
 from atrium.curate.page_candidate import PageCandidate
-from atrium.embed.embedder import Embedder
+from atrium.curate.page_library import PageLibrary
 
 # The five curated folders. `brain/inbox/` and the repository's own documents
 # are indexed under the same provider and are not destinations: the inbox is
@@ -25,13 +23,11 @@ _DEPTH = 40
 _K = 60
 
 
-def page_shortlist(
-    connection: sqlite3.Connection, embedder: Embedder, claim: str, limit: int = 5
-) -> list[PageCandidate]:
+def page_shortlist(library: PageLibrary, claim: str, limit: int = 5) -> list[PageCandidate]:
     """Return the pages both lanes agree are plausible destinations for ``claim``."""
     lanes = (
-        lexical_page_hits(connection, claim, _DEPTH),
-        dense_page_hits(connection, embedder.embed([claim])[0], _DEPTH),
+        lexical_page_hits(library, claim, _DEPTH),
+        dense_page_hits(library, library.embedder.embed([claim])[0], _DEPTH),
     )
     fused: dict[str, float] = {}
     best: dict[str, PageCandidate] = {}

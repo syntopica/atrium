@@ -36,6 +36,17 @@
 
 ## Ingest / Store
 
+- [ ] **Process the retired memstore store into Atrium, then delete it** (owner,
+      2026-09-16: "tenemos que procesarlo y luego borrarlo"; routed from
+      `~/p/TODO.md` 2026-09-20). `~/p/wiki/mem/memstore/peer-b-retired-20260904`
+      is 26 GB in three palaces (`palace.pre-rebuild-20260821-002808` 14 GB,
+      `palace.pre-merge-20260811` 8.3 GB, `palace` 3.6 GB) plus `hallways.json`;
+      `this-mac-retired-20260914` is another 116 MB. MacBook only; its README says
+      there is no second copy and `wiki/.gitignore` ignores `/mem/`, so nothing is
+      pushed anywhere: do not delete before the ingestion runs. Open question from
+      that README: which of memstore's own synthesis is worth importing rather
+      than re-deriving, given Atrium already indexes the same conversation corpus.
+      A bulk read over 26 GB, so a delegated pass, not an inline session.
 - [ ] Codex source unblocked 2026-08-27: rocket-agents gained
       `--allow-partial` (commit `bfa54ec` there) and the full codex export landed
       — 4,356 conversations -> 21,219 records ingested, manifest declares

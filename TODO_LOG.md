@@ -16,7 +16,7 @@
   build under the grammar answered 6 of 6 in 86.4 s, generating more slowly
   (79.6 against 105.0 tok/s) and prefilling far faster (1,024 against 347
   tok/s). The constraint decides the outcome on a small model: `ornith-1.5:9b`
-  on the M1 Mac mini answered 2 of 5 unconstrained -- extra data after the
+  on the second machine answered 2 of 5 unconstrained -- extra data after the
   object, a truncated string, one reply with no required key -- and 5 of 5 with
   the grammar. Two earlier readings were wrong and are recorded so they are not
   re-derived: a prefill of ~59,000 tok/s belongs to whichever variant runs
@@ -82,7 +82,7 @@
   filter-repo` dropped `TODO_HISTORY_INDEX.jsonl` from every commit and
   replaced home paths, the work email, the second Claude profile name and the
   laptop host name across all blobs (141 commits, tree unchanged, `main`
-  force-pushed as `150f06d`). Backup: `~/backups/git-rewrite-2026-09-16/<repo>.bundle` (all refs before the rewrite) plus the filter-repo expression files under `expr/`. Commit hashes quoted in this log before 2026-09-16 no longer resolve; look them up by message in the bundle. Every other clone (the Mac mini) must `git fetch origin && git reset --hard origin/main`, not pull. GitHub may still serve the old commits by SHA from its cache until support purges them.
+  force-pushed as `150f06d`). Backup: a bundle kept outside the repository (all refs before the rewrite) plus the filter-repo expression files under `expr/`. Commit hashes quoted in this log before 2026-09-16 no longer resolve; look them up by message in the bundle. Every other clone (the second machine) must `git fetch origin && git reset --hard origin/main`, not pull. GitHub may still serve the old commits by SHA from its cache until support purges them.
 
 - [x] 2026-09-15 — **Unified operational context and origin preservation:**
   `atrium context` and MCP `atrium_context` now combine scoped history, curated
@@ -156,7 +156,7 @@
   `atrium-refresh` ran `ingest`, `ingest-synthesis` and `embed` but not `ingest-notes`, which
   was left to be run by hand -- so a machine's brain index sat at whatever commit it last
   saw while the notes themselves moved on. Measured 2026-09-05 with both checkouts at the
-  same commit: 268 notes indexed here against 243 on the mini, and this machine's own index
+  same commit: 268 notes indexed here against 243 on the second machine, and this machine's own index
   was 268 notes stale before the manual catch-up. The notes are half the dense lane, so a
   frozen brain is a quietly worse `atrium search` with nothing on screen to say so. Fixed by
   adding the step to the refresh (33 s, incremental, skips unchanged notes) in
@@ -198,7 +198,7 @@
   this was a live memory that no agent could reach by the only route it was told to use, and it
   fails in the one way nobody reports: a session simply improvises instead. Only the helper
   scripts `atrium-lock` and `atrium-refresh` were linked into `~/.local/bin`; the CLI itself
-  never was. Fixed on the Mac mini 2026-09-07: `dotfiles/bin/atrium/atrium` wraps
+  never was. Fixed on the second machine 2026-09-07: `dotfiles/bin/atrium/atrium` wraps
   `uv run --directory ~/p/mem atrium "$@"` — the same call `atrium-refresh` already makes —
   symlinked as `~/.local/bin/atrium` (dotfiles `9408859`). Verified from an unrelated directory
   in a fresh login shell.
@@ -212,7 +212,7 @@
   before the change it matched the atrium one exactly. A second install bug went with it —
   `dotfiles/bootstrap.sh` linked every top-level `bin/*` entry, so a fresh machine got
   `~/.local/bin/atrium` pointing at the *directory*, shadowing the wrapper and installing none
-  of the scripts inside it. Closed on the MacBook Pro 2026-09-08: the symlink is in place
+  of the scripts inside it. Closed on the primary machine 2026-09-08: the symlink is in place
   (`~/.local/bin/atrium -> ~/p/dotfiles/bin/atrium/atrium`, the `uv run --project` version) and
   `atrium search "test" --project .` from `~/p/brain` returns brain hits, so the cwd bug is gone
   on both machines.
@@ -222,16 +222,16 @@
   path, `tmutil destinationinfo` reported no Time Machine destination on this machine, and
   `peer-b` had no `~/.local/share/atrium/` at all. It is the one thing here that is not
   disposable -- the index rebuilds from it, and it rebuilds from nothing but paid model calls.
-  Closed by provisioning the mini with a full copy and adding `sync_synthesis_registry_to` to
+  Closed by provisioning the second machine with a full copy and adding `sync_synthesis_registry_to` to
   `~/p/dotfiles/bin/sync-all-safe` (`dc689ae` there), which pushes `records/` and
   `active-recipe.json` from the designated writer on every daily run and never deletes on the
   peer, exactly as the pinned design says. Verified 2026-09-05: 2,514 files, 9.7 MB
   incremental, both machines at 32,503 records with an identical manifest.
-  Still open, and wider than this item: the MacBook has no Time Machine destination
+  Still open, and wider than this item: the primary machine has no Time Machine destination
   configured at all, and Backblaze now excludes the archive (see `~/p/TODO.md`).
 
 
-- [x] 2026-09-04 — **Durability / Observability:** The Mac mini runs Atrium; memstore
+- [x] 2026-09-04 — **Durability / Observability:** The second machine runs Atrium; memstore
   retired from it; the empty synthesis record found and refused.
   - Mini before: no `~/p/mem`, no index, no registry copy, memstore daemon
     still mining 26 GB, `cleanupPeriodDays` unset (30-day session purge live),
@@ -244,7 +244,7 @@
     template written by the primary only, `claude-apply` leaves an established
     host alone, import retry on `ConversationArchiveChangedError`, backup prune
     after every applied import, config push from the primary only, and a
-    `macbook` leg for the secondary; mini schedule moved to 20:00.
+    `primary` leg for the secondary; second-machine schedule moved to 20:00.
   - memstore copy: 28.07 GB, 1,475 files, at
     `~/.local/share/memstore-peer-b-retired-20260904/`; verified by rsync
     itemize (clean), `integrity_check` ok on all four sqlite files, and the
@@ -262,7 +262,7 @@
     machines; `synthesize_conversation` now raises `EmptySynthesisError`
     instead of writing such a record (`tests/test_synthesize_conversation_empty_output.py`).
   - Evidence: `atrium doctor` all ok at 16:54; `sync-all-safe.log` (conflicts
-    08-28..09-03, `synced peer-b` 09-01..09-04); mini `first-run.out`,
+    08-28..09-03, `synced second machine` 09-01..09-04); second-machine `first-run.out`,
     `refresh.log`; palace comparison in the session scratchpad.
 
 - [x] 2026-09-01 — **Retrieval:** Four renamed projects got their history back.
@@ -535,19 +535,19 @@
     which between two archives is simply wrong — neither supersedes the other.
     It now uses the union merge that already existed for capture fragments,
     made commutative so both hosts converge on the same record either way.
-  - **The merge fix earned itself the same day.** Capturing the Mac mini's
+  - **The merge fix earned itself the same day.** Capturing the second machine's
     corpus produced three conversations present on both hosts with differing
-    revisions. One of them, `f35e12570c48`, had 353 events on the mini and 356
+    revisions. One of them, `f35e12570c48`, had 353 events on the second machine and 356
     on the laptop: importing it under the old `replace` would have destroyed
     the three events only this machine held. After the import it has 356.
-  - The Mac mini's own history is captured: 7,697 conversations exported
+  - The second machine's own history is captured: 7,697 conversations exported
     (`complete:true`, nothing skipped), of which **437 existed nowhere else**.
     Its 3,072 Claude session files were never 3,072 conversations, as the
     review warned — the export spans every source on that host, and the two
     machines' corpora overlap heavily because `~/.claude/projects` is synced.
     Archive: 26,598 -> 27,036 conversations, integrity verified against its own
     manifest.
-  - An immutable snapshot lives on the Mac mini at
+  - An immutable snapshot lives on the second machine at
     `~/.local/share/rocket-agents/conversations/snapshots/2026-08-31-post-memstore-recovery/`,
     mode 0400, sha256 matched on both hosts, and that machine runs Backblaze —
     so the archive now exists in three places rather than one. Its disk has
@@ -555,7 +555,7 @@
     not against physical theft. Operator informed and accepted.
   - Evidence: `rocket-agents 9e4d1f5` (26 tests), `dotfiles 3f3737d`
     (`./scripts/check` green, no leaks), both hosts on the same commits via
-    git bundle without touching GitHub, and the Mac mini runs the new
+    git bundle without touching GitHub, and the second machine runs the new
     concurrency tests green.
 
 - [x] 2026-08-31 — **Cutover:** `~/.memstore` deleted; 118 GB reclaimed.
@@ -609,9 +609,9 @@
 
 - [x] 2026-08-31 — **Config:** Two Claude Code profiles, and only two.
   - Result: A third configuration existed at `~/.claude/.claude.json` — one
-    project, one MCP server, and its own `oauthAccount` binding
-    `me@cristiandeluxe.dev` to *the work organization's* organization, crossing the
-    email-separation rule in the global guidance. It is reached by setting
+    project, one MCP server, and its own `oauthAccount` binding the personal
+    address to the work organization, crossing the email-separation rule in the
+    global guidance. It is reached by setting
     `CLAUDE_CONFIG_DIR=~/.claude`, which looks like the way to name the
     personal profile and is not: Claude Code keeps its config at
     `$HOME/.claude.json` when the variable is unset and at
@@ -624,12 +624,13 @@
     accounts, how each is started and which file each uses; to forbid
     `CLAUDE_CONFIG_DIR=~/.claude` with the reason; to record that an MCP
     `command` must be an absolute path; and to mark `gateway-example` as a deliberate
-    per-profile difference rather than drift, since it is a BusiRocket service.
+    per-profile difference rather than drift, since it belongs to one of the
+    two accounts only.
   - `.zshrc` gained `claudeb` beside the existing `claudef`, so both profiles
     are named rather than one being "the default". It runs
     `env -u CLAUDE_CONFIG_DIR claude`: a shell that already ran `claudef`, or
-    any nested agent session, would otherwise send a bare `claude` to the
-    the work organization profile without saying so. Nothing in the shell ever set
+    any nested agent session, would otherwise send a bare `claude` to the work
+    profile without saying so. Nothing in the shell ever set
     `CLAUDE_CONFIG_DIR=~/.claude`, so the stray profile came from an ad-hoc
     invocation about a month earlier — plausibly an agent following the old
     rule text, which called `~/.claude` "canonical" without saying it is the
@@ -669,7 +670,7 @@
     a resident `Embedder` serves both clients — first search 20.7 s, next
     2.7 s. The dense lane is complete for the first time: 19,198 of 19,198.
   - Evidence: commits `d37ed44`..`243f299`; 77 tests pass, ruff clean; the
-    the work organization profile and Codex were each asked to quote back a real episode
+    work profile and Codex were each asked to quote back a real episode
     through the new path, and Claude answers NO to a memstore tool; a full
     `atrium-refresh` logged `2609 conversations -> 0 synthesis records
     written, 2609 unchanged` / `nothing to embed`, which is the vector-cascade
@@ -725,11 +726,12 @@
     transcript: Codex rollout `01a04379` (2026-08-27).
 
 - [x] 2026-08-27 — **Infrastructure:** Repository created and published:
-  `BusiRocket/atrium`, private, 5 commits; README and `AGENTS.md` record the
+  the private predecessor of this repository, 5 commits; README and
+  `AGENTS.md` record the
   layer boundary and the measured decisions (embedder, fusion weights,
   separate lexical lanes, addressable dense lane).
-  - Evidence: https://github.com/BusiRocket/atrium (visibility verified
-    PRIVATE); `git log --oneline` 5 commits.
+  - Evidence: the repository page (visibility verified PRIVATE);
+    `git log --oneline` 5 commits.
 
 - [x] 2026-08-27 — **Pending Decisions:** Design converged after three
   adversarial Codex rounds with real measurements over the user's corpus.

@@ -35,7 +35,7 @@ JSON CLI. Retrieved history never establishes a present-day operational outcome.
 
 ## Acceptance
 
-An anonymized Server-a-style fixture must retrieve both a project's mail-routing
+An anonymized server-style fixture must retrieve both a project's mail-routing
 history and a workspace-less access note, follow its runbook link, exclude another
 project's history and third-party instructions, remove duplicate evidence, honor
 budgets and require live verification before stating a message was delivered.

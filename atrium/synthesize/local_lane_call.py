@@ -21,7 +21,7 @@ from atrium.synthesize.parsed_json_object import parsed_json_object
 # prefill, and the same GGUF build measured 55.9 and 95.5 tok/s of generation
 # in two consecutive batches, which is more spread than any difference between
 # the builds. The constraint matters most on a small model: ornith-1.5:9b on
-# the M1 Mac mini answered 2 of 5 unconstrained and 5 of 5 with the grammar.
+# the second machine answered 2 of 5 unconstrained and 5 of 5 with the grammar.
 LOCAL_DEFAULT_MODEL = "qwen3.6:35b"
 # The episode ceiling is 32k tokens; the window has to hold the transcript,
 # the instruction and the answer.

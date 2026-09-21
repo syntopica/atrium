@@ -41,7 +41,7 @@
       `~/p/TODO.md` 2026-09-20). `~/p/wiki/mem/memstore/peer-b-retired-20260904`
       is 26 GB in three palaces (`palace.pre-rebuild-20260821-002808` 14 GB,
       `palace.pre-merge-20260811` 8.3 GB, `palace` 3.6 GB) plus `hallways.json`;
-      `this-mac-retired-20260914` is another 116 MB. MacBook only; its README says
+      `this-mac-retired-20260914` is another 116 MB. primary machine only; its README says
       there is no second copy and `wiki/.gitignore` ignores `/mem/`, so nothing is
       pushed anywhere: do not delete before the ingestion runs. Open question from
       that README: which of memstore's own synthesis is worth importing rather
@@ -136,7 +136,7 @@
     Coverage after the fixes was 2,609 of 11,028 archived conversations (23.7%).
     **Re-measured 2026-09-01: 3,007 of 30,318 (9.9%)** — the numerator grew by
     398 while the denominator nearly tripled, because the memstore recovery and
-    the Mac mini capture added conversations far faster than a quota-walled drip
+    the second machine capture added conversations far faster than a quota-walled drip
     can synthesize them. Coverage is now falling, not rising, and the drip has
     been sleeping against the weekly Gemini wall since 2026-08-31 23:22. One day
     of agy work on 2026-08-28 (13,966 records) spent an entire Google AI Pro
@@ -330,8 +330,8 @@
       refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
       rewrite filed under Ingest / Store); recall fires in both Claude profiles
       (the second Claude profile's projects directory is a symlink into the first, so its
-      sessions are captured); the Mac mini's sessions reach the archive through the daily `sync-all-safe`
-      leg (verified on mini-only sessions of 09-03 and 09-04). Fixed the same day: the Mac mini
+      sessions are captured); the second machine's sessions reach the archive through the daily `sync-all-safe`
+      leg (verified on second-machine sessions of 09-03 and 09-04). Fixed the same day: the second machine
       now runs Atrium with its own index and hourly refresh, memstore is gone from it, and its
       copy of the synthesis registry is the second disk the Durability item asked for (see
       `TODO_LOG.md` 2026-09-04). Still open:
@@ -344,11 +344,11 @@
     `smart-sales` (114) have zero memory; `atrium synthesize --project` can fill them the next
     time a lane has quota.
   - Disk: the 2026-09-04 measurements were index 20 GB, archive 5.2 GB plus one 5.2 GB backup,
-    and 94% used. Corrected 2026-09-14: the retired memstore copy is on the MacBook,
-    not the mini (`du -sk`: 27,416,464 KiB). The named path is absent on the mini;
+    and 94% used. Corrected 2026-09-14: the retired memstore copy is on the primary machine,
+    not the second machine (`du -sk`: 27,416,464 KiB). The named path is absent on the second machine;
     its residual repository, launchers and plugins were backed up and removed there.
-    The mini still measures 96% used. During the retirement task, another operation moved
-    the MacBook copy to `~/p/wiki/mem/memstore/peer-b-retired-20260904/`; its adjacent
+    The second machine still measures 96% used. During the retirement task, another operation moved
+    the primary machine copy to `~/p/wiki/mem/memstore/peer-b-retired-20260904/`; its adjacent
     README retains it as raw material for a possible Atrium ingestion pass. The retirement
     task did not delete it or authorize ingestion. The local retirement backup also moved
     to `~/p/wiki/mem/memstore/this-mac-retired-20260914/` and its hashes were reverified.
@@ -537,7 +537,7 @@
       beside its unit. Every session reports the gate as "green except these two",
       which is how a real finding would hide. Smallest step: declare
       `model_repo.py` a data module in `codeality-py.toml` and move `_descend` to its
-      own file, then re-run the gate. Recovered from the Mac mini's checkout, whose
+      own file, then re-run the gate. Recovered from the second machine's checkout, whose
       branch had diverged since 2026-08-27.
 
 ## Self-improvement
@@ -552,12 +552,12 @@
 ## Cross-project
 
 - [ ] **The two machines' archives are not identical after a two-way sync.** Found
-      2026-09-05 by running `atrium doctor` on the newly provisioned Mac mini: it warns
+      2026-09-05 by running `atrium doctor` on the newly provisioned second machine: it warns
       `9 conversations no longer archived` -- nine conversations that have paid synthesis
-      records but are absent from the mini's archive -- while the same check on the MacBook
+      records but are absent from the second machine's archive -- while the same check on the primary machine
       reports zero. The nine are old (2026-07-15 to 2026-08-09), so this is not the
       registry-ahead-of-archive lag it first looked like. Counts diverge in both directions:
-      43,995 indexable conversations on the mini against 43,991 on the MacBook, after
+      43,995 indexable conversations on the second machine against 43,991 on the primary machine, after
       `sync-conversations ... sync` ran both legs on 09-04. The merge is supposed to be a union,
       so a set difference either way is either an import that silently dropped records or a
       leg that did not complete. Small (9 of 32,503 records) and not urgent, but it is exactly

@@ -157,7 +157,7 @@ def test_restating_where_the_session_ran_is_not_a_claim() -> None:
 @pytest.mark.parametrize(
     ("fact", "reason"),
     [
-        ("The shell working directory was reset to `[HOME]/p/busirocket`.", "session_mechanics"),
+        ("The shell working directory was reset to `[HOME]/p/site`.", "session_mechanics"),
         ("21 commits locales sin push al cierre del episodio.", "session_mechanics"),
         (
             "Final review verdicts: `SPEC COMPLIANCE`, `TASK QUALITY: Approved`. No findings.",

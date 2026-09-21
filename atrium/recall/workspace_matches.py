@@ -6,7 +6,7 @@ def workspace_matches(workspace: str | None, project: str) -> bool:
 
     The Python twin of the SQL in ``workspace_scope``: the project root itself,
     or anything below it, and nothing that merely shares a name prefix --
-    `[HOME]/p/project-after-enrichment-backfill` is not part of `[HOME]/p/project-after`, and
+    `[HOME]/p/project-after-backfill` is not part of `[HOME]/p/project-after`, and
     treating it as such would quietly fold a neighbouring project's history in.
     """
     if not workspace:

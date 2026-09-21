@@ -15,7 +15,7 @@ def test_a_name_prefix_neighbour_does_not():
     """Both of these are real projects in this corpus, and folding the second
     into the first would silently synthesize 1,017 conversations of the wrong
     one."""
-    assert not workspace_matches("[HOME]/p/project-after-enrichment-backfill", "[HOME]/p/project-after")
+    assert not workspace_matches("[HOME]/p/project-after-backfill", "[HOME]/p/project-after")
 
 
 def test_an_absent_workspace_matches_nothing():

@@ -53,9 +53,9 @@ def test_a_subdirectory_of_the_scratchpad_is_the_same_project(home: Path):
 
 
 def test_a_hyphen_in_the_project_name_survives_the_encoding(home: Path):
-    """`inbox-tool` and `inbox/companion` encode identically.
+    """`inbox-tool` and `inbox/tool` encode identically.
 
-    Splitting on hyphens would invent `[HOME]/p/inbox/companion`, a phantom
+    Splitting on hyphens would invent `[HOME]/p/inbox/tool`, a phantom
     project of exactly the kind this removes, so the decode is a search of the
     real tree.
     """
@@ -64,13 +64,13 @@ def test_a_hyphen_in_the_project_name_survives_the_encoding(home: Path):
 
 
 def test_an_ambiguous_encoding_names_no_project(home: Path):
-    """`inbox-tool` and `inbox/companion` cannot both be the answer.
+    """`inbox-tool` and `inbox/tool` cannot both be the answer.
 
     Preferring either one files a session run in the other's directory under
     this one: not a phantom project but a real project's memory, quietly
     absorbing another's conversations. Nothing is a safer answer than a guess.
     """
-    (home / "p" / "inbox" / "companion").mkdir(parents=True)
+    (home / "p" / "inbox" / "tool").mkdir(parents=True)
     workspace = _scratchpad(home / "p" / "inbox-tool")
     assert canonical_workspace(workspace, home) is None
 

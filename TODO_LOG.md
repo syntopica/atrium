@@ -108,7 +108,7 @@
   at ingest, but not silently keep them as phantom projects.
   Done 2026-09-08 (`7e0ca9b`): mapped back, not dropped. The encoding replaces `/`, `.` and
   spaces alike with a hyphen, so the decode walks the real directory tree rather than
-  splitting on hyphens -- which would have invented `p/inbox/companion` beside the real
+  splitting on hyphens -- which would have invented `p/inbox/tool` beside the real
   `p/inbox-tool`, the same phantom under another name -- and answers None when two real
   directories encode identically. Measured against the live index: 67 scratchpad workspaces
   collapse to 19 real projects, 331 conversations remapped, 45 dropped because their project
@@ -273,7 +273,7 @@
     onto the current one at ingest, subdirectories included.
   - **Detection matters as much as the mechanism.** Timestamp contiguity alone
     is useless — it proposes the cross-product of every dead project ending
-    near every live one starting, including `project-after-enrichment-backfill ->
+    near every live one starting, including `project-after-backfill ->
     brain`. What works is content: the known-true rename shows `project-before`
     mentioned **7,522 times** by `project-after` against 46 by the runner-up, a
     163:1 dominance. Weaker ratios (2:1 to 4:1) are suggestive only, so the
@@ -282,7 +282,7 @@
     `brain`, which documents everything.
   - Folded, confirmed by the operator: `project-before -> project-after`,
     `agents-tools -> rocket-agents`, `wide-project-before -> wide-project`,
-    `project-after-enrichment-backfill -> project-after`.
+    `project-after-backfill -> project-after`.
   - Result after re-ingest of both raw and synthesis records: rocket-agents'
     history starts 2026-06-26 instead of 2026-08-19 and its episodes reach back
     to 2026-08-13; wide-project starts 2026-01-16 instead of 2026-04-14;

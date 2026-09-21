@@ -340,7 +340,7 @@
     before the next wall. Newest-first ordering (`cli.py:440`) means the recent days do get
     memory first, but ~150k episodes of backlog at ~400/day is not a plan. Same open decision as
     the Synthesis item: pay the codex lane on a schedule, or accept partial coverage.
-  - Coverage 38 of 51 projects (75%). `client-widgets-global-content` (495 conversations) and
+  - Coverage 38 of 51 projects (75%). `client-widgets` (495 conversations) and
     `smart-sales` (114) have zero memory; `atrium synthesize --project` can fill them the next
     time a lane has quota.
   - Disk: the 2026-09-04 measurements were index 20 GB, archive 5.2 GB plus one 5.2 GB backup,

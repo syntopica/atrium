@@ -7,11 +7,11 @@ from atrium.ingest.descend_encoded_segment import descend_encoded_segment
 
 # The segment is an absolute path with every character that is not a letter or
 # a digit replaced by a hyphen, so `/Users/me/p/inbox-tool` and
-# `/Users/me/p/inbox/companion` encode identically, and
+# `/Users/me/p/inbox/tool` encode identically, and
 # `/Users/me/p/arcade/.worktrees` encodes to `-Users-me-p-arcade--worktrees`.
 # The encoding is lossy in exactly the character that separates components, so
 # decoding is a search of the real tree rather than a substitution -- splitting
-# on hyphens would invent `[HOME]/p/inbox/companion`, a phantom project of the
+# on hyphens would invent `[HOME]/p/inbox/tool`, a phantom project of the
 # same kind this exists to remove.
 _SEPARATOR = re.compile(r"[^A-Za-z0-9]")
 
@@ -26,7 +26,7 @@ def decode_workspace_segment(segment: str, home: str | Path) -> str | None:
 
     When more than one real directory encodes to the same segment the answer is
     None as well. Preferring one of them would file a session run in
-    `p/inbox/companion` under `p/inbox-tool`: one project's conversations
+    `p/inbox/tool` under `p/inbox-tool`: one project's conversations
     entering another project's memory, which is worse than the phantom, and
     invisible once it happens.
 

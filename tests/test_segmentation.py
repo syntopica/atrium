@@ -11,9 +11,7 @@ def _message(index, role, text):
 def _session(topic_a_turns=4, topic_b_turns=4):
     events = []
     for i in range(topic_a_turns):
-        events.append(
-            _message(len(events), "user", f"la factura de acme del trimestre {i} falta")
-        )
+        events.append(_message(len(events), "user", f"la factura de acme del trimestre {i} falta"))
         events.append(_message(len(events), "assistant", "reviso acme"))
     for i in range(topic_b_turns):
         events.append(

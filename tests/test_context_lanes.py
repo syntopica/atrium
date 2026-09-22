@@ -7,7 +7,9 @@ from atrium.store.open_store import open_store
 
 
 def test_no_vectors_degrades_each_requested_semantic_pass(corpus):
-    result = retrieve_context(corpus[0], "Server-a", project=corpus[1], lane="dense", state=corpus[2])
+    result = retrieve_context(
+        corpus[0], "Server-a", project=corpus[1], lane="dense", state=corpus[2]
+    )
     assert result["route"] == {
         "requested_lane": "dense",
         "history_lane": "words",

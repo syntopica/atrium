@@ -226,7 +226,10 @@ def test_folding_still_collapses_markup_and_case() -> None:
             "Plan 4a1220e8 generation job monitor: total=0 succeeded=0 running=0 queued=0.",
             "empty_metric",
         ),
-        ("Código fuente de referencia consultado: ~/p/consumer-z/plugins/dmxusb/src/", "path_pointer"),
+        (
+            "Código fuente de referencia consultado: ~/p/consumer-z/plugins/dmxusb/src/",
+            "path_pointer",
+        ),
     ],
 )
 def test_the_second_grading_pass_debris_is_named(fact: str, reason: str) -> None:

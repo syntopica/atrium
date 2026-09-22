@@ -1,17 +1,21 @@
 """Read every Max account's OAuth access token from the macOS keychain."""
 
 import json
+import os
 import subprocess
 import time
 
-# One keychain service per Claude Code profile. The same three the
-# project-after/wide-project Max-lane scripts rotate through: a heavy session may
-# have rate-limited one account while another still has headroom.
-_SERVICES = (
-    "Claude Code-credentials",
-    "Claude Code-credentials",
-    "Claude Code-credentials",
-)
+# Keychain services to read, one per Claude Code profile: a heavy session may
+# have rate-limited one account while another still has headroom. Extra
+# profiles are named in ATRIUM_KEYCHAIN_SERVICES, colon-separated, because a
+# profile's service name is local to the machine that created it.
+_DEFAULT_SERVICE = "Claude Code-credentials"
+
+
+def _services() -> tuple[str, ...]:
+    extra = os.environ.get("ATRIUM_KEYCHAIN_SERVICES", "")
+    named = tuple(part for part in extra.split(":") if part)
+    return named or (_DEFAULT_SERVICE,)
 
 
 def max_lane_tokens() -> list[str]:
@@ -22,7 +26,7 @@ def max_lane_tokens() -> list[str]:
     revoked account. Raises only when no account has a live token at all.
     """
     tokens: list[str] = []
-    for service in _SERVICES:
+    for service in _services():
         try:
             raw = subprocess.run(
                 ["security", "find-generic-password", "-s", service, "-w"],

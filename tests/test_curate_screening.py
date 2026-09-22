@@ -55,7 +55,7 @@ def test_debris_names_the_reason_it_rejects() -> None:
         "empty_acknowledgement"
     )
     assert runtime_debris("short") == "too_short"
-    assert runtime_debris("Enable Banking's Bank consent expires every 90 days") is None
+    assert runtime_debris("Enable Banking's bank consent expires every 90 days") is None
 
 
 def test_one_claim_stated_twice_keeps_both_sources_and_the_fuller_wording(tmp_path: Path) -> None:
@@ -79,7 +79,7 @@ def test_one_claim_stated_twice_keeps_both_sources_and_the_fuller_wording(tmp_pa
 
 
 def test_the_same_fact_twice_collapses_and_dates_span_both(tmp_path: Path) -> None:
-    fact = "Enable Banking's Bank consent expires every 90 days and needs manual re-auth"
+    fact = "Enable Banking's bank consent expires every 90 days and needs manual re-auth"
     registry = _registry(
         tmp_path, [_record("a", "2026-07-01", [fact]), _record("b", "2026-09-16", [fact])]
     )

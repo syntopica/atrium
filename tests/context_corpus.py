@@ -55,7 +55,7 @@ def corpus(tmp_path):
         for path, text in [
             (
                 "projects/server-a/access.md",
-                "# Server-a access\n\nServer-a mail routing requires the approved account. See [[runbook]].",
+                "# Server-a access\n\nMail routing requires the approved account. See [[runbook]].",
             ),
             (
                 "projects/server-a/runbook.md",

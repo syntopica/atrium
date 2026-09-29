@@ -1,0 +1,69 @@
+"""The local synthesis lane routed through the worker queue instead of Ollama directly."""
+
+import hashlib
+import os
+import time
+from typing import Any
+
+from atrium.synthesize.lane_prompt import LanePrompt
+from atrium.synthesize.lane_prompt_text import lane_prompt_text
+from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
+from atrium.synthesize.worker_http_call import worker_http_call
+
+# Under the drip's 1800 s stall guard: a pending job is re-found by its
+# idempotency key on the next pass, so giving up here loses no work.
+_WAIT_SECONDS = 1500
+_TERMINAL_STATES = ("succeeded", "failed", "cancelled", "expired")
+
+
+def worker_lane_call(
+    prompt_parts: LanePrompt, tool: dict[str, Any], model: str = LOCAL_DEFAULT_MODEL
+) -> dict[str, Any]:
+    """Same contract as local_lane_call; the worker owns idle gating and the Ollama options."""
+    schema = {**tool["input_schema"], "additionalProperties": False}
+    prompt = lane_prompt_text(prompt_parts, schema)
+    key = "syn:" + hashlib.sha256((model + prompt).encode()).hexdigest()
+    job = {
+        "contract": 1,
+        "kind": "inference",
+        "queue": "atrium.synthesis",
+        "idempotency_key": key,
+        "priority": 40,
+        "privacy": "personal",
+        "max_attempts": 2,
+        "requirements": {"capability": "chat.json", "models": [model]},
+        "input": {
+            "messages": [{"role": "user", "content": prompt}],
+            "schema": schema,
+            "options": {"temperature": 0.2},
+        },
+    }
+    job_id = worker_http_call("POST", "/v1/jobs", job)["id"]
+    poll = float(os.environ.get("ATRIUM_WORKER_POLL", "10"))
+    deadline = time.monotonic() + _WAIT_SECONDS
+    while time.monotonic() < deadline:
+        state = worker_http_call("GET", f"/v1/jobs/{job_id}")
+        result = state.get("result")
+        ack = f"/v1/jobs/{job_id}/ack"
+        if result is None and state.get("state") in _TERMINAL_STATES:
+            # A re-submitted key whose result was already acked (a crash between
+            # the ack and the registry write): nothing will ever arrive.
+            raise RuntimeError("worker job already consumed")
+        if result and result["control"] == "split_requested":
+            worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": True})
+        elif result and result["control"] is None:
+            worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": False})
+            usage = result.get("usage") or {}
+            return {
+                "input": result["output"]["json"],
+                "model": model,
+                "usage": {
+                    "input_tokens": usage.get("tokens_in", 0),
+                    "output_tokens": usage.get("tokens_out", 0),
+                },
+            }
+        elif result:
+            worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": False})
+            raise RuntimeError(f"worker job ended: {result['control']}")
+        time.sleep(poll)
+    raise RuntimeError("worker job still pending")

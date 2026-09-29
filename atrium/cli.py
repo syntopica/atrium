@@ -1,6 +1,7 @@
 """Atrium command line — the core surface every adapter wraps."""
 
 import argparse
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -648,8 +649,15 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
 
         local_model = model or LOCAL_DEFAULT_MODEL
 
-        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return local_lane_call(LanePrompt(system_text, user_text), tool, local_model)
+        if os.environ.get("ATRIUM_LOCAL_TRANSPORT") == "worker":
+            from atrium.synthesize.worker_lane_call import worker_lane_call
+
+            def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+                return worker_lane_call(LanePrompt(system_text, user_text), tool, local_model)
+        else:
+
+            def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+                return local_lane_call(LanePrompt(system_text, user_text), tool, local_model)
 
         model_id = local_lane_model_id(local_model)
     elif producer == "cursor":

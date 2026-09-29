@@ -18,8 +18,11 @@ TOOL = {
 }
 
 
-def serve(results: list[Any], state: str = "succeeded") -> tuple[str, dict[str, Any]]:
+def serve(
+    results: list[Any], state: str = "succeeded", consumed: int = 0
+) -> tuple[str, dict[str, Any]]:
     seen: dict[str, Any] = {}
+    polled: set[int] = set()
 
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self) -> None:
@@ -27,12 +30,19 @@ def serve(results: list[Any], state: str = "succeeded") -> tuple[str, dict[str, 
             body = json.loads(self.rfile.read(length) or b"{}")
             seen.setdefault(self.path, []).append(body)
             if self.path == "/v1/jobs":
-                self._reply(201, {"id": "j1", "created": True})
+                self._reply(201, {"id": f"j{len(seen['/v1/jobs'])}", "created": True})
             else:
                 self._reply(200, {"acked": True})
 
         def do_GET(self) -> None:
-            self._reply(200, {"id": "j1", "state": state, "error": None, "result": results.pop(0)})
+            number = int(self.path.rsplit("/", 1)[1][1:])
+            if number <= consumed:
+                self._reply(200, {"id": f"j{number}", "state": state, "result": None})
+            elif number not in polled:
+                polled.add(number)
+                self._reply(200, {"id": f"j{number}", "state": "queued", "result": None})
+            else:
+                self._reply(200, {"id": f"j{number}", "state": "running", "result": results.pop(0)})
 
         def _reply(self, status: int, payload: dict[str, Any]) -> None:
             data = json.dumps(payload).encode()
@@ -99,11 +109,41 @@ def test_a_split_request_is_declined_and_waiting_continues(monkeypatch, tmp_path
 @pytest.mark.parametrize(
     "state", ["succeeded", "failed", "cancelled", "expired", "unacked_expired", "superseded"]
 )
-def test_an_already_consumed_job_fails_fast(monkeypatch, tmp_path, state):
-    url, _ = serve([None], state=state)
+def test_a_consumed_base_key_walks_to_the_next_suffix(monkeypatch, tmp_path, state):
+    ok = {
+        "result_id": "r1",
+        "control": None,
+        "output": {"text": "{}", "json": {"title": "t"}},
+        "usage": {},
+    }
+    url, seen = serve([ok, ok], state=state, consumed=1)
     configure(monkeypatch, tmp_path, url)
-    with pytest.raises(RuntimeError, match="worker job already consumed"):
+    worker_lane_call(LanePrompt("sys", "user"), TOOL)
+    keys = [job["idempotency_key"] for job in seen["/v1/jobs"]]
+    assert len(keys) == 2
+    assert keys[1] == keys[0] + ":r1"
+    assert seen["/v1/jobs/j2/ack"][0] == {"result_id": "r1", "decline": False}
+
+
+def test_every_key_consumed_ends_in_retries_exhausted_after_four_submits(monkeypatch, tmp_path):
+    url, seen = serve([], consumed=99)
+    configure(monkeypatch, tmp_path, url)
+    with pytest.raises(RuntimeError, match="worker job retries exhausted"):
         worker_lane_call(LanePrompt("sys", "user"), TOOL)
+    assert len(seen["/v1/jobs"]) == 4
+
+
+def test_a_first_key_success_submits_once(monkeypatch, tmp_path):
+    ok = {
+        "result_id": "r1",
+        "control": None,
+        "output": {"text": "{}", "json": {"title": "t"}},
+        "usage": {},
+    }
+    url, seen = serve([ok, ok])
+    configure(monkeypatch, tmp_path, url)
+    worker_lane_call(LanePrompt("sys", "user"), TOOL)
+    assert len(seen["/v1/jobs"]) == 1
 
 
 def test_worker_prompt_equals_the_local_lane_prompt(monkeypatch, tmp_path):

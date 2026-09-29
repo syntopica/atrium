@@ -9,18 +9,11 @@ from atrium.synthesize.lane_prompt import LanePrompt
 from atrium.synthesize.lane_prompt_text import lane_prompt_text
 from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 from atrium.synthesize.worker_http_call import worker_http_call
+from atrium.synthesize.worker_lane_submit import worker_lane_submit
 
 # Under the drip's 1800 s stall guard: a pending job is re-found by its
 # idempotency key on the next pass, so giving up here loses no work.
 _WAIT_SECONDS = 1500
-_TERMINAL_STATES = (
-    "succeeded",
-    "failed",
-    "cancelled",
-    "expired",
-    "unacked_expired",
-    "superseded",
-)
 
 
 def worker_lane_call(
@@ -45,17 +38,14 @@ def worker_lane_call(
             "options": {"temperature": 0.2},
         },
     }
-    job_id = worker_http_call("POST", "/v1/jobs", job)["id"]
+    # Ack precedes the registry write (accepted gap); the retry-key walk recovers from it.
+    job_id = worker_lane_submit(job)
     poll = float(os.environ.get("ATRIUM_WORKER_POLL", "10"))
     deadline = time.monotonic() + _WAIT_SECONDS
     while time.monotonic() < deadline:
         state = worker_http_call("GET", f"/v1/jobs/{job_id}")
         result = state.get("result")
         ack = f"/v1/jobs/{job_id}/ack"
-        if result is None and state.get("state") in _TERMINAL_STATES:
-            # A re-submitted key whose result was already acked (a crash between
-            # the ack and the registry write): nothing will ever arrive.
-            raise RuntimeError("worker job already consumed")
         if result and result["control"] == "split_requested":
             worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": True})
         elif result and result["control"] is None:

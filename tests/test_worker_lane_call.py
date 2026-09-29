@@ -96,7 +96,9 @@ def test_a_split_request_is_declined_and_waiting_continues(monkeypatch, tmp_path
     assert seen["/v1/jobs/j1/ack"][0] == {"result_id": "r0", "decline": True}
 
 
-@pytest.mark.parametrize("state", ["succeeded", "failed", "cancelled", "expired"])
+@pytest.mark.parametrize(
+    "state", ["succeeded", "failed", "cancelled", "expired", "unacked_expired", "superseded"]
+)
 def test_an_already_consumed_job_fails_fast(monkeypatch, tmp_path, state):
     url, _ = serve([None], state=state)
     configure(monkeypatch, tmp_path, url)

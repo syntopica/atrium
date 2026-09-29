@@ -13,7 +13,14 @@ from atrium.synthesize.worker_http_call import worker_http_call
 # Under the drip's 1800 s stall guard: a pending job is re-found by its
 # idempotency key on the next pass, so giving up here loses no work.
 _WAIT_SECONDS = 1500
-_TERMINAL_STATES = ("succeeded", "failed", "cancelled", "expired")
+_TERMINAL_STATES = (
+    "succeeded",
+    "failed",
+    "cancelled",
+    "expired",
+    "unacked_expired",
+    "superseded",
+)
 
 
 def worker_lane_call(

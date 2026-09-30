@@ -6,6 +6,10 @@
 
 ### 2026-09
 
+- [x] 2026-09-30 — **pip-audit green again:** the lock moved pyjwt 2.13.0 ->
+  2.15.1 (12 CVEs, via `mcp[crypto]`) and urllib3 2.7.0 -> 2.8.0 (3 CVEs) with
+  `uv lock --upgrade-package`; `codeality-py gate` passed every stage.
+
 - [x] 2026-09-17 — **The local lane takes the GGUF build and hands Ollama the
   schema as a grammar:** `local_lane_call` now sends `format` with the synthesis
   schema and defaults to `qwen3.6:35b` instead of `qwen3.6:35b-mlx`, because an

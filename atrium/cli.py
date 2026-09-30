@@ -78,13 +78,14 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     synthesize.add_argument("--dry-run", action="store_true")
     synthesize.add_argument(
         "--producer",
-        choices=("agy", "codex", "cursor", "local", "max"),
+        choices=("agy", "codex", "cursor", "local", "max", "task"),
         default="agy",
         help="agy: Gemini bulk quota via the Antigravity CLI (default -- the "
         "standing routing rule for whole-corpus passes); codex: the Codex "
         "CLI's quota; cursor: the Cursor CLI's monthly quota, read-only ask "
         "mode; local: a model served by Ollama on this machine, off every "
-        "quota; max: the Claude Max OAuth lane",
+        "quota; max: the Claude Max OAuth lane; task: the worker's atrium.tasks "
+        "queue (cursor, agy when cursor walls), --model names the worker profile",
     )
     synthesize.add_argument("--workers", type=_positive_limit, default=3)
     synthesize.add_argument(
@@ -660,6 +661,20 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
                 return local_lane_call(LanePrompt(system_text, user_text), tool, local_model)
 
         model_id = local_lane_model_id(local_model)
+    elif producer == "task":
+        from atrium.synthesize.lane_prompt import LanePrompt
+        from atrium.synthesize.worker_task_lane_call import (
+            WORKER_TASK_DEFAULT_PROFILE,
+            worker_task_lane_call,
+        )
+        from atrium.synthesize.worker_task_lane_model_id import worker_task_lane_model_id
+
+        task_profile = model or WORKER_TASK_DEFAULT_PROFILE
+
+        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
+            return worker_task_lane_call(LanePrompt(system_text, user_text), tool, task_profile)
+
+        model_id = worker_task_lane_model_id(task_profile)
     elif producer == "cursor":
         from atrium.synthesize.cursor_lane_call import CURSOR_DEFAULT_MODEL, cursor_lane_call
         from atrium.synthesize.cursor_lane_model_id import cursor_lane_model_id

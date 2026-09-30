@@ -1,4 +1,4 @@
-"""The cursor and agy synthesis lanes routed through the worker's task queue."""
+"""The agy synthesis lane routed through the worker's task queue."""
 
 import hashlib
 import os
@@ -11,12 +11,12 @@ from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 from atrium.synthesize.worker_http_call import worker_http_call
 from atrium.synthesize.worker_lane_submit import worker_lane_submit
 
-# The worker's queue answers a wall on this profile's runner by running the job
-# under the queue's fallback (atrium.agy), so the lane names one profile only.
-WORKER_TASK_DEFAULT_PROFILE = "atrium.cursor"
+# Owner routing rule, 2026-09-30: bulk AI runs on the worker, on agy or local
+# models; cursor is cancelled and codex is not a worker route.
+WORKER_TASK_DEFAULT_PROFILE = "atrium.agy"
 
-# The largest prompt anything in this stack has been seen to survive: cursor
-# returned an empty stdout with exit 0 at 800 KB (clips, 2026-09-11), and agy
+# The largest prompt anything in this stack has been seen to survive (a CLI
+# returned an empty stdout with exit 0 at 800 KB, clips 2026-09-11), and agy
 # takes the prompt on argv, under macOS's 1 MiB ARG_MAX.
 _PROMPT_CEILING_BYTES = 512 * 1024
 
@@ -29,7 +29,7 @@ _WAIT_SECONDS = 1800
 def worker_task_lane_call(
     prompt_parts: LanePrompt, tool: dict[str, Any], profile: str = WORKER_TASK_DEFAULT_PROFILE
 ) -> dict[str, Any]:
-    """Same contract as cursor_lane_call; the worker owns the runners and their walls.
+    """Same contract as agy_lane_call; the worker owns the runner and its walls.
 
     A job held while every runner it could use rests (``cooling_until``) raises
     QuotaExhaustedError, so the pass stops submitting and leaves the job queued

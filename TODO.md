@@ -528,11 +528,6 @@
 
 ## Durability
 
-- [ ] `codeality-py gate` fails on pip-audit: pyjwt 2.13.0 has CVE-2026-102274,
-      fixed in 2.14.0 (seen 2026-09-29 at cc1727d; lock unchanged since
-      f9ff9d7, so pre-existing). Next step: bump pyjwt to >=2.14.0 in the lock
-      and rerun the gate.
-
 ## Quality gate
 
 - [ ] `codeality-py baseline check` reports two BPY001 findings that predate the

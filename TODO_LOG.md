@@ -4,6 +4,34 @@
 
 ## 2026
 
+### 2026-10
+
+- [x] 2026-10-01 — **drip-loop.sh retired; every synthesis model call goes
+  through the worker.** `--producer task` (atrium 163e633, agy-only since
+  fc67f34 under the owner's 2026-09-30 routing rule: cursor cancelled, bulk AI
+  on the worker on agy or local models) submits each call as a `task` on queue
+  `atrium.tasks`, profile `atrium.agy`, privacy `personal`, the synthesis
+  schema as `output_schema`; `cooling_until` stops the pass and leaves the job
+  queued for a later pass. The direct cursor lane is removed. The producer is
+  now `com.cristian.atrium-synthesis` (dotfiles `bin/atrium/atrium-synthesis`,
+  every 15 min under `atrium-lock`): the task lane, then the local lane
+  through the worker only while the worker reports agy resting; each pass
+  time-boxed at 3300 s and guarded by `watch-mtime.sh` on
+  `synthesis-pass.log` (2700 s). No quota probe. Evidence: a scoped real run
+  (`--workspace [HOME]/p/shoutouts --limit 3`) ran 5 task jobs to
+  `succeeded` (one episode map-reduced over 2 chunks) and wrote 3 records
+  with `model_requested: worker-atrium.agy`, `model_resolved: agy`; the wall
+  path was seen first (cursor's "out of usage" and agy's quota wall, both
+  resting, pass stopped on `cooling until`). `com.cristian.atrium-drip` was
+  booted out at a pass wait (no record lost: the pass was waiting on a worker
+  job) and its plist kept as `.retired`. This also closes as obsolete the
+  drip stall guard that killed any synthesize pass by name: the new guard
+  watches the pid it launched. Worker side: cursor's wall sentence became a
+  quota wall (worker 49a7537) before cursor was dropped from the instance.
+  The first production tick then lost conversations to `Connection reset by
+  peer`: ASCII-escaped accents took large prompts past the coordinator's
+  1 MiB body limit; requests are UTF-8 since then.
+
 ### 2026-09
 
 - [x] 2026-09-30 — **pip-audit green again:** the lock moved pyjwt 2.13.0 ->

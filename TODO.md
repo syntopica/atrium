@@ -399,17 +399,6 @@
       `IDLE_START=1 IDLE_RESUME=99999`: pass admitted, cut 20 s later, exit 143, lane rechosen,
       no orphan. dotfiles `21e0279`.
 
-- [ ] **The drip's stall guard kills any other synthesize pass on the machine.**
-      `drip-guard.sh` finds its target with `pgrep -f "atrium synthesize"`, which matches _any_
-      pass, and judges it against the drip's own `run.log`. While the drip sleeps against a quota
-      wall that log does not move -- it has not moved since 2026-09-05 -- so the idle time is
-      always over the threshold and any manually launched pass is killed within 120 s of starting.
-      Found 2026-09-08 when a `--producer max` pass died silently twice before the cause was
-      visible; the run printed nothing and exited, which reads exactly like a broken lane.
-      The guard also violates the rule it was written under: watch the pid you launched, not a
-      name pattern. Smallest fix: have `drip-loop.sh` pass its pass pid to the guard and have the
-      guard `kill -0` that pid, so the guard is scoped to the pass it armed for.
-
 - [~] **The session producer is built and registered; its first hook-driven record is
   still to be observed.** 2026-09-16: `atrium session-stop` and `atrium record-session`
   (`7e646ed`, `368720a`), design `docs/designs/session-producer.md` (revision 2 after a
@@ -539,6 +528,14 @@
   a timeout emit a one-line "context timed out" notice instead of nothing.
 
 ## Durability
+
+- [ ] The worker lanes see HTTP 429 when a queue is at `max_outstanding`: on
+      2026-10-01 00:40 the drip's local pass logged `FAILED: HTTP Error 429`
+      per conversation, `atrium.synthesis` being at its `max_outstanding`
+      (20, which counts results not yet acked as well as queued jobs). Each 429
+      counts a conversation failed and moves on, so a pass burns through the
+      corpus without submitting. Next step: treat 429 like `cooling_until`
+      (stop the pass, come back later) in `worker_lane_submit`.
 
 ## Quality gate
 

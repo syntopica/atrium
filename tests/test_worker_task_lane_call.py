@@ -94,7 +94,7 @@ def test_submits_a_personal_task_and_acks_its_answer(coordinator):
     assert (job["kind"], job["queue"], job["privacy"]) == ("task", "atrium.tasks", "personal")
     schema = {**TOOL["input_schema"], "additionalProperties": False}
     assert job["input"] == {
-        "profile": "atrium.cursor",
+        "profile": "atrium.agy",
         "prompt": lane_prompt_text(parts, schema),
         "output_schema": schema,
     }
@@ -104,9 +104,15 @@ def test_submits_a_personal_task_and_acks_its_answer(coordinator):
 
 def test_the_resolved_model_names_runner_and_model(coordinator):
     done = json.loads(json.dumps(DONE))
-    done["result"]["executor"] = {"node": "n", "provider": "cursor", "model": "composer-2.5"}
+    done["result"]["executor"] = {
+        "node": "n",
+        "provider": "agy",
+        "model": "gemini-3.7-flash-medium",
+    }
     coordinator([done])
-    assert worker_task_lane_call(LanePrompt("s", "u"), TOOL)["model"] == "cursor-composer-2.5"
+    assert (
+        worker_task_lane_call(LanePrompt("s", "u"), TOOL)["model"] == "agy-gemini-3.7-flash-medium"
+    )
 
 
 def test_every_runner_resting_stops_the_pass_without_an_ack(coordinator):
@@ -136,4 +142,4 @@ def test_an_oversized_prompt_is_refused_before_submitting(coordinator):
 
 
 def test_the_population_is_named_after_the_profile():
-    assert worker_task_lane_model_id("atrium.cursor") == "worker-atrium.cursor"
+    assert worker_task_lane_model_id("atrium.agy") == "worker-atrium.agy"

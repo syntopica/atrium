@@ -525,6 +525,18 @@
   emits VS Code workspace metadata instead of dialogue. Both filed in
   `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
+- [ ] **The UserPromptSubmit context hook is silent on most prompts under
+  load.** Observed 2026-09-30 in a compratuentrada session (load average 28):
+  only 1 of ~15 prompts got a context block. The hook caps retrieval at
+  `ATRIUM_PROMPT_CONTEXT_TIMEOUT=5` s; `atrium context --lane dense --limit 4
+  --max-chars 1400 --project .` measured 2.5, 4.5, 5.2, 6.5 and 7.5 s in a row,
+  so the kill path returns nothing and the session never learns why. For a new
+  repository it also falls back: warnings
+  `history_vectors_missing_lexical_fallback` and `lexical_budget_exhausted`,
+  history candidates 0, so only curated notes can answer. The Stop hook
+  (`record-session`) worked on every turn. Smallest next step: time each stage
+  (embedder load, curated dense pass, history words pass) under load, and make
+  a timeout emit a one-line "context timed out" notice instead of nothing.
 
 ## Durability
 

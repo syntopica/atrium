@@ -697,17 +697,18 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
             session_records.append(record)
     if not include_session_covered:
         covered = session_covered_conversations(session_records)
-    made = skipped = failed = 0
+    made = skipped = failed = deferred = 0
     total = len(conversations)
-    # Once the quota window is spent nothing left in the pass can succeed:
-    # stop calling, count the rest as failed (still pending), and let the
-    # outer drip loop sleep until the reset instead of grinding failures.
+    # Once the quota window is spent (or the worker's queue is full, or every
+    # runner rests) nothing left in the pass can succeed: stop calling, count
+    # the rest as deferred -- still pending, not failed -- and let a later tick
+    # pick them up instead of grinding failures.
     quota_wall = threading.Event()
 
     def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
         position, conversation = item
         if quota_wall.is_set():
-            return {"synthesized": 0, "skipped": 0, "failed": 1}
+            return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
         if conversation["id"] in covered:
             # The session that lived it already recorded it.
             return {"synthesized": 0, "skipped": 1, "failed": 0}
@@ -719,7 +720,7 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
             if not quota_wall.is_set():
                 quota_wall.set()
                 print(f"  [{position}/{total}] quota wall, aborting pass: {error}", flush=True)
-            return {"synthesized": 0, "skipped": 0, "failed": 1}
+            return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
         except Exception as error:
             print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}
@@ -735,8 +736,10 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
             made += result["synthesized"]
             skipped += result["skipped"]
             failed += result["failed"]
+            deferred += result.get("deferred", 0)
     print(
         f"  synthesized {made}, already present {skipped}, failed conversations {failed}, "
+        f"deferred {deferred}, "
         f"registry {default_registry()}"
     )
     return 0 if failed == 0 else 1

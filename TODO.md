@@ -527,16 +527,6 @@
   (embedder load, curated dense pass, history words pass) under load, and make
   a timeout emit a one-line "context timed out" notice instead of nothing.
 
-## Durability
-
-- [ ] The worker lanes see HTTP 429 when a queue is at `max_outstanding`: on
-      2026-10-01 00:40 the drip's local pass logged `FAILED: HTTP Error 429`
-      per conversation, `atrium.synthesis` being at its `max_outstanding`
-      (20, which counts results not yet acked as well as queued jobs). Each 429
-      counts a conversation failed and moves on, so a pass burns through the
-      corpus without submitting. Next step: treat 429 like `cooling_until`
-      (stop the pass, come back later) in `worker_lane_submit`.
-
 ## Quality gate
 
 - [ ] `codeality-py baseline check` reports two BPY001 findings that predate the

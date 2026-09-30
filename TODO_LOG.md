@@ -6,6 +6,19 @@
 
 ### 2026-10
 
+- [x] 2026-10-01 — **A full worker queue (HTTP 429 `outstanding_limit`) stops
+  the pass instead of failing every conversation.** `worker_http_call` now maps
+  coordinator refusals through `worker_http_error`: 429 raises
+  `QuotaExhaustedError` ("worker queue full (outstanding_limit); retry on a
+  later pass", deliberately without "cooling until", which the tick script
+  reads as agy resting), 413 says "worker refused the request body as too
+  large (payload_too_large)" (the coordinator answers 413 instead of a reset
+  since worker 7ff5d8a), anything else "worker answered HTTP <n> (<code>)" with
+  the code allowlisted to `[a-z0-9_]`. `synthesize` now counts conversations
+  stopped by any wall (quota, cooling, full queue) as `deferred`, not
+  `failed`, and exits 0 when nothing else failed. Evidence:
+  `tests/test_worker_http_error.py` (3 tests, live HTTP server), gate green.
+
 - [x] 2026-10-01 — **drip-loop.sh retired; every synthesis model call goes
   through the worker.** `--producer task` (atrium 163e633, agy-only since
   fc67f34 under the owner's 2026-09-30 routing rule: cursor cancelled, bulk AI

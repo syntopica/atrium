@@ -527,6 +527,19 @@
   (embedder load, curated dense pass, history words pass) under load, and make
   a timeout emit a one-line "context timed out" notice instead of nothing.
 
+- [ ] **Decide whether to raise `ATRIUM_PROMPT_CONTEXT_TIMEOUT` from 5 s to 10
+  s.** The trade is more prompts that get a context block against up to 10 s of
+  extra wait per prompt; the owner has not answered, so
+  `~/.claude/settings.json` stays unchanged. Smallest next step: ask for the
+  choice, or measure after the stage timing in the silent-hook item above. Found
+  in compratuentrada session 2026-10-01.
+- [ ] **The resident `atrium` MCP server closes its connection
+  (`CONNECTION_CLOSED`), so `atrium_context` is unavailable at session start.**
+  The CLI (`atrium context ... --json`) works as the fallback. Smallest next
+  step: start the server by hand, read its stderr and the client log to see why
+  it exits, and fix or add a restart. Found in compratuentrada session
+  2026-10-01.
+
 ## Quality gate
 
 - [ ] `codeality-py baseline check` reports two BPY001 findings that predate the

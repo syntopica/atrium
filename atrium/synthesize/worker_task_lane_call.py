@@ -25,6 +25,8 @@ _PROMPT_CEILING_BYTES = 512 * 1024
 # its idempotency key and collects the result.
 _WAIT_SECONDS = 1800
 
+WORKER_TASK_QUEUE = "atrium.tasks"
+
 
 def worker_task_lane_call(
     prompt_parts: LanePrompt, tool: dict[str, Any], profile: str = WORKER_TASK_DEFAULT_PROFILE
@@ -33,8 +35,8 @@ def worker_task_lane_call(
 
     A job held while every runner it could use rests (``cooling_until``) raises
     QuotaExhaustedError, so the pass stops submitting and leaves the job queued
-    for a later pass to collect. Ack precedes the registry write, the gap the
-    inference lane accepts too; the retry-key walk recovers from it.
+    for a later pass to collect. A usable result is returned unacknowledged,
+    under ``worker_results``: the caller acks it after its registry write.
     """
     schema = {**tool["input_schema"], "additionalProperties": False}
     prompt = lane_prompt_text(prompt_parts, schema)
@@ -44,7 +46,7 @@ def worker_task_lane_call(
     job = {
         "contract": 1,
         "kind": "task",
-        "queue": "atrium.tasks",
+        "queue": WORKER_TASK_QUEUE,
         "idempotency_key": key,
         "priority": 40,
         "privacy": "personal",
@@ -64,9 +66,6 @@ def worker_task_lane_call(
                 )
             time.sleep(poll)
             continue
-        worker_http_call(
-            "POST", f"/v1/jobs/{job_id}/ack", {"result_id": result["result_id"], "decline": False}
-        )
         output = (result.get("output") or {}).get("json")
         if result["control"] is None and isinstance(output, dict):
             executor = result.get("executor") or {}
@@ -79,7 +78,11 @@ def worker_task_lane_call(
                     "input_tokens": usage.get("tokens_in", 0),
                     "output_tokens": usage.get("tokens_out", 0),
                 },
+                "worker_results": [{"job_id": job_id, "result_id": result["result_id"]}],
             }
+        worker_http_call(
+            "POST", f"/v1/jobs/{job_id}/ack", {"result_id": result["result_id"], "decline": False}
+        )
         error = (result.get("detail") or {}).get("error", "no JSON object")
         raise RuntimeError(f"worker task ended: {result['control']} ({error})")
     raise RuntimeError("worker task still pending")

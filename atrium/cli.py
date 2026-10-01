@@ -624,6 +624,7 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         episodes = sum(len(segment_episodes(c.get("events") or [])) for c in conversations)
         print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
         return 0
+    worker_queue: str | None = None
     if producer == "max":
         from atrium.synthesize.max_lane_call import MODEL, max_lane_call
         from atrium.synthesize.max_lane_tokens import max_lane_tokens
@@ -650,7 +651,12 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         local_model = model or LOCAL_DEFAULT_MODEL
 
         if os.environ.get("ATRIUM_LOCAL_TRANSPORT") == "worker":
-            from atrium.synthesize.worker_lane_call import worker_lane_call
+            from atrium.synthesize.worker_lane_call import (
+                WORKER_SYNTHESIS_QUEUE,
+                worker_lane_call,
+            )
+
+            worker_queue = WORKER_SYNTHESIS_QUEUE
 
             def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
                 return worker_lane_call(LanePrompt(system_text, user_text), tool, local_model)
@@ -664,11 +670,13 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         from atrium.synthesize.lane_prompt import LanePrompt
         from atrium.synthesize.worker_task_lane_call import (
             WORKER_TASK_DEFAULT_PROFILE,
+            WORKER_TASK_QUEUE,
             worker_task_lane_call,
         )
         from atrium.synthesize.worker_task_lane_model_id import worker_task_lane_model_id
 
         task_profile = model or WORKER_TASK_DEFAULT_PROFILE
+        worker_queue = WORKER_TASK_QUEUE
 
         def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
             return worker_task_lane_call(LanePrompt(system_text, user_text), tool, task_profile)
@@ -691,12 +699,20 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     done_episodes: set[str] = set()
     covered: set[str] = set()
     session_records = []
+    recorded_results: set[str] = set()
     for record in read_records(default_registry()):
         done_episodes.add(record["episode_id"])
+        recorded_results.update(r["result_id"] for r in record.get("worker_results") or [])
         if record.get("segmentation") == "session-self-v1":
             session_records.append(record)
     if not include_session_covered:
         covered = session_covered_conversations(session_records)
+    if worker_queue is not None:
+        from atrium.synthesize.ack_recorded_worker_results import ack_recorded_worker_results
+
+        settled = ack_recorded_worker_results(worker_queue, recorded_results)
+        if settled:
+            print(f"  acked {settled} worker results the registry already held")
     made = skipped = failed = deferred = 0
     total = len(conversations)
     # Once the quota window is spent (or the worker's queue is full, or every

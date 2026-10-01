@@ -6,6 +6,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from atrium.synthesize.ack_worker_results import ack_worker_results
 from atrium.synthesize.empty_synthesis_error import EmptySynthesisError
 from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
@@ -49,8 +50,12 @@ def synthesize_conversation(
             skipped += 1
             continue
         result = _synthesize_episode(episode, events, producer)
+        # Worker results are acked only once the record is on disk: a crash in
+        # between leaves them offered, and the next pass's drain acks them.
+        worker_results = result.get("worker_results") or []
         output = result["input"]
         if not (output.get("title") or output.get("summary")):
+            ack_worker_results(worker_results)
             raise EmptySynthesisError(f"empty synthesis for episode {episode_id}")
         output_json = json.dumps(result["input"], ensure_ascii=False, sort_keys=True)
         write_record(
@@ -81,8 +86,10 @@ def synthesize_conversation(
                 # archive stamped 2 onto schema 1 ids, and the re-key then
                 # skipped exactly those records as already current.
                 "event_id_schema": conversation.get("schemaVersion", 1),
+                **({"worker_results": worker_results} if worker_results else {}),
             },
         )
+        ack_worker_results(worker_results)
         made += 1
     return {"synthesized": made, "skipped": skipped}
 
@@ -114,6 +121,9 @@ def _synthesize_episode(
         "input_tokens": sum(p["usage"].get("input_tokens", 0) for p in [*partials, reduced]),
         "output_tokens": sum(p["usage"].get("output_tokens", 0) for p in [*partials, reduced]),
     }
+    reduced["worker_results"] = [
+        r for p in [*partials, reduced] for r in p.get("worker_results") or []
+    ]
     return reduced
 
 

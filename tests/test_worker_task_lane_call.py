@@ -81,7 +81,7 @@ DONE = {
 }
 
 
-def test_submits_a_personal_task_and_acks_its_answer(coordinator):
+def test_submits_a_personal_task_and_returns_its_answer_unacked(coordinator):
     seen = coordinator([QUEUED, DONE])
     parts = LanePrompt("sys", "user")
     out = worker_task_lane_call(parts, TOOL)
@@ -89,6 +89,7 @@ def test_submits_a_personal_task_and_acks_its_answer(coordinator):
         "input": {"title": "t"},
         "model": "agy",
         "usage": {"input_tokens": 0, "output_tokens": 0},
+        "worker_results": [{"job_id": "j1", "result_id": "r1"}],
     }
     job = seen["/v1/jobs"][0]
     assert (job["kind"], job["queue"], job["privacy"]) == ("task", "atrium.tasks", "personal")
@@ -99,7 +100,8 @@ def test_submits_a_personal_task_and_acks_its_answer(coordinator):
         "output_schema": schema,
     }
     assert job["idempotency_key"].startswith("task:")
-    assert seen["/v1/jobs/j1/ack"] == [{"result_id": "r1", "decline": False}]
+    # The caller acks after its registry write, not the lane.
+    assert "/v1/jobs/j1/ack" not in seen
 
 
 def test_the_resolved_model_names_runner_and_model(coordinator):

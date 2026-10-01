@@ -67,7 +67,7 @@ def configure(monkeypatch: pytest.MonkeyPatch, tmp_path: Any, url: str) -> None:
     monkeypatch.setenv("ATRIUM_WORKER_POLL", "0")
 
 
-def test_submits_personal_job_waits_and_acks(monkeypatch, tmp_path):
+def test_submits_personal_job_and_returns_the_result_unacked(monkeypatch, tmp_path):
     usage = {"tokens_in": 5, "tokens_out": 2}
     ok = {
         "result_id": "r1",
@@ -82,6 +82,7 @@ def test_submits_personal_job_waits_and_acks(monkeypatch, tmp_path):
         "input": {"title": "t"},
         "model": "qwen3.6:35b",
         "usage": {"input_tokens": 5, "output_tokens": 2},
+        "worker_results": [{"job_id": "j1", "result_id": "r1"}],
     }
     job = seen["/v1/jobs"][0]
     assert (job["privacy"], job["queue"], job["requirements"]["models"]) == (
@@ -89,7 +90,8 @@ def test_submits_personal_job_waits_and_acks(monkeypatch, tmp_path):
         "atrium.synthesis",
         ["qwen3.6:35b"],
     )
-    assert seen["/v1/jobs/j1/ack"][0] == {"result_id": "r1", "decline": False}
+    # The caller acks after its registry write, not the lane.
+    assert "/v1/jobs/j1/ack" not in seen
 
 
 def test_a_split_request_is_declined_and_waiting_continues(monkeypatch, tmp_path):
@@ -118,11 +120,11 @@ def test_a_consumed_base_key_walks_to_the_next_suffix(monkeypatch, tmp_path, sta
     }
     url, seen = serve([ok, ok], state=state, consumed=1)
     configure(monkeypatch, tmp_path, url)
-    worker_lane_call(LanePrompt("sys", "user"), TOOL)
+    out = worker_lane_call(LanePrompt("sys", "user"), TOOL)
     keys = [job["idempotency_key"] for job in seen["/v1/jobs"]]
     assert len(keys) == 2
     assert keys[1] == keys[0] + ":r1"
-    assert seen["/v1/jobs/j2/ack"][0] == {"result_id": "r1", "decline": False}
+    assert out["worker_results"] == [{"job_id": "j2", "result_id": "r1"}]
 
 
 def test_every_key_consumed_ends_in_retries_exhausted_after_four_submits(monkeypatch, tmp_path):

@@ -6,6 +6,21 @@
 
 ### 2026-10
 
+- [x] 2026-10-01 — **Worker results are acked after the registry write, not
+  before.** Both worker lanes (`worker_lane_call`, `worker_task_lane_call`)
+  now return a usable result unacknowledged under `worker_results`;
+  `synthesize_conversation` writes the record (carrying `worker_results`,
+  map-reduce partials included) and only then acks. A crash in between leaves
+  the result offered by the worker while the episode is skipped as done, so
+  each worker pass first runs `ack_recorded_worker_results`, which pages
+  `GET /v1/results` for the lane's queue and acks every result a record
+  already carries (acking twice is harmless per the worker contract). Control
+  results and empty syntheses are still acked at once. Previously the only
+  recovery was the retry-key walk (0a48096) at the cost of a rerun. Evidence:
+  `tests/test_worker_ack_after_registry_write.py` (crash window: record on
+  disk, no ack; next pass drains 1, synthesizes 0, one record, result acked,
+  one job), fails with the old ordering; gate green.
+
 - [x] 2026-10-01 — **A full worker queue (HTTP 429 `outstanding_limit`) stops
   the pass instead of failing every conversation.** `worker_http_call` now maps
   coordinator refusals through `worker_http_error`: 429 raises

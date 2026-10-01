@@ -15,18 +15,25 @@ from atrium.synthesize.worker_lane_submit import worker_lane_submit
 # idempotency key on the next pass, so giving up here loses no work.
 _WAIT_SECONDS = 1500
 
+WORKER_SYNTHESIS_QUEUE = "atrium.synthesis"
+
 
 def worker_lane_call(
     prompt_parts: LanePrompt, tool: dict[str, Any], model: str = LOCAL_DEFAULT_MODEL
 ) -> dict[str, Any]:
-    """Same contract as local_lane_call; the worker owns idle gating and the Ollama options."""
+    """Same contract as local_lane_call; the worker owns idle gating and the Ollama options.
+
+    A usable result is returned unacknowledged, under ``worker_results``: the
+    caller acks it only after its registry holds the record, so a crash in
+    between leaves the result for the next pass instead of losing it.
+    """
     schema = {**tool["input_schema"], "additionalProperties": False}
     prompt = lane_prompt_text(prompt_parts, schema)
     key = "syn:" + hashlib.sha256((model + prompt).encode()).hexdigest()
     job = {
         "contract": 1,
         "kind": "inference",
-        "queue": "atrium.synthesis",
+        "queue": WORKER_SYNTHESIS_QUEUE,
         "idempotency_key": key,
         "priority": 40,
         "privacy": "personal",
@@ -38,7 +45,6 @@ def worker_lane_call(
             "options": {"temperature": 0.2},
         },
     }
-    # Ack precedes the registry write (accepted gap); the retry-key walk recovers from it.
     job_id = worker_lane_submit(job)
     poll = float(os.environ.get("ATRIUM_WORKER_POLL", "10"))
     deadline = time.monotonic() + _WAIT_SECONDS
@@ -49,7 +55,6 @@ def worker_lane_call(
         if result and result["control"] == "split_requested":
             worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": True})
         elif result and result["control"] is None:
-            worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": False})
             usage = result.get("usage") or {}
             return {
                 "input": result["output"]["json"],
@@ -58,6 +63,7 @@ def worker_lane_call(
                     "input_tokens": usage.get("tokens_in", 0),
                     "output_tokens": usage.get("tokens_out", 0),
                 },
+                "worker_results": [{"job_id": job_id, "result_id": result["result_id"]}],
             }
         elif result:
             worker_http_call("POST", ack, {"result_id": result["result_id"], "decline": False})

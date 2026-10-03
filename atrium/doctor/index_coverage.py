@@ -10,6 +10,11 @@ from atrium.doctor.finding import Finding
 # tenth of the corpus answers every query confidently and incompletely.
 DRIFT_WARN_RATIO = 0.01
 DRIFT_BROKEN_RATIO = 0.05
+CODES = {
+    "ok": "index_coverage_complete",
+    "warn": "index_coverage_drifting",
+    "broken": "index_coverage_broken",
+}
 
 
 def index_coverage(connection: sqlite3.Connection, admissions: ArchiveAdmissions) -> Finding:
@@ -38,6 +43,7 @@ def index_coverage(connection: sqlite3.Connection, admissions: ArchiveAdmissions
     return Finding(
         check="index-coverage",
         severity=severity,
+        code=CODES[severity],
         summary=(
             f"{len(indexed)} of {len(admissions.admitting_ids)} indexable conversations indexed, "
             f"{len(missing)} missing, {len(extra)} indexed but not archived, "

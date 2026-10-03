@@ -20,6 +20,7 @@ def synthesis_coherence(registry: Path, archive_ids: set[str]) -> Finding:
         return Finding(
             check="synthesis",
             severity="ok",
+            code="synthesis_no_registry",
             summary="no synthesis registry on this machine",
             detail={"registry": str(registry)},
         )
@@ -33,6 +34,7 @@ def synthesis_coherence(registry: Path, archive_ids: set[str]) -> Finding:
     return Finding(
         check="synthesis",
         severity="warn" if orphans else "ok",
+        code="synthesis_orphan_conversations" if orphans else "synthesis_coherent",
         summary=f"{total} synthesis records, {len(orphans)} conversations no longer archived",
         detail={"records": total, "orphan_conversations": sorted(orphans)[:20]},
     )

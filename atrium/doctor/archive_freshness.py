@@ -11,6 +11,7 @@ from atrium.doctor.finding import Finding
 # stopped moving -- without saying so.
 STALE_AFTER_SECONDS = 7200
 BROKEN_AFTER_SECONDS = 86400
+CODES = {"ok": "archive_fresh", "warn": "archive_stale", "broken": "archive_dead"}
 
 
 def archive_freshness(archive: Path, now: float | None = None) -> Finding:
@@ -20,6 +21,7 @@ def archive_freshness(archive: Path, now: float | None = None) -> Finding:
         return Finding(
             check="archive",
             severity="broken",
+            code="archive_missing",
             summary="the canonical archive does not exist",
             detail={"archive": str(archive)},
         )
@@ -30,6 +32,7 @@ def archive_freshness(archive: Path, now: float | None = None) -> Finding:
     return Finding(
         check="archive",
         severity=severity,
+        code=CODES[severity],
         summary=f"archive last written {int(age)}s ago",
         detail={"age_seconds": int(age), "bytes": archive.stat().st_size},
     )

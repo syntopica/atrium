@@ -27,6 +27,7 @@ def synthesis_event_membership(
         return Finding(
             check="synthesis-events",
             severity="ok",
+            code="synthesis_events_not_applicable",
             summary="no synthesis registry or archive on this machine",
             detail={},
         )
@@ -35,6 +36,7 @@ def synthesis_event_membership(
         return Finding(
             check="synthesis-events",
             severity="ok",
+            code="synthesis_events_empty_registry",
             summary="registry holds no records",
             detail={},
         )
@@ -70,6 +72,7 @@ def synthesis_event_membership(
     return Finding(
         check="synthesis-events",
         severity="broken" if broken else "ok",
+        code="synthesis_events_missing" if broken else "synthesis_events_coherent",
         summary=(
             f"{len(chosen)} sampled records, {checked_events} member events, "
             f"{missing_events} no longer in their conversation, "

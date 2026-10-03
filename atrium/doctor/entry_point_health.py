@@ -68,6 +68,7 @@ def entry_point_health(
         return Finding(
             check="entrypoints",
             severity="broken",
+            code="entrypoints_missing",
             summary=f"{machine}: " + "; ".join(missing),
             detail={**detail, "missing": missing},
         )
@@ -75,6 +76,7 @@ def entry_point_health(
         return Finding(
             check="entrypoints",
             severity="warn",
+            code="entrypoints_shadowed",
             summary=(
                 f"{machine}: {COMMAND} runs from {lookup.command}, but "
                 + "; ".join(lookup.shadows)
@@ -85,6 +87,7 @@ def entry_point_health(
     return Finding(
         check="entrypoints",
         severity="ok",
+        code="entrypoints_resolved",
         summary=(
             f"{machine}: {COMMAND} resolves at {lookup.command}; "
             f"{MCP_SCRIPT} is declared, not started"

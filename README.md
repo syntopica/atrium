@@ -193,6 +193,27 @@ The data directory is the point: an instance keeps its derived state beside the
 config that owns it, ignored by the instance's own repository and never synced.
 `ATRIUM_INDEX` still overrides the index file alone for the MCP server.
 
+### Status documents
+
+Two JSON files under `<state>/status/` let a dashboard read Atrium's health
+without polling a slow command. Each carries `"schemaVersion": 1`, has exactly
+one writer, and is published atomically (temporary file in the same directory,
+`fsync`, rename). Both hold counts, provider and model names, and instants only
+-- never record text or paths.
+
+- `refresh.json`: written by `atrium status --publish`, which only the refresh
+  job runs, as its last step. Records per source; archive, refresh and newest
+  content instants (`at`, `ageSeconds` at writing time); per synthesis
+  population `records`, `episodes`, `intended`, `indexed`; `writtenAt`.
+- `synthesis.json`: written by `atrium synthesize` when a pass ends (never on
+  `--dry-run`). `lastPass` holds `producer`, `startedAt`, `finishedAt`,
+  `conversations`, `synthesized`, `skipped`, `failed`, `deferred`; `writtenAt`.
+
+`atrium doctor --json` prints `{"schemaVersion", "ok", "checks": [{"name",
+"ok", "severity", "code"}]}`, where `code` is a fixed machine word and `ok` is
+true only for a healthy check. The exit status is unchanged: non-zero only when
+a check is `broken`.
+
 ## Why the lanes stay separate
 
 `words` matches on word boundaries; `substrings` matches fragments. They answer different

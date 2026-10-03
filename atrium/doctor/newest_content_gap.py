@@ -25,6 +25,7 @@ def newest_content_gap(connection: sqlite3.Connection, now: float | None = None)
         return Finding(
             check="content",
             severity="warn",
+            code="content_untimestamped",
             summary="no record carries an authored timestamp",
             detail={},
         )
@@ -33,6 +34,7 @@ def newest_content_gap(connection: sqlite3.Connection, now: float | None = None)
     return Finding(
         check="content",
         severity="ok",
+        code="content_present",
         summary=f"newest indexed content authored {gap}s ago",
         detail={"newest_authored_at": newest, "gap_seconds": gap},
     )

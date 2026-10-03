@@ -191,6 +191,11 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         "doctor", help="Check whether the memory would answer from a world that still exists"
     )
     doctor.add_argument("--archive", type=Path, default=archive)
+    doctor.add_argument(
+        "--json",
+        action="store_true",
+        help="Print checks as JSON (name, ok, severity, fixed code) instead of prose",
+    )
 
     rekey = subcommands.add_parser(
         "rekey-synthesis",
@@ -258,6 +263,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         action="store_true",
         help="Also report how many real projects have synthesized memory. Off by "
         "default: it scans every record and costs ~44s, and the answer moves slowly",
+    )
+    status.add_argument(
+        "--publish",
+        action="store_true",
+        help="Also publish status/refresh.json atomically. Only the refresh job passes "
+        "this, at its end, so the file has exactly one writer",
     )
 
     args = parser.parse_args(argv)
@@ -338,7 +349,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     if args.command == "rekey-synthesis":
         return _rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
-        return _doctor(args.index, args.archive, refresh_stamp)
+        return _doctor(args.index, args.archive, refresh_stamp, as_json=args.json)
     if args.command == "search":
         lane = (
             "substring"
@@ -371,6 +382,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         args.refresh_stamp,
         args.synthesis_registry,
         coverage=args.coverage,
+        publish=state if args.publish else None,
     )
 
 
@@ -579,6 +591,7 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     are exactly the ones nothing but this archive can still account for.
     """
     import threading
+    import time
     from concurrent.futures import ThreadPoolExecutor
 
     from atrium.ingest.canonical_workspace import canonical_workspace
@@ -715,6 +728,7 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
             print(f"  acked {settled} worker results the registry already held")
     made = skipped = failed = deferred = 0
     total = len(conversations)
+    started = time.time()
     # Once the quota window is spent (or the worker's queue is full, or every
     # runner rests) nothing left in the pass can succeed: stop calling, count
     # the rest as deferred -- still pending, not failed -- and let a later tick
@@ -758,10 +772,23 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         f"deferred {deferred}, "
         f"registry {default_registry()}"
     )
+    from atrium.status.publish_json_atomically import publish_json_atomically
+    from atrium.status.status_file import status_file
+    from atrium.status.synthesis_pass import SynthesisPass
+    from atrium.status.synthesis_status import synthesis_status
+
+    finished = time.time()
+    publish_json_atomically(
+        status_file(state_directory(), "synthesis"),
+        synthesis_status(
+            SynthesisPass(producer, started, finished, total, made, skipped, failed, deferred),
+            finished,
+        ),
+    )
     return 0 if failed == 0 else 1
 
 
-def _doctor(index: Path, archive: Path, stamp: Path) -> int:
+def _doctor(index: Path, archive: Path, stamp: Path, *, as_json: bool = False) -> int:
     """Report every coherence check, and fail when the memory is answering wrongly.
 
     Everything this looks at had already gone wrong silently: a sync eleven days
@@ -772,6 +799,14 @@ def _doctor(index: Path, archive: Path, stamp: Path) -> int:
     from atrium.doctor.run_doctor import run_doctor
 
     findings = run_doctor(index, archive, stamp, default_registry())
+    if as_json:
+        import json
+
+        from atrium.status.doctor_report import doctor_report
+
+        report = doctor_report(findings)
+        print(json.dumps(report, sort_keys=True))
+        return 0 if report["ok"] else 1
     mark = {"ok": "ok  ", "warn": "warn", "broken": "FAIL"}
     for finding in findings:
         print(f"  {mark[finding.severity]} {finding.check:<16} {finding.summary}")
@@ -945,13 +980,14 @@ def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path) -> i
     return 0
 
 
-def _status(
+def _status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     index: Path,
     archive: Path,
     stamp: Path,
     registry: Path | None = None,
     *,
     coverage: bool = False,
+    publish: Path | None = None,
 ) -> int:
     """Show what the index holds -- and say loudly when it is answering stale.
 
@@ -959,11 +995,20 @@ def _status(
     counts and the index answered every query as if current. Row counts cannot
     show that; the ages below can, so they print on every status, not only in
     `doctor`.
+
+    ``publish`` is the state directory to write ``status/refresh.json`` into,
+    from the same open index, so the file and the printed lines agree.
     """
+    import time
+
     from atrium.doctor.archive_freshness import archive_freshness
     from atrium.doctor.newest_content_gap import newest_content_gap
     from atrium.doctor.refresh_health import refresh_health
     from atrium.recall.project_coverage import project_coverage
+    from atrium.status.indexed_synthesis_episodes import indexed_synthesis_episodes
+    from atrium.status.publish_json_atomically import publish_json_atomically
+    from atrium.status.refresh_status import refresh_status
+    from atrium.status.status_file import status_file
 
     connection = open_store(index, read_only=True)
     records = connection.execute("SELECT count(*) FROM records").fetchone()[0]
@@ -976,14 +1021,22 @@ def _status(
         refresh_health(stamp),
         newest_content_gap(connection),
     ]
-    indexed_episodes = {
-        row[0]
-        for row in connection.execute("SELECT event_id FROM records WHERE provider = 'synthesis'")
-    }
+    indexed_episodes = indexed_synthesis_episodes(connection)
     # Scanning every record for coverage costs ~44s against 1.1M rows, so the
     # hourly refresh does not pay for a number that moves by fractions of a
     # percent between runs. Ask for it when the question is being asked.
     project_memory = project_coverage(connection) if coverage else None
+    if publish is not None:
+        publish_json_atomically(
+            status_file(publish, "refresh"),
+            refresh_status(
+                connection,
+                archive,
+                stamp,
+                registry if registry is not None else default_registry(),
+                time.time(),
+            ),
+        )
     connection.close()
     print(f"  index: {index}")
     print(f"  built by: schema {build.get('schema')}, pipeline {build.get('pipeline')}")

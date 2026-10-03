@@ -12,6 +12,7 @@ from atrium.doctor.finding import Finding
 # as health.
 STALE_AFTER_SECONDS = 3600
 BROKEN_AFTER_SECONDS = 21600
+CODES = {"ok": "refresh_fresh", "warn": "refresh_stale", "broken": "refresh_dead"}
 
 
 def refresh_health(stamp: Path, now: float | None = None) -> Finding:
@@ -21,6 +22,7 @@ def refresh_health(stamp: Path, now: float | None = None) -> Finding:
         return Finding(
             check="refresh",
             severity="broken",
+            code="refresh_never_recorded",
             summary="no refresh has ever recorded a completion",
             detail={"stamp": str(stamp)},
         )
@@ -31,6 +33,7 @@ def refresh_health(stamp: Path, now: float | None = None) -> Finding:
     return Finding(
         check="refresh",
         severity=severity,
+        code=CODES[severity],
         summary=f"last refresh finished {int(age)}s ago",
         detail={"age_seconds": int(age), "stamp": str(stamp)},
     )

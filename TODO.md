@@ -326,6 +326,17 @@
 
 ## Observability
 
+- [~] **Status documents for dashboards** (2026-10-03): `status/refresh.json`,
+      `status/synthesis.json` and `doctor --json` are in place with tests. Open:
+      (1) the refresh job (outside this repository) must call
+      `atrium status --publish` instead of `atrium status` as its last step, or
+      `refresh.json` is never written; (2) `doctor --json` measured 114-188 s and
+      620-690 MB RSS on a full instance against a 2 s / 300 MB polling budget: the
+      archive and registry scans dominate, the three cheap checks take ~0.1 s.
+      It stays an on-demand call until a cheap mode (entry points, archive,
+      refresh only) or a published doctor document exists. (3) `--publish`
+      reads the synthesis registry twice (status table and document); fold the
+      two if the refresh tail grows noticeably.
 - [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly
       refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
       rewrite filed under Ingest / Store); recall fires in both Claude profiles

@@ -20,6 +20,7 @@ def archive_schema_coherence(archive: Path, sample: int = 2000) -> Finding:
         return Finding(
             check="archive-schema",
             severity="broken",
+            code="archive_missing",
             summary="the canonical archive does not exist",
             detail={"archive": str(archive)},
         )
@@ -38,12 +39,14 @@ def archive_schema_coherence(archive: Path, sample: int = 2000) -> Finding:
         return Finding(
             check="archive-schema",
             severity="broken",
+            code="archive_schema_older_records",
             summary=f"{older} of {seen} sampled records predate the manifest's schema {declared}",
             detail={"declared": declared, "older": older, "sampled": seen},
         )
     return Finding(
         check="archive-schema",
         severity="ok",
+        code="archive_schema_coherent",
         summary=f"{seen} sampled records all match manifest schema {declared}",
         detail={"declared": declared, "sampled": seen},
     )

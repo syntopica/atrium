@@ -270,6 +270,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         help="Also publish status/refresh.json atomically. Only the refresh job passes "
         "this, at its end, so the file has exactly one writer",
     )
+    status.add_argument(
+        "--json",
+        action="store_true",
+        help="Print the same redacted document --publish writes (counts, ages, "
+        "populations) instead of the text report",
+    )
 
     args = parser.parse_args(argv)
     if args.command == "ingest":
@@ -383,6 +389,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         args.synthesis_registry,
         coverage=args.coverage,
         publish=state if args.publish else None,
+        as_json=args.json,
     )
 
 
@@ -988,6 +995,7 @@ def _status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     *,
     coverage: bool = False,
     publish: Path | None = None,
+    as_json: bool = False,
 ) -> int:
     """Show what the index holds -- and say loudly when it is answering stale.
 
@@ -998,6 +1006,7 @@ def _status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
 
     ``publish`` is the state directory to write ``status/refresh.json`` into,
     from the same open index, so the file and the printed lines agree.
+    ``as_json`` prints that same document instead of the text report.
     """
     import time
 
@@ -1026,18 +1035,23 @@ def _status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     # hourly refresh does not pay for a number that moves by fractions of a
     # percent between runs. Ask for it when the question is being asked.
     project_memory = project_coverage(connection) if coverage else None
-    if publish is not None:
-        publish_json_atomically(
-            status_file(publish, "refresh"),
-            refresh_status(
-                connection,
-                archive,
-                stamp,
-                registry if registry is not None else default_registry(),
-                time.time(),
-            ),
+    document = None
+    if publish is not None or as_json:
+        document = refresh_status(
+            connection,
+            archive,
+            stamp,
+            registry if registry is not None else default_registry(),
+            time.time(),
         )
+    if publish is not None:
+        publish_json_atomically(status_file(publish, "refresh"), document)
     connection.close()
+    if as_json:
+        import json
+
+        print(json.dumps(document, sort_keys=True))
+        return 0
     print(f"  index: {index}")
     print(f"  built by: schema {build.get('schema')}, pipeline {build.get('pipeline')}")
     print(f"  records: {records:,}")

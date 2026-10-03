@@ -604,8 +604,6 @@
 Moved verbatim from `~/p/TODO.md` on 2026-10-03; the routing table in
 `~/p/TODO_LOG.md` (entry of that date) records each move.
 
-- [ ] **`atrium status --json` is rejected (`unrecognized arguments`), though
-  the guidance assumes `--json` on some verbs.** Smallest next step: list which
-  verbs accept `--json`, then either add the flag to `status` or correct the
-  guidance and the Atrium CLI usage docs. Found in compratuentrada session
-  2026-10-01.
+- [x] **`atrium status --json` is rejected (`unrecognized arguments`).** Fixed: `status --json`
+  prints the redacted refresh document (same as `--publish`, writes nothing); `doctor`,
+  `prepare` and `context` already had `--json`. No guidance elsewhere referenced it.

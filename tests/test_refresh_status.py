@@ -149,3 +149,16 @@ def test_a_plain_status_never_writes_the_file(tmp_path, monkeypatch):
     monkeypatch.setenv("ATRIUM_STATE", str(state))
     assert _status(tmp_path) == 0
     assert not (state / "status").exists()
+
+
+def test_status_json_prints_the_redacted_document_and_writes_nothing(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    monkeypatch.setenv("ATRIUM_STATE", str(state))
+    assert _status(tmp_path, "--json") == 0
+    text = capsys.readouterr().out
+    assert SENTINEL not in text
+    assert str(tmp_path) not in text
+    document = json.loads(text)
+    assert document["schemaVersion"] == 1
+    assert document["records"]["total"] == 3
+    assert not (state / "status").exists()

@@ -598,3 +598,14 @@
       dims, config-only) nearly doubles dense quality (R@10 40.8% -> 70.4%) at
       ~36 h CPU re-embed. Decision pending: worth doing while Atrium replaces it?
       Filed in `~/p/memstore/TODO.md`.
+
+## Routed from `~/p/TODO.md` (2026-10-03)
+
+Moved verbatim from `~/p/TODO.md` on 2026-10-03; the routing table in
+`~/p/TODO_LOG.md` (entry of that date) records each move.
+
+- [ ] **`atrium status --json` is rejected (`unrecognized arguments`), though
+  the guidance assumes `--json` on some verbs.** Smallest next step: list which
+  verbs accept `--json`, then either add the flag to `status` or correct the
+  guidance and the Atrium CLI usage docs. Found in compratuentrada session
+  2026-10-01.

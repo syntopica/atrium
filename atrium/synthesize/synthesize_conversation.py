@@ -2,10 +2,12 @@
 
 import hashlib
 import json
+import time
 from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
+from atrium.status.iso_utc import iso_utc
 from atrium.synthesize.ack_worker_results import ack_worker_results
 from atrium.synthesize.empty_synthesis_error import EmptySynthesisError
 from atrium.synthesize.episode_identity import episode_identity
@@ -49,7 +51,9 @@ def synthesize_conversation(
         if has_record(registry, job_key) or (done_episodes and episode_id in done_episodes):
             skipped += 1
             continue
+        began = time.monotonic()
         result = _synthesize_episode(episode, events, producer)
+        duration_ms = round((time.monotonic() - began) * 1000)
         # Worker results are acked only once the record is on disk: a crash in
         # between leaves them offered, and the next pass's drain acks them.
         worker_results = result.get("worker_results") or []
@@ -77,6 +81,10 @@ def synthesize_conversation(
                 "map_chunks": len(episode["chunks"]),
                 "usage": result["usage"],
                 "authored_at": conversation.get("updatedAt") or conversation.get("startedAt"),
+                # When and how long: the wall time of every producer call this
+                # episode made, map and reduce together. Outside the job key.
+                "synthesized_at": iso_utc(time.time()),
+                "duration_ms": duration_ms,
                 "output": result["input"],
                 "output_sha256": hashlib.sha256(output_json.encode()).hexdigest(),
                 # The rule the member ids actually follow, taken from the

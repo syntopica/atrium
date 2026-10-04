@@ -339,6 +339,20 @@
 
 ## Observability
 
+- [ ] **The local lane has not finished a pass by itself since 2026-10-04
+      00:49.** `atrium synthesis passes --json` on 2026-10-04 19:00 reported
+      `unsuccessfulStreak` 15: every local pass since 01:04 ended `exit 124` at
+      the 3300 s box (two more have a start and no end), so `synthesis.json`
+      still describes the 00:49 pass. The running pass had finished 1 of
+      52,427 conversations after 26 min, its other lines `FAILED: worker job
+      still pending`, while the registry still gained 866 records that day.
+      Next step: measure how much of each pass goes to the start-up registry
+      read (`read_records` over 76k files) versus waiting on worker jobs, then
+      decide between a shorter wait budget and a longer box.
+- [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
+      of its window (15,696 files for 14 days). If a reader ever needs it
+      polled, keep per-day totals for closed days in a derived file.
+
 - [~] **Status documents for dashboards** (2026-10-03): `status/refresh.json`,
       `status/synthesis.json` and `doctor --json` are in place with tests. The refresh
       job calls `atrium status --publish` since dotfiles 905d5cd. Open: (2) `doctor --json` measured 114-188 s and

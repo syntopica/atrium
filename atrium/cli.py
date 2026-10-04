@@ -605,7 +605,6 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     from atrium.ingest.canonical_workspace import canonical_workspace
     from atrium.recall.project_workspace import project_workspace
     from atrium.recall.workspace_matches import workspace_matches
-    from atrium.synthesize.episode_backlog import episode_backlog
     from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
     from atrium.synthesize.record_worker_submission import record_worker_submission
     from atrium.synthesize.segment_episodes import segment_episodes
@@ -740,8 +739,15 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     covered: set[str] = set()
     session_records = []
     recorded_results: set[str] = set()
+    # (conversation, revision) pairs some record already synthesized: after a
+    # wall, the cheap test for "nothing new here". Segmenting every remaining
+    # conversation to count exact episodes took minutes, past the tick's box.
+    recorded_revisions: set[tuple[str, str]] = set()
     for record in read_records(default_registry()):
         done_episodes.add(record["episode_id"])
+        recorded_revisions.add(
+            (record.get("conversation_id") or "", record.get("revision_sha256") or "")
+        )
         recorded_results.update(r["result_id"] for r in record.get("worker_results") or [])
         if record.get("segmentation") == "session-self-v1":
             session_records.append(record)
@@ -781,20 +787,18 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
 
     def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
         position, conversation = item
-        if conversation["id"] in covered:
-            # The session that lived it already recorded it.
-            return {"synthesized": 0, "skipped": 1, "failed": 0}
         collecting = conversation["id"] in holding
-        if quota_wall.is_set() and not collecting:
-            # Deferred means work left undone, not every conversation after the wall.
-            backlog = episode_backlog(conversation, model_id, default_registry(), done_episodes)
-            deferred_here = 1 if backlog["pending"] else 0
-            return {
-                "synthesized": 0,
-                "skipped": backlog["present"],
-                "failed": 0,
-                "deferred": deferred_here,
-            }
+        walled = quota_wall.is_set() and not collecting
+        revision = (conversation.get("provenance") or {}).get("contentSha256") or ""
+        # After a wall, a conversation already synthesized at its current
+        # revision is present, not deferred: deferred means work left undone.
+        if conversation["id"] in covered or (
+            walled and (conversation["id"], revision) in recorded_revisions
+        ):
+            # Covered: the session that lived it already recorded it.
+            return {"synthesized": 0, "skipped": 1, "failed": 0}
+        if walled:
+            return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
         producer_call = call
         if worker_queue is not None:
             on_submit = functools.partial(

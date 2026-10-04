@@ -27,10 +27,12 @@
 - [x] 2026-10-04 — **`deferred` counts real pending work.** After a quota wall
   every remaining conversation was counted deferred before the covered and
   already-synthesized checks ran, so the published number was the archive
-  size. Covered conversations are now skipped first, and after the wall
-  `episode_backlog` (same done rule as `synthesize_conversation`) counts a
-  conversation deferred only if an episode is still to make; its present
-  episodes go to `skipped`. README documents the field. Evidence:
+  size. Covered conversations are now skipped first, and after the wall a
+  conversation is deferred only if no record holds it at its current
+  revision; otherwise it counts as skipped. Exact per-episode counting
+  (segmenting every remaining conversation) was tried first and took minutes,
+  past the tick's time box, so the cheap revision test replaced it. README
+  documents the field. Evidence:
   `test_deferred_counts_only_conversations_with_work_left`.
 
 - [x] 2026-10-01 — **Worker results are acked after the registry write, not

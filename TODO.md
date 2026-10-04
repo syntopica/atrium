@@ -265,8 +265,8 @@
       episode from the consumed key's sibling record, or include the episode
       id in the key. (2) A journaled job whose conversation is otherwise done
       (its episode recorded by another population) is never re-submitted, so
-      its result is never acked; ack such results at pass start using
-      `episode_backlog`. (3) Map-reduce partials stay unacked until the whole
+      its result is never acked; ack such results at pass start once their
+      conversation has nothing left to make. (3) Map-reduce partials stay unacked until the whole
       episode reduces; an episode with more chunks than `max_outstanding`
       can never finish on the worker lane.
 

@@ -209,8 +209,8 @@ one writer, and is published atomically (temporary file in the same directory,
   `--dry-run`). `lastPass` holds `producer`, `startedAt`, `finishedAt`,
   `conversations`, `synthesized`, `skipped`, `failed`, `deferred`; `writtenAt`.
   `deferred` counts conversations a quota wall or a full worker queue left
-  with at least one episode still to synthesize; a conversation with nothing
-  left after the wall counts its episodes under `skipped`, as any pass does.
+  unattempted with no record at their current revision; one that already has
+  a record at that revision counts under `skipped` instead.
 
 `atrium doctor --json` prints `{"schemaVersion", "ok", "checks": [{"name",
 "ok", "severity", "code"}]}`, where `code` is a fixed machine word and `ok` is

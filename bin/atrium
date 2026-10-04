@@ -1,0 +1,6 @@
+#!/bin/sh
+# Run this checkout's atrium without changing the caller's directory, so a
+# reader that resolves engines by path (orbit) calls it like brain and clips.
+# The console script lives in the project environment `uv sync` builds.
+here=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+exec "$here/.venv/bin/atrium" "$@"

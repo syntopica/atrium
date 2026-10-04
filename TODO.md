@@ -257,6 +257,19 @@
     divergence error, never resolved by timestamps.
     Only user-approved notes are proposed to brain (a tray, not a dump).
 
+- [ ] Worker lane leftovers found while fixing uncollected results
+      (2026-10-04). (1) Episodes whose transcript is identical to another's
+      share one prompt and one idempotency key; once the base key and its
+      three retry suffixes are consumed, every further such episode fails
+      `worker job retries exhausted` on every pass. Smallest step: record the
+      episode from the consumed key's sibling record, or include the episode
+      id in the key. (2) A journaled job whose conversation is otherwise done
+      (its episode recorded by another population) is never re-submitted, so
+      its result is never acked; ack such results at pass start using
+      `episode_backlog`. (3) Map-reduce partials stay unacked until the whole
+      episode reduces; an episode with more chunks than `max_outstanding`
+      can never finish on the worker lane.
+
 ## Promotion pipeline
 
 - [x] Stage one, `atrium curate-screen`: 47,753 records and 306,212 facts into

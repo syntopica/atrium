@@ -3,6 +3,7 @@
 import hashlib
 import os
 import time
+from collections.abc import Callable
 from typing import Any
 
 from atrium.synthesize.lane_prompt import LanePrompt
@@ -29,7 +30,10 @@ WORKER_TASK_QUEUE = "atrium.tasks"
 
 
 def worker_task_lane_call(
-    prompt_parts: LanePrompt, tool: dict[str, Any], profile: str = WORKER_TASK_DEFAULT_PROFILE
+    prompt_parts: LanePrompt,
+    tool: dict[str, Any],
+    profile: str = WORKER_TASK_DEFAULT_PROFILE,
+    on_submit: Callable[[str], None] | None = None,
 ) -> dict[str, Any]:
     """Same contract as agy_lane_call; the worker owns the runner and its walls.
 
@@ -54,6 +58,8 @@ def worker_task_lane_call(
         "input": {"profile": profile, "prompt": prompt, "output_schema": schema},
     }
     job_id = worker_lane_submit(job)
+    if on_submit is not None:
+        on_submit(job_id)
     poll = float(os.environ.get("ATRIUM_WORKER_POLL", "10"))
     deadline = time.monotonic() + _WAIT_SECONDS
     while time.monotonic() < deadline:

@@ -145,3 +145,10 @@ def test_an_oversized_prompt_is_refused_before_submitting(coordinator):
 
 def test_the_population_is_named_after_the_profile():
     assert worker_task_lane_model_id("atrium.agy") == "worker-atrium.agy"
+
+
+def test_the_submitted_task_id_is_reported_before_waiting(coordinator):
+    coordinator([QUEUED, DONE])
+    submitted: list[str] = []
+    worker_task_lane_call(LanePrompt("sys", "user"), TOOL, on_submit=submitted.append)
+    assert submitted == ["j1"]

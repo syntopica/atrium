@@ -6,6 +6,16 @@
 
 ### 2026-10
 
+- [x] 2026-10-04 — **`atrium synthesis recent|passes|show --json` shows what
+  synthesis did.** `passes` parses the wrapper's `synthesis.log` (exit codes,
+  `timeout`/`killed`/`interrupted`, tallies) plus the running pass's progress;
+  `recent` lists the newest records by one `scandir` (model, tokens, duration,
+  window, fact counts) and tokens per UTC day; `show` alone prints a record's
+  title, summary, facts and open ends. New records carry `synthesized_at` and
+  `duration_ms`. Evidence: `tests/test_synthesis_ledger_*.py`, gate green; on
+  the full instance `passes` 0.13 s, `recent` 6 s at load 41 (76,095 records,
+  15,696 in the 14-day window). orbit consumes it.
+
 - [x] 2026-10-04 — **Worker results a pass stopped waiting for are collected
   first.** A pass gives up on a job after its wait budget, a timeout kill or a
   refused later chunk; the result then arrives unacknowledged and holds a

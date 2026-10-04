@@ -283,7 +283,33 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         "populations) instead of the text report",
     )
 
+    synthesis = subcommands.add_parser(
+        "synthesis", help="Read what synthesis did: newest records, tokens, passes"
+    )
+    views = synthesis.add_subparsers(dest="view", required=True)
+    recent = views.add_parser(
+        "recent", help="Newest records with model, tokens and counts; tokens per day"
+    )
+    recent.add_argument("--limit", type=_positive_limit, default=50)
+    recent.add_argument("--days", type=_positive_limit, default=14)
+    passes = views.add_parser("passes", help="Recent passes from the wrapper's tick log")
+    passes.add_argument("--limit", type=_positive_limit, default=20)
+    show = views.add_parser("show", help="One record with its synthesized content")
+    show.add_argument("--job-key", required=True)
+    for view in (recent, passes, show):
+        view.add_argument("--json", action="store_true", help="JSON output (the only format)")
+
     args = parser.parse_args(argv)
+    if args.command == "synthesis":
+        from atrium.ledger.run_synthesis_cli import run_synthesis_cli
+
+        return run_synthesis_cli(
+            args.view,
+            default_registry(),
+            limit=min(getattr(args, "limit", 1), 500),
+            days=min(getattr(args, "days", 14), 90),
+            job_key=getattr(args, "job_key", None),
+        )
     if args.command == "ingest":
         ingested = _ingest(args.index, args.archive, sweep=not args.partial)
         if ingested == 0:

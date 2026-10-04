@@ -224,6 +224,38 @@ memory for a reader to poll.
 stays under 2 s and 50 MB on the full instance (10 queries, 2026-10-04); the
 default `auto` lane loads the embedder and measured 1.1-7.1 s and 1.6 GB.
 
+### What synthesis did
+
+`atrium synthesis <view> --json` reads the registry and the scheduled
+wrapper's logs; it writes nothing. Every document carries `"schemaVersion": 1`
+and `writtenAt`.
+
+- `passes [--limit N]` parses `<registry>/synthesis.log`, the wrapper's tick
+  log, newest first: `lane`, `producer`, `model`, `startedAt`, `finishedAt`,
+  `durationS`, `exitCode`, `state` (`ok`, `timeout` for exit 124, `killed` for
+  137, `failed`, `interrupted` when a start has no end, `running` for a last
+  start with no end yet) and the tallies when the pass printed them. Also
+  `lastPass`, `unsuccessfulStreak` and, while a pass runs, `progress` counted
+  from `synthesis-pass.log` (conversations, finished, failed, synthesized, no
+  failure text). `synthesis.json` misses every pass the time box kills; this
+  does not. It reads two log tails and answers in about 0.1 s.
+- `recent [--limit N] [--days D]` lists the newest `N` records by file time
+  (one `scandir`, then only those files are opened): `jobKey`, `kind`
+  (`episode` or `session`), `source`, `conversationId`, `episodeId`,
+  `eventCount`, the session window, `authoredAt`, `writtenAt`, model
+  requested and resolved, input and output tokens, `durationMs`, `mapChunks`,
+  and the counts of facts and open ends. `daily` holds records and tokens per
+  UTC day for the last `D` days, by when the registry gained the record. It
+  opens every file of that window, so it is a detail call (2-6 s on 76k
+  records), not something to poll.
+- `show --job-key KEY` prints one record's metadata and, under `content`, its
+  title, summary, facts and open ends. Only this view prints synthesized text,
+  so a reader can gate it; the key must be a 32-hex registry key.
+
+New records carry `synthesized_at` and `duration_ms` (the wall time of every
+producer call the episode made); older records fall back to the file time and
+a null duration.
+
 ## Why the lanes stay separate
 
 `words` matches on word boundaries; `substrings` matches fragments. They answer different

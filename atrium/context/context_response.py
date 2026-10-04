@@ -5,6 +5,7 @@ from typing import Any
 
 from atrium.context.context_configuration import context_configuration
 from atrium.context.context_freshness import context_freshness
+from atrium.context.context_schema_version import CONTEXT_SCHEMA_VERSION
 
 
 def context_response(  # noqa: PLR0913, PLR0917 -- mirrors the public request envelope
@@ -23,6 +24,7 @@ def context_response(  # noqa: PLR0913, PLR0917 -- mirrors the public request en
     if configuration["status"] in ("invalid", "missing"):
         warnings.append(f"configuration_{configuration['status']}")
     return {
+        "schemaVersion": CONTEXT_SCHEMA_VERSION,
         "query": query,
         "scope": {"project": str(project) if project is not None else None, "workspace": workspace},
         "route": {"requested_lane": lane, "history_lane": lane, "curated_lane": lane},

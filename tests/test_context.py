@@ -26,6 +26,7 @@ def test_scoped_history_curated_note_and_one_hop(corpus):
     }
     assert len(evidence) == 3
     assert all(item["record_id"] not in {"other", "injection"} for item in evidence)
+    assert result["schemaVersion"] == 1
     assert result["requires_live_verification"] is True
     assert result["freshness"]["status"] == "fresh"
     assert result["deduplicated"] == 1

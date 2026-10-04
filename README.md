@@ -215,7 +215,14 @@ one writer, and is published atomically (temporary file in the same directory,
 `atrium doctor --json` prints `{"schemaVersion", "ok", "checks": [{"name",
 "ok", "severity", "code"}]}`, where `code` is a fixed machine word and `ok` is
 true only for a healthy check. The exit status is unchanged: non-zero only when
-a check is `broken`.
+a check is `broken`. `atrium doctor --publish` also writes that document, with
+`writtenAt`, to `doctor.json` beside the other status files; the refresh job
+passes it after `status --publish`, because a run costs minutes and too much
+memory for a reader to poll.
+
+`atrium context --json` carries `"schemaVersion": 1`. With `--lane words` it
+stays under 2 s and 50 MB on the full instance (10 queries, 2026-10-04); the
+default `auto` lane loads the embedder and measured 1.1-7.1 s and 1.6 GB.
 
 ## Why the lanes stay separate
 

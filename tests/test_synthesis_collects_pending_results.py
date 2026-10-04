@@ -160,7 +160,8 @@ def test_every_submission_is_journaled_against_its_conversation(worker, tmp_path
 def test_deferred_counts_only_conversations_with_work_left(worker, tmp_path, monkeypatch):
     registry = worker([])
     done_id = episode_identity("conv-done", ["e1", "e2"])
-    write_record(registry, "k-done", {"job_key": "k-done", "episode_id": done_id})
+    record = {"job_key": "k-done", "episode_id": done_id, "conversation_id": "conv-done"}
+    write_record(registry, "k-done", {**record, "revision_sha256": ""})
     original = synthesize_module.synthesize_conversation
 
     def fake(conversation, *args, **kwargs):
@@ -171,5 +172,5 @@ def test_deferred_counts_only_conversations_with_work_left(worker, tmp_path, mon
     monkeypatch.setattr(synthesize_module, "synthesize_conversation", fake)
     assert _pass(tmp_path, ["conv-wall", "conv-done", "conv-todo"]) == 0
     last = _last_pass(registry)
-    # conv-wall hit the wall and conv-todo still has an episode to make; conv-done has none.
+    # conv-wall hit the wall and conv-todo has no record at its revision; conv-done has one.
     assert (last["deferred"], last["skipped"], last["synthesized"]) == (2, 1, 0)

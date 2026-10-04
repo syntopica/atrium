@@ -1044,7 +1044,7 @@ def _status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
             registry if registry is not None else default_registry(),
             time.time(),
         )
-    if publish is not None:
+    if publish is not None and document is not None:
         publish_json_atomically(status_file(publish, "refresh"), document)
     connection.close()
     if as_json:

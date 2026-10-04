@@ -196,6 +196,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         action="store_true",
         help="Print checks as JSON (name, ok, severity, fixed code) instead of prose",
     )
+    doctor.add_argument(
+        "--publish",
+        action="store_true",
+        help="Also publish status/doctor.json atomically. Only the refresh job passes "
+        "this, at its end: the run costs minutes, too slow for a reader to poll",
+    )
 
     rekey = subcommands.add_parser(
         "rekey-synthesis",
@@ -355,7 +361,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     if args.command == "rekey-synthesis":
         return _rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
-        return _doctor(args.index, args.archive, refresh_stamp, as_json=args.json)
+        return _doctor(
+            args.index, args.archive, refresh_stamp, as_json=args.json, publish=args.publish
+        )
     if args.command == "search":
         lane = (
             "substring"
@@ -856,7 +864,9 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     return 0 if failed == 0 else 1
 
 
-def _doctor(index: Path, archive: Path, stamp: Path, *, as_json: bool = False) -> int:
+def _doctor(
+    index: Path, archive: Path, stamp: Path, *, as_json: bool = False, publish: bool = False
+) -> int:
     """Report every coherence check, and fail when the memory is answering wrongly.
 
     Everything this looks at had already gone wrong silently: a sync eleven days
@@ -867,6 +877,16 @@ def _doctor(index: Path, archive: Path, stamp: Path, *, as_json: bool = False) -
     from atrium.doctor.run_doctor import run_doctor
 
     findings = run_doctor(index, archive, stamp, default_registry())
+    if publish:
+        import time
+
+        from atrium.status.doctor_status import doctor_status
+        from atrium.status.publish_json_atomically import publish_json_atomically
+        from atrium.status.status_file import status_file
+
+        publish_json_atomically(
+            status_file(state_directory(), "doctor"), doctor_status(findings, time.time())
+        )
     if as_json:
         import json
 

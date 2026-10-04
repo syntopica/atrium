@@ -75,3 +75,26 @@ def test_the_command_prints_json_with_codes_and_a_matching_exit(tmp_path, monkey
         assert set(check) == {"name", "ok", "severity", "code"}
         assert CODE_PATTERN.fullmatch(check["code"])
     assert str(tmp_path) not in out
+
+
+def test_publish_writes_the_report_with_its_instant(tmp_path, monkeypatch, capsys):
+    state = tmp_path / "state"
+    monkeypatch.setenv("ATRIUM_STATE", str(state))
+    code = main(
+        [
+            "--index",
+            str(tmp_path / "index.sqlite3"),
+            "doctor",
+            "--publish",
+            "--archive",
+            str(tmp_path / "absent.jsonl"),
+        ]
+    )
+    published = json.loads((state / "status" / "doctor.json").read_text())
+    assert code == 1
+    assert published["schemaVersion"] == 1
+    assert published["ok"] is False
+    assert published["writtenAt"].endswith("Z")
+    assert {check["code"] for check in published["checks"]} >= {"archive_missing"}
+    assert str(tmp_path) not in json.dumps(published)
+    assert list((state / "status").glob(".*.tmp")) == []

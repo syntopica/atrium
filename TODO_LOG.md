@@ -6,6 +6,33 @@
 
 ### 2026-10
 
+- [x] 2026-10-04 — **Worker results a pass stopped waiting for are collected
+  first.** A pass gives up on a job after its wait budget, a timeout kill or a
+  refused later chunk; the result then arrives unacknowledged and holds a
+  queue slot. Later passes walk newest-first and stop at the first 429, so
+  they never reached that conversation, and uncollected results filled
+  `max_outstanding` until the worker expired them (`unacked_expired`, the
+  output lost). Each worker-lane submission is now journaled
+  (`<registry>/worker-submissions.jsonl`, job id and conversation id only);
+  at pass start `pending_worker_jobs` pages `GET /v1/results`, and the
+  conversations those jobs belong to are walked first, where re-submission
+  finds the job by idempotency key (never refused by a full queue) and the
+  normal path records and acks it. A refused new chunk in such a conversation
+  does not raise the wall for the rest of them. Results submitted before the
+  journal existed have no entry and still wait for the walk. Evidence:
+  `tests/test_synthesis_collects_pending_results.py`,
+  `tests/test_pending_worker_jobs.py`, `tests/test_worker_submission_journal.py`;
+  gate green.
+
+- [x] 2026-10-04 — **`deferred` counts real pending work.** After a quota wall
+  every remaining conversation was counted deferred before the covered and
+  already-synthesized checks ran, so the published number was the archive
+  size. Covered conversations are now skipped first, and after the wall
+  `episode_backlog` (same done rule as `synthesize_conversation`) counts a
+  conversation deferred only if an episode is still to make; its present
+  episodes go to `skipped`. README documents the field. Evidence:
+  `test_deferred_counts_only_conversations_with_work_left`.
+
 - [x] 2026-10-01 — **Worker results are acked after the registry write, not
   before.** Both worker lanes (`worker_lane_call`, `worker_task_lane_call`)
   now return a usable result unacknowledged under `worker_results`;

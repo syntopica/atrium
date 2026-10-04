@@ -597,6 +597,7 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     uncovered projects here no longer exist on disk, and their conversations
     are exactly the ones nothing but this archive can still account for.
     """
+    import functools
     import threading
     import time
     from concurrent.futures import ThreadPoolExecutor
@@ -604,7 +605,9 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
     from atrium.ingest.canonical_workspace import canonical_workspace
     from atrium.recall.project_workspace import project_workspace
     from atrium.recall.workspace_matches import workspace_matches
+    from atrium.synthesize.episode_backlog import episode_backlog
     from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
+    from atrium.synthesize.record_worker_submission import record_worker_submission
     from atrium.synthesize.segment_episodes import segment_episodes
     from atrium.synthesize.synthesize_conversation import synthesize_conversation
 
@@ -645,6 +648,9 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
         return 0
     worker_queue: str | None = None
+    # A worker lane journals each job it submits against its conversation, so
+    # a later pass can find which conversation an uncollected result is for.
+    journal = default_registry() / "worker-submissions.jsonl"
     if producer == "max":
         from atrium.synthesize.max_lane_call import MODEL, max_lane_call
         from atrium.synthesize.max_lane_tokens import max_lane_tokens
@@ -678,8 +684,15 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
 
             worker_queue = WORKER_SYNTHESIS_QUEUE
 
+            def journaled_call(
+                system_text: str, user_text: str, tool: dict[str, Any], on_submit: Any
+            ) -> dict[str, Any]:
+                return worker_lane_call(
+                    LanePrompt(system_text, user_text), tool, local_model, on_submit
+                )
+
             def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-                return worker_lane_call(LanePrompt(system_text, user_text), tool, local_model)
+                return journaled_call(system_text, user_text, tool, None)
         else:
 
             def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
@@ -698,8 +711,15 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         task_profile = model or WORKER_TASK_DEFAULT_PROFILE
         worker_queue = WORKER_TASK_QUEUE
 
+        def journaled_call(
+            system_text: str, user_text: str, tool: dict[str, Any], on_submit: Any
+        ) -> dict[str, Any]:
+            return worker_task_lane_call(
+                LanePrompt(system_text, user_text), tool, task_profile, on_submit
+            )
+
         def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return worker_task_lane_call(LanePrompt(system_text, user_text), tool, task_profile)
+            return journaled_call(system_text, user_text, tool, None)
 
         model_id = worker_task_lane_model_id(task_profile)
     else:
@@ -727,12 +747,29 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
             session_records.append(record)
     if not include_session_covered:
         covered = session_covered_conversations(session_records)
+    holding: set[str] = set()
     if worker_queue is not None:
         from atrium.synthesize.ack_recorded_worker_results import ack_recorded_worker_results
+        from atrium.synthesize.pending_worker_jobs import pending_worker_jobs
+        from atrium.synthesize.read_worker_submissions import read_worker_submissions
 
         settled = ack_recorded_worker_results(worker_queue, recorded_results)
         if settled:
             print(f"  acked {settled} worker results the registry already held")
+        # Results a pass stopped waiting for arrive unacknowledged and hold a
+        # queue slot each. Walk their conversations first: re-submitting one
+        # finds its job by idempotency key and collects the result, which a
+        # full queue does not refuse. Left to the newest-first walk, they sat
+        # behind the first refused submission until the worker expired them.
+        submissions = read_worker_submissions(journal)
+        holding = {
+            submissions[job] for job in pending_worker_jobs(worker_queue) if job in submissions
+        }
+        if holding:
+            print(
+                f"  {len(holding)} conversations hold uncollected worker results; walking them first"
+            )
+            conversations.sort(key=lambda conversation: conversation["id"] not in holding)
     made = skipped = failed = deferred = 0
     total = len(conversations)
     started = time.time()
@@ -744,16 +781,36 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
 
     def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
         position, conversation = item
-        if quota_wall.is_set():
-            return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
         if conversation["id"] in covered:
             # The session that lived it already recorded it.
             return {"synthesized": 0, "skipped": 1, "failed": 0}
+        collecting = conversation["id"] in holding
+        if quota_wall.is_set() and not collecting:
+            # Deferred means work left undone, not every conversation after the wall.
+            backlog = episode_backlog(conversation, model_id, default_registry(), done_episodes)
+            deferred_here = 1 if backlog["pending"] else 0
+            return {
+                "synthesized": 0,
+                "skipped": backlog["present"],
+                "failed": 0,
+                "deferred": deferred_here,
+            }
+        producer_call = call
+        if worker_queue is not None:
+            on_submit = functools.partial(
+                record_worker_submission, journal, conversation_id=conversation["id"]
+            )
+            producer_call = functools.partial(journaled_call, on_submit=on_submit)
         try:
             result = synthesize_conversation(
-                conversation, call, model_id, default_registry(), done_episodes
+                conversation, producer_call, model_id, default_registry(), done_episodes
             )
         except QuotaExhaustedError as error:
+            if collecting:
+                # Only this conversation's new chunk was refused: the others
+                # holding results are walked next and must not be stranded.
+                print(f"  [{position}/{total}] queue full while collecting: {error}", flush=True)
+                return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
             if not quota_wall.is_set():
                 quota_wall.set()
                 print(f"  [{position}/{total}] quota wall, aborting pass: {error}", flush=True)

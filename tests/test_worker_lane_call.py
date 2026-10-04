@@ -179,3 +179,17 @@ def test_worker_prompt_equals_the_local_lane_prompt(monkeypatch, tmp_path):
     local_lane_call(parts, TOOL)
     worker_prompt = seen["/v1/jobs"][0]["input"]["messages"][0]["content"]
     assert worker_prompt == sent["messages"][0]["content"]
+
+
+def test_the_submitted_job_id_is_reported_before_waiting(monkeypatch, tmp_path):
+    ok = {
+        "result_id": "r1",
+        "control": None,
+        "output": {"text": "{}", "json": {"title": "t"}},
+        "usage": {},
+    }
+    url, _seen = serve([ok])
+    configure(monkeypatch, tmp_path, url)
+    submitted: list[str] = []
+    worker_lane_call(LanePrompt("sys", "user"), TOOL, on_submit=submitted.append)
+    assert submitted == ["j1"]

@@ -12,6 +12,10 @@ from atrium.retrieve.hits_from_rows import hits_from_rows
 # promptly, rarely enough that the check is not the cost.
 _INSTRUCTIONS_PER_CHECK = 10_000
 
+# The budget is CPU time; wall time stops a read only at this many budgets, so a
+# cold disk or a stalled lock is still bounded.
+_WALL_BUDGETS = 5
+
 
 def ranked_hits(  # noqa: PLR0913, PLR0917 -- one streaming read, fully parameterised
     connection: sqlite3.Connection,
@@ -39,13 +43,23 @@ def ranked_hits(  # noqa: PLR0913, PLR0917 -- one streaming read, fully paramete
     that sorts before it returns a single row, so an expired budget meant an
     empty answer; a streaming read keeps every hit it has already taken, and
     reports the budget as spent on top of them (raised by review, 2026-09-16).
+
+    ``milliseconds`` is CPU time of this thread, which runs SQLite too. As wall
+    time it was spent waiting for a core on a saturated machine: on 2026-10-05,
+    at load 68, a query that finds eight blocks in 2 s returned none. Wall time
+    still ends the read after ``_WALL_BUDGETS`` budgets.
     """
-    deadline = time.monotonic() + milliseconds / 1000
+    budget = milliseconds / 1000
+    cpu_deadline = time.thread_time() + budget
+    wall_deadline = time.monotonic() + budget * _WALL_BUDGETS
     interrupted = False
+
+    def spent() -> bool:
+        return time.thread_time() > cpu_deadline or time.monotonic() > wall_deadline
 
     def expired() -> int:
         nonlocal interrupted
-        if time.monotonic() <= deadline:
+        if not spent():
             return 0
         interrupted = True
         return 1
@@ -60,7 +74,7 @@ def ranked_hits(  # noqa: PLR0913, PLR0917 -- one streaming read, fully paramete
             # handler only fires while the VM steps, so a read whose cost is on
             # this side -- a verifier regex, a long row -- would run past the
             # budget unnoticed (a rewritten regression caught this).
-            if time.monotonic() > deadline:
+            if spent():
                 interrupted = True
                 break
             hit = hits_from_rows([row])[0]

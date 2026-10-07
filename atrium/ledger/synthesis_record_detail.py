@@ -9,7 +9,7 @@ from atrium.ledger.record_metadata import record_metadata
 from atrium.ledger.record_written_at import record_written_at
 from atrium.status.iso_utc import iso_utc
 from atrium.status.status_schema_version import STATUS_SCHEMA_VERSION
-from atrium.synthesize.synthesis_registry import record_path
+from atrium.synthesize.record_path import record_path
 
 JOB_KEY = re.compile(r"^[0-9a-f]{32}$")
 

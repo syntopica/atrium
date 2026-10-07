@@ -21,7 +21,7 @@ from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 from atrium.synthesize.read_worker_submissions import read_worker_submissions
 from atrium.synthesize.record_worker_submission import record_worker_submission
-from atrium.synthesize.synthesis_registry import write_record
+from atrium.synthesize.write_record import write_record
 
 OUTPUT = {"title": "t", "summary": "s", "facts": [], "open_ends": []}
 

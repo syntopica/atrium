@@ -1,7 +1,9 @@
 """Registry records are immutable, resumable and index-ready."""
 
 from atrium.ingest.to_synthesis_records import to_synthesis_records
-from atrium.synthesize.synthesis_registry import has_record, read_records, write_record
+from atrium.synthesize.has_record import has_record
+from atrium.synthesize.read_records import read_records
+from atrium.synthesize.write_record import write_record
 
 
 def _record(job_key="k1", conversation="conv-1"):
@@ -55,7 +57,8 @@ def test_concurrent_writers_never_overwrite_a_claimed_key(tmp_path):
     """
     import threading
 
-    from atrium.synthesize.synthesis_registry import read_records, write_record
+    from atrium.synthesize.read_records import read_records
+    from atrium.synthesize.write_record import write_record
 
     start = threading.Barrier(2)
 

@@ -9,7 +9,7 @@ from session_transcript import SessionTranscript as T
 from atrium.session.record_session import record_session
 from atrium.session.session_state_path import session_state_path
 from atrium.session.session_stop_decision import session_stop_decision
-from atrium.synthesize.synthesis_registry import read_records
+from atrium.synthesize.read_records import read_records
 
 NOW = datetime(2026, 9, 16, 12, 0, tzinfo=UTC)
 

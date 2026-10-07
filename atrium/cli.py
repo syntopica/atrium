@@ -767,7 +767,7 @@ def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface:
         model_id = agy_lane_model_id(agy_model)
 
     from atrium.session.session_covered_conversations import session_covered_conversations
-    from atrium.synthesize.synthesis_registry import read_records
+    from atrium.synthesize.read_records import read_records
 
     done_episodes: set[str] = set()
     covered: set[str] = set()
@@ -977,9 +977,9 @@ def _ingest_synthesis(index: Path) -> int:
     from atrium.ingest.canonical_workspace import canonical_workspace
     from atrium.ingest.conversation_workspaces import conversation_workspaces
     from atrium.ingest.to_synthesis_records import to_synthesis_records
-    from atrium.synthesize.active_recipe import active_recipe_priority
+    from atrium.synthesize.active_recipe_priority import active_recipe_priority
     from atrium.synthesize.choose_served_records import choose_served_records
-    from atrium.synthesize.synthesis_registry import read_records
+    from atrium.synthesize.read_records import read_records
 
     chosen = choose_served_records(
         read_records(default_registry()), active_recipe_priority(default_registry())

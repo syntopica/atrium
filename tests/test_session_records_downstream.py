@@ -7,7 +7,7 @@ from atrium.recall.recent_episodes import recent_episodes
 from atrium.session.session_covered_conversations import session_covered_conversations
 from atrium.store.open_store import open_store
 from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
-from atrium.synthesize.synthesis_registry import write_record
+from atrium.synthesize.write_record import write_record
 
 RECORD = {
     "job_key": "k" * 32,

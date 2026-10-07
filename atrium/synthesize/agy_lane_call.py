@@ -4,8 +4,9 @@ import json
 import re
 import subprocess
 import time
-from typing import Any, cast
+from typing import Any
 
+from atrium.synthesize.parse_loose_json import parse_loose_json
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 
 # The brain's routing rule: whole-corpus bulk goes to Gemini via agy -- its
@@ -90,7 +91,7 @@ def agy_lane_call(
             last_error = f"agy returned no JSON object: {completed.stdout[-250:]!r}"
             continue
         try:
-            output = _parse_loose_json(match.group(0))
+            output = parse_loose_json(match.group(0))
         except json.JSONDecodeError as error:
             last_error = f"agy JSON did not parse: {error}"
             continue
@@ -100,17 +101,3 @@ def agy_lane_call(
             continue
         return {"input": output, "model": model, "usage": {}}
     raise RuntimeError(last_error)
-
-
-def _parse_loose_json(text: str) -> dict[str, Any]:
-    """Parse Gemini's JSON, tolerating its two observed sloppinesses.
-
-    Raw control characters inside strings (strict=False accepts them) and
-    invalid backslash escapes (repaired to literal backslashes). Anything
-    still broken raises and the retry loop takes another attempt.
-    """
-    try:
-        return cast("dict[str, Any]", json.loads(text, strict=False))
-    except json.JSONDecodeError:
-        repaired = re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", text)
-        return cast("dict[str, Any]", json.loads(repaired, strict=False))

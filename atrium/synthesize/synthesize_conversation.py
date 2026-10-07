@@ -3,7 +3,6 @@
 import hashlib
 import json
 import time
-from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -11,17 +10,14 @@ from atrium.status.iso_utc import iso_utc
 from atrium.synthesize.ack_worker_results import ack_worker_results
 from atrium.synthesize.empty_synthesis_error import EmptySynthesisError
 from atrium.synthesize.episode_identity import episode_identity
+from atrium.synthesize.has_record import has_record
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
+from atrium.synthesize.producer import Producer
 from atrium.synthesize.segment_episodes import SEGMENTATION_FINGERPRINT, segment_episodes
-from atrium.synthesize.synthesis_prompt import PROMPT_SHA256, SYNTHESIS_SYSTEM_TEXT
-from atrium.synthesize.synthesis_registry import has_record, write_record
-from atrium.synthesize.synthesis_schema import OUTPUT_SCHEMA_VERSION, SYNTHESIS_TOOL
-
-# A producer is (system_text, user_text, tool) -> {"input", "model", "usage"},
-# plus the deterministic model string that enters the job key. Two exist: the
-# Max OAuth lane and the Codex CLI. Their records carry different recipe
-# fingerprints and coexist in the registry without mixing.
-Producer = Callable[[str, str, dict[str, Any]], dict[str, Any]]
+from atrium.synthesize.synthesis_prompt import PROMPT_SHA256
+from atrium.synthesize.synthesis_schema import OUTPUT_SCHEMA_VERSION
+from atrium.synthesize.synthesize_episode import synthesize_episode
+from atrium.synthesize.write_record import write_record
 
 
 def synthesize_conversation(
@@ -52,7 +48,7 @@ def synthesize_conversation(
             skipped += 1
             continue
         began = time.monotonic()
-        result = _synthesize_episode(episode, events, producer)
+        result = synthesize_episode(episode, events, producer)
         duration_ms = round((time.monotonic() - began) * 1000)
         # Worker results are acked only once the record is on disk: a crash in
         # between leaves them offered, and the next pass's drain acks them.
@@ -100,55 +96,3 @@ def synthesize_conversation(
         ack_worker_results(worker_results)
         made += 1
     return {"synthesized": made, "skipped": skipped}
-
-
-def _synthesize_episode(
-    episode: dict[str, Any], events: list[dict[str, Any]], producer: Producer
-) -> dict[str, Any]:
-    chunks = episode["chunks"]
-    if len(chunks) == 1:
-        return producer(SYNTHESIS_SYSTEM_TEXT, _transcript(chunks[0], events), SYNTHESIS_TOOL)
-    # Map-reduce for the long tail: chunk syntheses exist only to fit model
-    # context and are folded back into exactly one episode record.
-    partials = [
-        producer(SYNTHESIS_SYSTEM_TEXT, _transcript(chunk, events), SYNTHESIS_TOOL)
-        for chunk in chunks
-    ]
-    reduce_input = "\n\n".join(
-        f"[part {index + 1}]\n{json.dumps(partial['input'], ensure_ascii=False)}"
-        for index, partial in enumerate(partials)
-    )
-    reduced = producer(
-        SYNTHESIS_SYSTEM_TEXT
-        + "\nThe user message holds partial syntheses of consecutive parts of ONE "
-        "episode. Merge them into a single faithful synthesis of the whole episode.",
-        reduce_input,
-        SYNTHESIS_TOOL,
-    )
-    reduced["usage"] = {
-        "input_tokens": sum(p["usage"].get("input_tokens", 0) for p in [*partials, reduced]),
-        "output_tokens": sum(p["usage"].get("output_tokens", 0) for p in [*partials, reduced]),
-    }
-    reduced["worker_results"] = [
-        r for p in [*partials, reduced] for r in p.get("worker_results") or []
-    ]
-    return reduced
-
-
-# One event's contribution to a synthesis transcript. A single 600k-character
-# paste is mostly logs; synthesis needs its head and tail, and the verbatim
-# body stays in the canonical archive the record cites.
-_EVENT_CHAR_CAP = 60_000
-
-
-def _transcript(event_indexes: list[int], events: list[dict[str, Any]]) -> str:
-    lines = []
-    for index in event_indexes:
-        event = events[index]
-        text = (event.get("text") or "").strip()
-        if len(text) > _EVENT_CHAR_CAP:
-            half = _EVENT_CHAR_CAP // 2
-            text = f"{text[:half]}\n[... truncated for synthesis ...]\n{text[-half:]}"
-        if text:
-            lines.append(f"[{event.get('role', 'unknown')}] {text}")
-    return "\n".join(lines)

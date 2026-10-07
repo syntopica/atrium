@@ -3,6 +3,8 @@
 import re
 from pathlib import Path
 
+from atrium.recall.repository_root import repository_root
+
 # The exporter redacts the user's home directory before anything is indexed, so
 # a live cwd has to be written the same way before it can match a stored path.
 _HOME = "[HOME]"
@@ -37,7 +39,7 @@ def project_workspace(cwd: str | Path, home: str | Path | None = None) -> str | 
         path = Path(cwd).expanduser().resolve()
     except OSError:
         return None
-    root = _repository_root(path)
+    root = repository_root(path)
     if root is None:
         return None
     if root == home:
@@ -50,16 +52,3 @@ def project_workspace(cwd: str | Path, home: str | Path | None = None) -> str | 
         text = str(root)
     text = _WORKTREE.sub("", text).rstrip("/")
     return text or None
-
-
-def _repository_root(path: Path) -> Path | None:
-    """The nearest ancestor of ``path`` that contains a ``.git``, itself included.
-
-    ``.git`` is a file rather than a directory inside a worktree, so both are
-    accepted: a worktree is still inside its project, and the caller folds the
-    worktree suffix away afterwards.
-    """
-    for candidate in (path, *path.parents):
-        if (candidate / ".git").exists():
-            return candidate
-    return None

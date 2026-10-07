@@ -7,8 +7,8 @@ from typing import Any
 
 from atrium.synthesize.backup_synthesis_records import backup_synthesis_records
 from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
+from atrium.synthesize.record_path import record_path
 from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
-from atrium.synthesize.synthesis_registry import record_path
 
 
 def rekey_synthesis_registry(registry: Path, *, apply: bool = False) -> dict[str, Any]:

@@ -5,7 +5,7 @@ from typing import Any
 
 from atrium.synthesize.choose_served_records import choose_served_records
 from atrium.synthesize.read_recipe_priority import read_recipe_priority
-from atrium.synthesize.synthesis_registry import read_records
+from atrium.synthesize.read_records import read_records
 
 
 def population_report(

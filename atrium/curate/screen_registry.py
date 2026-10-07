@@ -10,7 +10,7 @@ from atrium.curate.normalized_claim import normalized_claim
 from atrium.curate.record_facts import record_facts
 from atrium.curate.runtime_debris import runtime_debris
 from atrium.curate.screening_report import ScreeningReport
-from atrium.synthesize.synthesis_registry import read_records
+from atrium.synthesize.read_records import read_records
 
 
 def screen_registry(registry: Path) -> ScreeningReport:

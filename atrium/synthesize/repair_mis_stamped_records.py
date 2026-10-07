@@ -7,8 +7,8 @@ from typing import Any
 
 from atrium.synthesize.backup_synthesis_records import backup_synthesis_records
 from atrium.synthesize.qualify_event_id import qualify_event_id
+from atrium.synthesize.record_path import record_path
 from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
-from atrium.synthesize.synthesis_registry import record_path
 
 
 def repair_mis_stamped_records(

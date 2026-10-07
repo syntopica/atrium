@@ -6,7 +6,7 @@ from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.job_identity import job_identity
 from atrium.synthesize.qualify_event_id import qualify_event_id
 from atrium.synthesize.repair_mis_stamped_records import repair_mis_stamped_records
-from atrium.synthesize.synthesis_registry import write_record
+from atrium.synthesize.write_record import write_record
 
 CONVERSATION = "c" * 64
 

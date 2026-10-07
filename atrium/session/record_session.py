@@ -11,7 +11,8 @@ from atrium.session.record_outcome import RecordOutcome
 from atrium.session.record_receipt import record_receipt
 from atrium.session.resolve_pending_checkpoint import resolve_pending_checkpoint
 from atrium.session.validate_synthesis_payload import validate_synthesis_payload
-from atrium.synthesize.synthesis_registry import has_record, write_record
+from atrium.synthesize.has_record import has_record
+from atrium.synthesize.write_record import write_record
 
 
 def record_session(

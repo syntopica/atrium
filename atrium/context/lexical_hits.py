@@ -7,9 +7,10 @@ from atrium.context.context_scope import context_scope
 from atrium.retrieve.conjunctive_expression import conjunctive_expression
 from atrium.retrieve.fold import fold
 from atrium.retrieve.hit import Hit
+from atrium.retrieve.match_expression import match_expression
 from atrium.retrieve.ranked_hits import ranked_hits
-from atrium.retrieve.search_words import _match_expression, _verifiers
 from atrium.retrieve.selective_expression import selective_expression
+from atrium.retrieve.word_verifiers import word_verifiers
 
 # Both passes stream in rank order now, so these bound a pathology rather than
 # the ordinary case: measured on 1,417,899 records, the narrow pass costs 0.03s
@@ -36,7 +37,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
             return []
         match = '"' + query.strip().replace('"', '""') + '"'
     else:
-        match = _match_expression(query)
+        match = match_expression(query)
     if not match:
         return []
     scope, parameters = context_scope(curated, workspace)
@@ -56,7 +57,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
         WHERE {table} MATCH ?
         ORDER BY {table}.rank
     """  # noqa: S608 -- table is one of two hardcoded identifiers, data is bound
-    verifiers, plain = _verifiers(query)
+    verifiers, plain = word_verifiers(query)
     verify = lane != "substring" and bool(verifiers) and not plain
     seen: set[str] = set()
 

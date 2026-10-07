@@ -3,7 +3,7 @@
 import json
 from pathlib import Path
 
-from atrium.synthesize.active_recipe import _DEFAULT_PRIORITY
+from atrium.synthesize.active_recipe_priority import _DEFAULT_PRIORITY
 
 
 def read_recipe_priority(registry: Path) -> list[str]:

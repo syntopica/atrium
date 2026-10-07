@@ -51,7 +51,7 @@ branch = true
 [tool.coverage.report]
 show_missing = true
 skip_covered = true
-fail_under = 54
+fail_under = 80
 
 [build-system]
 requires = ["setuptools>=68"]

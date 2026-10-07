@@ -11,7 +11,7 @@ import pytest
 
 from atrium.synthesize.ack_recorded_worker_results import ack_recorded_worker_results
 from atrium.synthesize.lane_prompt import LanePrompt
-from atrium.synthesize.synthesis_registry import read_records
+from atrium.synthesize.read_records import read_records
 from atrium.synthesize.synthesize_conversation import synthesize_conversation
 from atrium.synthesize.worker_task_lane_call import WORKER_TASK_QUEUE, worker_task_lane_call
 

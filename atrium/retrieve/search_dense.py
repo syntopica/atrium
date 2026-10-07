@@ -5,7 +5,7 @@ import sqlite3
 import numpy as np
 
 from atrium.retrieve.hit import Hit
-from atrium.retrieve.workspace_scope import workspace_clause
+from atrium.retrieve.workspace_clause import workspace_clause
 
 _QUERY = """
 SELECT v.record_id, v.vector, r.text, r.conversation_id, r.source_sha256,

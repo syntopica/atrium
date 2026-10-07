@@ -3,7 +3,7 @@
 import sqlite3
 
 from atrium.retrieve.hit import Hit
-from atrium.retrieve.workspace_scope import workspace_clause
+from atrium.retrieve.workspace_clause import workspace_clause
 
 _QUERY = """
 SELECT r.record_id, r.text, -bm25(substrings) AS score, r.conversation_id,

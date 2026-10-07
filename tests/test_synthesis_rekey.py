@@ -7,9 +7,10 @@ from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.event_id_schema import EVENT_ID_SCHEMA
 from atrium.synthesize.job_identity import job_identity
 from atrium.synthesize.qualify_event_id import qualify_event_id
+from atrium.synthesize.record_path import record_path
 from atrium.synthesize.rekey_synthesis_record import rekey_synthesis_record
 from atrium.synthesize.rekey_synthesis_registry import rekey_synthesis_registry
-from atrium.synthesize.synthesis_registry import record_path, write_record
+from atrium.synthesize.write_record import write_record
 
 CONVERSATION = "c" * 64
 

@@ -1,25 +1,24 @@
 """Atrium command line — the core surface every adapter wraps."""
 
 import argparse
-import os
 import sys
 from pathlib import Path
-from typing import Any
 
-from atrium.ingest.admission_tally import AdmissionTally
-from atrium.ingest.read_archive import read_archive
-from atrium.ingest.read_notes import read_notes
-from atrium.ingest.to_note_records import to_note_records
-from atrium.ingest.to_records import to_records
-from atrium.ingest.workspace_aliases import workspace_aliases
-from atrium.record import Record
+from atrium.commands.positive_limit import positive_limit
+from atrium.commands.run_doctor import run_doctor
+from atrium.commands.run_embed import run_embed
+from atrium.commands.run_ingest import run_ingest
+from atrium.commands.run_ingest_notes import run_ingest_notes
+from atrium.commands.run_ingest_synthesis import run_ingest_synthesis
+from atrium.commands.run_recall import run_recall
+from atrium.commands.run_rekey_synthesis import run_rekey_synthesis
+from atrium.commands.run_search import run_search
+from atrium.commands.run_status import run_status
+from atrium.commands.run_synthesize import run_synthesize
 from atrium.session.record_session_contract import RECORD_SESSION_CONTRACT
 from atrium.state.archive_path import archive_path
 from atrium.state.record_refresh import record_refresh
 from atrium.state.state_directory import state_directory
-from atrium.store.delete_absent_conversations import delete_absent_conversations
-from atrium.store.open_store import open_store
-from atrium.store.write_conversation import UNCHANGED, write_conversation
 from atrium.synthesize.default_registry import default_registry
 
 
@@ -74,7 +73,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         "synthesize", help="Synthesize archive episodes into the registry (Max lane)"
     )
     synthesize.add_argument("archive", type=Path)
-    synthesize.add_argument("--limit", type=_positive_limit, default=None)
+    synthesize.add_argument("--limit", type=positive_limit, default=None)
     synthesize.add_argument("--dry-run", action="store_true")
     synthesize.add_argument(
         "--producer",
@@ -86,7 +85,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         "quota; max: the Claude Max OAuth lane; task: agy through the worker's "
         "atrium.tasks queue, --model names the worker profile",
     )
-    synthesize.add_argument("--workers", type=_positive_limit, default=3)
+    synthesize.add_argument("--workers", type=positive_limit, default=3)
     synthesize.add_argument(
         "--model",
         default=None,
@@ -217,7 +216,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
 
     search = subcommands.add_parser("search", help="Search the index")
     search.add_argument("query")
-    search.add_argument("--limit", type=_positive_limit, default=10)
+    search.add_argument("--limit", type=positive_limit, default=10)
     search.add_argument(
         "--project",
         type=Path,
@@ -240,8 +239,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     context = subcommands.add_parser("context", help="Retrieve bounded project and curated context")
     context.add_argument("query")
     context.add_argument("--project", type=Path, default=None)
-    context.add_argument("--limit", type=_positive_limit, default=8)
-    context.add_argument("--max-chars", type=_positive_limit, default=16000)
+    context.add_argument("--limit", type=positive_limit, default=8)
+    context.add_argument("--max-chars", type=positive_limit, default=16000)
     context.add_argument("--lane", choices=("auto", "words", "substring", "dense"), default="auto")
     context.add_argument(
         "--json", action="store_true", help="Emit the shared JSON contract (default)"
@@ -256,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         default=Path.cwd(),
         help="Directory whose project to recall (default: the working directory)",
     )
-    recall.add_argument("--limit", type=_positive_limit, default=12)
+    recall.add_argument("--limit", type=positive_limit, default=12)
     recall.add_argument("--archive", type=Path, default=archive)
     recall.add_argument("--refresh-stamp", type=Path, default=refresh_stamp)
 
@@ -290,10 +289,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
     recent = views.add_parser(
         "recent", help="Newest records with model, tokens and counts; tokens per day"
     )
-    recent.add_argument("--limit", type=_positive_limit, default=50)
-    recent.add_argument("--days", type=_positive_limit, default=14)
+    recent.add_argument("--limit", type=positive_limit, default=50)
+    recent.add_argument("--days", type=positive_limit, default=14)
     passes = views.add_parser("passes", help="Recent passes from the wrapper's tick log")
-    passes.add_argument("--limit", type=_positive_limit, default=20)
+    passes.add_argument("--limit", type=positive_limit, default=20)
     show = views.add_parser("show", help="One record with its synthesized content")
     show.add_argument("--job-key", required=True)
     for view in (recent, passes, show):
@@ -311,12 +310,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             job_key=getattr(args, "job_key", None),
         )
     if args.command == "ingest":
-        ingested = _ingest(args.index, args.archive, sweep=not args.partial)
+        ingested = run_ingest(args.index, args.archive, sweep=not args.partial)
         if ingested == 0:
             record_refresh(refresh_stamp)
         return ingested
     if args.command == "ingest-notes":
-        ingested = _ingest_notes(
+        ingested = run_ingest_notes(
             args.index,
             args.root,
             args.provider,
@@ -328,9 +327,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             record_refresh(refresh_stamp)
         return ingested
     if args.command == "embed":
-        return _embed(args.index)
+        return run_embed(args.index)
     if args.command == "synthesize":
-        return _synthesize(
+        return run_synthesize(
             args.archive,
             args.limit,
             args.dry_run,
@@ -343,7 +342,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             include_session_covered=args.include_session_covered,
         )
     if args.command == "ingest-synthesis":
-        return _ingest_synthesis(args.index)
+        return run_ingest_synthesis(args.index)
     if args.command == "curate-screen":
         from atrium.curate.run_curate_screen_cli import run_curate_screen_cli
 
@@ -385,9 +384,9 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             args.checkpoint, default_registry(), nothing_durable=args.nothing_durable
         )
     if args.command == "rekey-synthesis":
-        return _rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
+        return run_rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
-        return _doctor(
+        return run_doctor(
             args.index, args.archive, refresh_stamp, as_json=args.json, publish=args.publish
         )
     if args.command == "search":
@@ -400,7 +399,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             if args.dense
             else "auto"
         )
-        return _search(args.index, args.query, args.limit, lane, args.project)
+        return run_search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "prepare-context":
         from atrium.context.prepare_context_cli import prepare_context_cli
 
@@ -415,8 +414,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         except ValueError as error:
             parser.error(str(error))
     if args.command == "recall":
-        return _recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
-    return _status(
+        return run_recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
+    return run_status(
         args.index,
         args.archive,
         args.refresh_stamp,
@@ -425,798 +424,6 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         publish=state if args.publish else None,
         as_json=args.json,
     )
-
-
-def _ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
-    """Index an archive, or change nothing at all.
-
-    One transaction for the whole run. A malformed line partway through an
-    archive must not leave the index holding half a revision: the previous
-    behaviour committed each conversation as it went, so a mid-file failure left
-    records written but unsearchable, and the operator saw an error next to an
-    index that looked populated.
-
-    An archive is a source's full export, so after ingesting it the index must
-    hold exactly its conversations for the providers it carries: conversations
-    deleted or redacted away upstream never appear in the new input, and only
-    the sweep removes them. `--partial` opts out for deliberate slices.
-    """
-    connection = open_store(index)
-    total = 0
-    conversations = 0
-    unchanged = 0
-    removed = 0
-    tally = AdmissionTally()
-    # Read once per pass, not once per conversation: it is a file on disk and
-    # this loop runs 30,000 times.
-    aliases = workspace_aliases()
-    seen_by_provider: dict[str, set[str]] = {}
-    try:
-        with connection:
-            for conversation in read_archive(archive):
-                conversations += 1
-                written = write_conversation(
-                    connection, conversation["id"], to_records(conversation, tally, aliases)
-                )
-                unchanged += written == UNCHANGED
-                total += max(written, 0)
-                provider = conversation.get("source") or "unknown"
-                seen_by_provider.setdefault(provider, set()).add(conversation["id"])
-            if sweep:
-                for provider, seen in seen_by_provider.items():
-                    removed += delete_absent_conversations(connection, provider, seen)
-    finally:
-        connection.close()
-    swept = f", {removed} absent removed" if removed else ""
-    skipped = f", {unchanged} conversations unchanged" if unchanged else ""
-    print(f"  {conversations} conversations -> {total} records written at {index}{skipped}{swept}")
-    for label, counts in (("admitted", tally.admitted), ("rejected", tally.rejected)):
-        if counts:
-            ranked = sorted(counts.items(), key=lambda item: -item[1])
-            print(f"  {label}: " + ", ".join(f"{count:,} {name}" for name, count in ranked))
-    return 0
-
-
-def _positive_limit(raw: str) -> int:
-    """Reject a limit that would uncap the query.
-
-    SQLite treats a negative LIMIT as no limit, so `--limit -1` quietly returns
-    the whole result set instead of failing.
-    """
-    value = int(raw)
-    if value < 1:
-        raise argparse.ArgumentTypeError("--limit must be 1 or greater")
-    return value
-
-
-def _ingest_notes(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
-    index: Path,
-    root: Path,
-    provider: str,
-    exclude: tuple[str, ...],
-    *,
-    sweep: bool = True,
-    role: str = "note",
-) -> int:
-    """Index a notes tree, same transactional and sweep contract as `_ingest`.
-
-    ``role`` carries the origin mark: "note" for the user's own curated text,
-    "source" for saved third-party content that must never be embedded or
-    injected, only searched on request.
-    """
-    connection = open_store(index)
-    total = 0
-    files = 0
-    unchanged = 0
-    removed = 0
-    tally = AdmissionTally()
-    seen: set[str] = set()
-    try:
-        with connection:
-            for note in read_notes(root, exclude, tally):
-                files += 1
-                tally.admit(role)
-                written = write_conversation(
-                    connection, note["path"], to_note_records(note, provider, role)
-                )
-                unchanged += written == UNCHANGED
-                total += max(written, 0)
-                seen.add(note["path"])
-            if sweep:
-                removed = delete_absent_conversations(connection, provider, seen)
-    finally:
-        connection.close()
-    swept = f", {removed} absent removed" if removed else ""
-    skipped = f", {unchanged} notes unchanged" if unchanged else ""
-    print(f"  {files} notes -> {total} records written at {index}{skipped}{swept}")
-    for label, counts in (("admitted", tally.admitted), ("rejected", tally.rejected)):
-        if counts:
-            ranked = sorted(counts.items(), key=lambda item: -item[1])
-            plural = " files" if label == "rejected" else ""
-            print(f"  {label}: " + ", ".join(f"{count:,} {name}{plural}" for name, count in ranked))
-    return 0
-
-
-def _embed(index: Path) -> int:
-    """Embed every semantic-layer record that has no vector yet.
-
-    Vectors commit per batch rather than per run: an interrupted embed keeps
-    what it finished (each vector is valid alone), and the next run resumes
-    from the missing ones.
-    """
-    from functools import partial
-
-    from atrium.embed.embedder import Embedder
-    from atrium.embed.model_is_cached import model_is_cached
-    from atrium.embed.model_repo import MODEL_REPO
-    from atrium.embed.semantic_roles import SEMANTIC_ROLES
-    from atrium.store.commit_with_retry import commit_with_retry
-    from atrium.store.write_vectors import write_vectors
-
-    # Every step below can block for minutes without spending any CPU: the open
-    # waits on another writer's lock, the count scans the whole record table,
-    # and the load may go to the network. Each one says so before it starts, so
-    # a stall is attributable to a named step instead of being a silent hang --
-    # which is how one cost twelve minutes of diagnosis on 2026-09-01.
-    print(f"  opening the index at {index}", flush=True)
-    connection = open_store(index)
-    placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
-    # Ordered by text length so each sub-batch pads to a similar length: the
-    # ONNX graph's attention cost grows with the square of the padded length,
-    # and one long chunk in a batch of short ones prices the whole batch at
-    # the long one's padding.
-    print("  counting the records that still need a vector", flush=True)
-    pending = connection.execute(
-        # S608: interpolation is `?` placeholders only; the values are bound.
-        f"SELECT record_id, source_sha256, text FROM records WHERE role IN ({placeholders}) "  # noqa: S608
-        "AND record_id NOT IN (SELECT record_id FROM vectors) "
-        "ORDER BY length(text), record_id",
-        SEMANTIC_ROLES,
-    ).fetchall()
-    if not pending:
-        connection.close()
-        print("  nothing to embed", flush=True)
-        return 0
-    print(f"  {len(pending):,} records to embed", flush=True)
-    source = "from the local cache" if model_is_cached() else "downloading it, first run here"
-    print(f"  loading the embedder: {MODEL_REPO} ({source})", flush=True)
-    embedder = Embedder()
-    batch_size = 256
-    print(f"  embedder loaded; embedding in batches of {batch_size}", flush=True)
-    written = 0
-    processed = 0
-    try:
-        for start in range(0, len(pending), batch_size):
-            batch = pending[start : start + batch_size]
-            matrix = embedder.embed([text for _, _, text in batch])
-            rows = [(rid, sha) for rid, sha, _ in batch]
-            written += commit_with_retry(
-                connection, partial(write_vectors, connection, rows, matrix)
-            )
-            processed += len(batch)
-            print(f"  embedded {written}/{len(pending)}", flush=True)
-    finally:
-        connection.close()
-    if written < processed:
-        print(
-            f"  {processed - written} superseded mid-run and skipped; run embed again", flush=True
-        )
-    return 0
-
-
-def _synthesize(  # noqa: PLR0912, PLR0913, PLR0917, PLR0915 -- the CLI surface: each argument is one flag
-    archive: Path,
-    limit: int | None,
-    dry_run: bool,
-    producer: str,
-    workers: int,
-    model: str | None = None,
-    effort: str | None = None,
-    project: Path | None = None,
-    workspace: str | None = None,
-    *,
-    include_session_covered: bool = False,
-) -> int:
-    """Synthesize episodes newest-first; resumable, so interruption is cheap.
-
-    Conversations run in a small worker pool: registry writes are atomic and
-    never overwrite, so the worst a race costs is one duplicate call.
-
-    ``project`` and ``workspace`` narrow the pass to one project. Whole-corpus
-    coverage costs about a dozen weekly quota cycles, while the projects that
-    actually lack memory are a handful -- `status --coverage` names them, and
-    this is how one gets filled without paying for the other 145,000 episodes.
-    ``workspace`` takes the stored prefix directly, which is the only form that
-    reaches a project whose directory is gone: three of the five largest
-    uncovered projects here no longer exist on disk, and their conversations
-    are exactly the ones nothing but this archive can still account for.
-    """
-    import functools
-    import threading
-    import time
-    from concurrent.futures import ThreadPoolExecutor
-
-    from atrium.ingest.canonical_workspace import canonical_workspace
-    from atrium.recall.project_workspace import project_workspace
-    from atrium.recall.workspace_matches import workspace_matches
-    from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
-    from atrium.synthesize.record_worker_submission import record_worker_submission
-    from atrium.synthesize.segment_episodes import segment_episodes
-    from atrium.synthesize.synthesize_conversation import synthesize_conversation
-
-    target = workspace
-    if project is not None:
-        target = project_workspace(project)
-        if target is None:
-            print(f"  {project} is in no repository, so it names no project")
-            return 1
-
-    conversations = sorted(
-        read_archive(archive),
-        key=lambda c: c.get("updatedAt") or c.get("startedAt") or "",
-        reverse=True,
-    )
-    if target is not None:
-        # The same aliases the ingest applies, or this filter would miss exactly
-        # the renamed history that makes a project whole: project-after's first
-        # month is archived under `p/project-before`.
-        aliases = workspace_aliases()
-        conversations = [
-            conversation
-            for conversation in conversations
-            if workspace_matches(
-                canonical_workspace(
-                    conversation.get("workspace"),
-                    aliases=aliases,
-                    started_at=conversation.get("startedAt"),
-                ),
-                target,
-            )
-        ]
-        print(f"  {len(conversations)} conversations in {target}")
-    if limit is not None:
-        conversations = conversations[:limit]
-    if dry_run:
-        episodes = sum(len(segment_episodes(c.get("events") or [])) for c in conversations)
-        print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
-        return 0
-    worker_queue: str | None = None
-    # A worker lane journals each job it submits against its conversation, so
-    # a later pass can find which conversation an uncollected result is for.
-    journal = default_registry() / "worker-submissions.jsonl"
-    if producer == "max":
-        from atrium.synthesize.max_lane_call import MODEL, max_lane_call
-        from atrium.synthesize.max_lane_tokens import max_lane_tokens
-
-        tokens = max_lane_tokens()
-
-        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return max_lane_call(tokens, system_text, user_text, tool)
-
-        model_id = MODEL
-    elif producer == "codex":
-        from atrium.synthesize.codex_lane_call import codex_lane_call
-        from atrium.synthesize.codex_lane_model_id import codex_lane_model_id
-
-        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return codex_lane_call(system_text, user_text, tool, model, effort)
-
-        model_id = codex_lane_model_id(model, effort)
-    elif producer == "local":
-        from atrium.synthesize.lane_prompt import LanePrompt
-        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL, local_lane_call
-        from atrium.synthesize.local_lane_model_id import local_lane_model_id
-
-        local_model = model or LOCAL_DEFAULT_MODEL
-
-        if os.environ.get("ATRIUM_LOCAL_TRANSPORT") == "worker":
-            from atrium.synthesize.worker_lane_call import (
-                WORKER_SYNTHESIS_QUEUE,
-                worker_lane_call,
-            )
-
-            worker_queue = WORKER_SYNTHESIS_QUEUE
-
-            def journaled_call(
-                system_text: str, user_text: str, tool: dict[str, Any], on_submit: Any
-            ) -> dict[str, Any]:
-                return worker_lane_call(
-                    LanePrompt(system_text, user_text), tool, local_model, on_submit
-                )
-
-            def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-                return journaled_call(system_text, user_text, tool, None)
-        else:
-
-            def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-                return local_lane_call(LanePrompt(system_text, user_text), tool, local_model)
-
-        model_id = local_lane_model_id(local_model)
-    elif producer == "task":
-        from atrium.synthesize.lane_prompt import LanePrompt
-        from atrium.synthesize.worker_task_lane_call import (
-            WORKER_TASK_DEFAULT_PROFILE,
-            WORKER_TASK_QUEUE,
-            worker_task_lane_call,
-        )
-        from atrium.synthesize.worker_task_lane_model_id import worker_task_lane_model_id
-
-        task_profile = model or WORKER_TASK_DEFAULT_PROFILE
-        worker_queue = WORKER_TASK_QUEUE
-
-        def journaled_call(
-            system_text: str, user_text: str, tool: dict[str, Any], on_submit: Any
-        ) -> dict[str, Any]:
-            return worker_task_lane_call(
-                LanePrompt(system_text, user_text), tool, task_profile, on_submit
-            )
-
-        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return journaled_call(system_text, user_text, tool, None)
-
-        model_id = worker_task_lane_model_id(task_profile)
-    else:
-        from atrium.synthesize.agy_lane_call import AGY_MODEL_ID, agy_lane_call
-        from atrium.synthesize.agy_lane_model_id import agy_lane_model_id
-
-        agy_model = model or AGY_MODEL_ID
-
-        def call(system_text: str, user_text: str, tool: dict[str, Any]) -> dict[str, Any]:
-            return agy_lane_call(system_text, user_text, tool, agy_model)
-
-        model_id = agy_lane_model_id(agy_model)
-
-    from atrium.session.session_covered_conversations import session_covered_conversations
-    from atrium.synthesize.read_records import read_records
-
-    done_episodes: set[str] = set()
-    covered: set[str] = set()
-    session_records = []
-    recorded_results: set[str] = set()
-    # (conversation, revision) pairs some record already synthesized: after a
-    # wall, the cheap test for "nothing new here". Segmenting every remaining
-    # conversation to count exact episodes took minutes, past the tick's box.
-    recorded_revisions: set[tuple[str, str]] = set()
-    for record in read_records(default_registry()):
-        done_episodes.add(record["episode_id"])
-        recorded_revisions.add(
-            (record.get("conversation_id") or "", record.get("revision_sha256") or "")
-        )
-        recorded_results.update(r["result_id"] for r in record.get("worker_results") or [])
-        if record.get("segmentation") == "session-self-v1":
-            session_records.append(record)
-    if not include_session_covered:
-        covered = session_covered_conversations(session_records)
-    holding: set[str] = set()
-    if worker_queue is not None:
-        from atrium.synthesize.ack_recorded_worker_results import ack_recorded_worker_results
-        from atrium.synthesize.pending_worker_jobs import pending_worker_jobs
-        from atrium.synthesize.read_worker_submissions import read_worker_submissions
-
-        settled = ack_recorded_worker_results(worker_queue, recorded_results)
-        if settled:
-            print(f"  acked {settled} worker results the registry already held")
-        # Results a pass stopped waiting for arrive unacknowledged and hold a
-        # queue slot each. Walk their conversations first: re-submitting one
-        # finds its job by idempotency key and collects the result, which a
-        # full queue does not refuse. Left to the newest-first walk, they sat
-        # behind the first refused submission until the worker expired them.
-        submissions = read_worker_submissions(journal)
-        holding = {
-            submissions[job] for job in pending_worker_jobs(worker_queue) if job in submissions
-        }
-        if holding:
-            print(
-                f"  {len(holding)} conversations hold uncollected worker results; walking them first"
-            )
-            conversations.sort(key=lambda conversation: conversation["id"] not in holding)
-    made = skipped = failed = deferred = 0
-    total = len(conversations)
-    started = time.time()
-    # Once the quota window is spent (or the worker's queue is full, or every
-    # runner rests) nothing left in the pass can succeed: stop calling, count
-    # the rest as deferred -- still pending, not failed -- and let a later tick
-    # pick them up instead of grinding failures.
-    quota_wall = threading.Event()
-
-    def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
-        position, conversation = item
-        collecting = conversation["id"] in holding
-        walled = quota_wall.is_set() and not collecting
-        revision = (conversation.get("provenance") or {}).get("contentSha256") or ""
-        # After a wall, a conversation already synthesized at its current
-        # revision is present, not deferred: deferred means work left undone.
-        if conversation["id"] in covered or (
-            walled and (conversation["id"], revision) in recorded_revisions
-        ):
-            # Covered: the session that lived it already recorded it.
-            return {"synthesized": 0, "skipped": 1, "failed": 0}
-        if walled:
-            return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
-        producer_call = call
-        if worker_queue is not None:
-            on_submit = functools.partial(
-                record_worker_submission, journal, conversation_id=conversation["id"]
-            )
-            producer_call = functools.partial(journaled_call, on_submit=on_submit)
-        try:
-            result = synthesize_conversation(
-                conversation, producer_call, model_id, default_registry(), done_episodes
-            )
-        except QuotaExhaustedError as error:
-            if collecting:
-                # Only this conversation's new chunk was refused: the others
-                # holding results are walked next and must not be stranded.
-                print(f"  [{position}/{total}] queue full while collecting: {error}", flush=True)
-                return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
-            if not quota_wall.is_set():
-                quota_wall.set()
-                print(f"  [{position}/{total}] quota wall, aborting pass: {error}", flush=True)
-            return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
-        except Exception as error:
-            print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
-            return {"synthesized": 0, "skipped": 0, "failed": 1}
-        print(
-            f"  [{position}/{total}] {conversation['id'][:12]} "
-            f"+{result['synthesized']} (skipped {result['skipped']})",
-            flush=True,
-        )
-        return {**result, "failed": 0}
-
-    with ThreadPoolExecutor(max_workers=workers) as pool:
-        for result in pool.map(run_one, enumerate(conversations, start=1)):
-            made += result["synthesized"]
-            skipped += result["skipped"]
-            failed += result["failed"]
-            deferred += result.get("deferred", 0)
-    print(
-        f"  synthesized {made}, already present {skipped}, failed conversations {failed}, "
-        f"deferred {deferred}, "
-        f"registry {default_registry()}"
-    )
-    from atrium.status.publish_json_atomically import publish_json_atomically
-    from atrium.status.status_file import status_file
-    from atrium.status.synthesis_pass import SynthesisPass
-    from atrium.status.synthesis_status import synthesis_status
-
-    finished = time.time()
-    publish_json_atomically(
-        status_file(state_directory(), "synthesis"),
-        synthesis_status(
-            SynthesisPass(producer, started, finished, total, made, skipped, failed, deferred),
-            finished,
-        ),
-    )
-    return 0 if failed == 0 else 1
-
-
-def _doctor(
-    index: Path, archive: Path, stamp: Path, *, as_json: bool = False, publish: bool = False
-) -> int:
-    """Report every coherence check, and fail when the memory is answering wrongly.
-
-    Everything this looks at had already gone wrong silently: a sync eleven days
-    dead behind a stale lock, a manifest outranking the records under it, a
-    refresh that reports "done" whatever happened. None of those were subtle --
-    they were invisible because nothing printed the right number.
-    """
-    from atrium.doctor.run_doctor import run_doctor
-
-    findings = run_doctor(index, archive, stamp, default_registry())
-    if publish:
-        import time
-
-        from atrium.status.doctor_status import doctor_status
-        from atrium.status.publish_json_atomically import publish_json_atomically
-        from atrium.status.status_file import status_file
-
-        publish_json_atomically(
-            status_file(state_directory(), "doctor"), doctor_status(findings, time.time())
-        )
-    if as_json:
-        import json
-
-        from atrium.status.doctor_report import doctor_report
-
-        report = doctor_report(findings)
-        print(json.dumps(report, sort_keys=True))
-        return 0 if report["ok"] else 1
-    mark = {"ok": "ok  ", "warn": "warn", "broken": "FAIL"}
-    for finding in findings:
-        print(f"  {mark[finding.severity]} {finding.check:<16} {finding.summary}")
-    broken = [finding for finding in findings if finding.severity == "broken"]
-    if broken:
-        print(f"  {len(broken)} check(s) say this index answers from a world that moved on")
-        return 1
-    return 0
-
-
-def _rekey_synthesis(*, apply: bool, repair: bool = False, archive: Path | None = None) -> int:
-    """Move every pre-schema-2 record onto the identity the archive now implies.
-
-    Reports before it writes, because the registry holds model output that was
-    paid for once and cannot be regenerated for free.
-    """
-    from atrium.synthesize.rekey_synthesis_registry import rekey_synthesis_registry
-
-    if repair:
-        from atrium.synthesize.repair_mis_stamped_records import repair_mis_stamped_records
-
-        assert archive is not None
-        found = repair_mis_stamped_records(default_registry(), archive, apply=apply)
-        verb = "repaired" if apply else "would repair"
-        print(
-            f"  {verb} {found['repaired']} mis-stamped records, "
-            f"{found['intact']} already agree with the archive"
-        )
-        if found["unexplained"]:
-            print(f"  {found['unexplained']} cite events absent under either rule; left alone")
-        return 0
-
-    report = rekey_synthesis_registry(default_registry(), apply=apply)
-    verb = "re-keyed" if apply else "would re-key"
-    print(f"  {verb} {report['moved']} records, {report['already']} already current")
-    if report["backup"]:
-        print(f"  records copied to {report['backup']} before rewriting")
-    if report["collided"]:
-        print(f"  {report['collided']} collided and were left alone: {report['collisions']}")
-        return 1
-    if not apply:
-        print("  nothing written; pass --apply to write")
-    return 0
-
-
-def _ingest_synthesis(index: Path) -> int:
-    """Index one record per episode; same sweep contract as the other ingests.
-
-    Several recipe populations may hold the same episode (different producers,
-    different job keys). The active-recipe manifest picks which one the index
-    serves, so coexistence in the registry never becomes a duplicate -- or a
-    primary-key collision -- in the index.
-    """
-    from atrium.ingest.canonical_workspace import canonical_workspace
-    from atrium.ingest.conversation_workspaces import conversation_workspaces
-    from atrium.ingest.to_synthesis_records import to_synthesis_records
-    from atrium.synthesize.active_recipe_priority import active_recipe_priority
-    from atrium.synthesize.choose_served_records import choose_served_records
-    from atrium.synthesize.read_records import read_records
-
-    chosen = choose_served_records(
-        read_records(default_registry()), active_recipe_priority(default_registry())
-    )
-
-    connection = open_store(index)
-    total = 0
-    unchanged = 0
-    seen: set[str] = set()
-    try:
-        # Read the workspaces before writing anything: the map comes from the
-        # raw conversations, which this pass never touches.
-        workspaces = conversation_workspaces(connection)
-        by_conversation: dict[str, list[Record]] = {}
-        for record in chosen.values():
-            # A session record names its own project: its conversation is
-            # not archived yet, so the archive's map cannot know it.
-            workspace = workspaces.get(record["conversation_id"]) or canonical_workspace(
-                record.get("workspace")
-            )
-            for row in to_synthesis_records(record, workspace):
-                by_conversation.setdefault(row.conversation_id, []).append(row)
-        with connection:
-            for conversation_id, rows in sorted(by_conversation.items()):
-                written = write_conversation(connection, conversation_id, rows)
-                unchanged += written == UNCHANGED
-                total += max(written, 0)
-                seen.add(conversation_id)
-            removed = delete_absent_conversations(connection, "synthesis", seen)
-    finally:
-        connection.close()
-    swept = f", {removed} absent removed" if removed else ""
-    skipped = f", {unchanged} unchanged" if unchanged else ""
-    print(f"  {len(seen)} conversations -> {total} synthesis records written{skipped}{swept}")
-    return 0
-
-
-def _search(index: Path, query: str, limit: int, lane: str, project: Path | None = None) -> int:
-    from atrium.recall.project_workspace import project_workspace
-    from atrium.retrieve.search import search
-
-    workspace = None
-    if project is not None:
-        workspace = project_workspace(project)
-        if workspace is None:
-            print(f"  {project} is in no repository, so it names no project to search")
-            return 1
-    connection = open_store(index, read_only=True)
-    exhausted: set[str] = set()
-    hits = search(connection, query, limit, lane, workspace=workspace, exhausted=exhausted)
-    connection.close()
-    if exhausted:
-        # "No matches" and "ran out of time" are the same empty list, and only
-        # one of them means the index does not hold this (raised by review).
-        print("  the word lane ran out of its time budget; results may be incomplete")
-    if not hits:
-        print("  no matches")
-        return 0
-    for position, hit in enumerate(hits, start=1):
-        stamp = (hit.authored_at or "")[:10]
-        origin = "  UNTRUSTED THIRD-PARTY TEXT" if hit.role == "source" else ""
-        print(
-            f"\n  [{position}] {hit.provider} {stamp}  "
-            f"score={hit.score:.3f} lane={hit.lane}{origin}"
-        )
-        print(f"      {hit.text[:200].strip()}")
-        print(f"      source: {hit.source_sha256[:12]} conversation: {hit.conversation_id[:12]}")
-    return 0
-
-
-def _recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path) -> int:
-    """Print the recall block for the project containing ``cwd``.
-
-    Exit status separates the two ways of printing nothing. Zero means there is
-    genuinely nothing to recall -- no project here, or no episodes in it -- and
-    silence is the right injection. Non-zero means recall could not answer, and
-    a caller must say so rather than let a broken index read as a project with
-    no history.
-
-    A stale index breaks the silence: the session about to trust this memory is
-    exactly the reader that must hear the archive stopped moving, and the empty
-    block is the case where nothing else would say so.
-    """
-    from atrium.doctor.archive_freshness import archive_freshness
-    from atrium.doctor.refresh_health import refresh_health
-    from atrium.recall.project_workspace import project_workspace
-    from atrium.recall.recent_episodes import recent_episodes
-    from atrium.recall.render_snapshot import render_snapshot
-
-    if not index.exists():
-        print(f"no index at {index}; run `atrium ingest` first", file=sys.stderr)
-        return 1
-    project = project_workspace(cwd)
-    if project is None:
-        return 0
-    connection = open_store(index, read_only=True)
-    try:
-        hits = recent_episodes(connection, project, limit)
-    finally:
-        connection.close()
-    stale = [
-        finding
-        for finding in (archive_freshness(archive), refresh_health(stamp))
-        if finding.severity != "ok"
-    ]
-    if stale:
-        details = "; ".join(finding.summary for finding in stale)
-        print(f"# atrium recall warning: memory may be stale -- {details}")
-    block = render_snapshot(project, hits)
-    if block:
-        print(block)
-    return 0
-
-
-def _status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
-    index: Path,
-    archive: Path,
-    stamp: Path,
-    registry: Path | None = None,
-    *,
-    coverage: bool = False,
-    publish: Path | None = None,
-    as_json: bool = False,
-) -> int:
-    """Show what the index holds -- and say loudly when it is answering stale.
-
-    The archive sat frozen from 2026-08-27 while status printed healthy row
-    counts and the index answered every query as if current. Row counts cannot
-    show that; the ages below can, so they print on every status, not only in
-    `doctor`.
-
-    ``publish`` is the state directory to write ``status/refresh.json`` into,
-    from the same open index, so the file and the printed lines agree.
-    ``as_json`` prints that same document instead of the text report.
-    """
-    import time
-
-    from atrium.doctor.archive_freshness import archive_freshness
-    from atrium.doctor.newest_content_gap import newest_content_gap
-    from atrium.doctor.refresh_health import refresh_health
-    from atrium.recall.project_coverage import project_coverage
-    from atrium.status.indexed_synthesis_episodes import indexed_synthesis_episodes
-    from atrium.status.publish_json_atomically import publish_json_atomically
-    from atrium.status.refresh_status import refresh_status
-    from atrium.status.status_file import status_file
-
-    connection = open_store(index, read_only=True)
-    records = connection.execute("SELECT count(*) FROM records").fetchone()[0]
-    providers = connection.execute(
-        "SELECT provider, count(*) FROM records GROUP BY provider ORDER BY 2 DESC"
-    ).fetchall()
-    build = dict(connection.execute("SELECT key, value FROM build_metadata"))
-    freshness = [
-        archive_freshness(archive),
-        refresh_health(stamp),
-        newest_content_gap(connection),
-    ]
-    indexed_episodes = indexed_synthesis_episodes(connection)
-    # Scanning every record for coverage costs ~44s against 1.1M rows, so the
-    # hourly refresh does not pay for a number that moves by fractions of a
-    # percent between runs. Ask for it when the question is being asked.
-    project_memory = project_coverage(connection) if coverage else None
-    document = None
-    if publish is not None or as_json:
-        document = refresh_status(
-            connection,
-            archive,
-            stamp,
-            registry if registry is not None else default_registry(),
-            time.time(),
-        )
-    if publish is not None and document is not None:
-        publish_json_atomically(status_file(publish, "refresh"), document)
-    connection.close()
-    if as_json:
-        import json
-
-        print(json.dumps(document, sort_keys=True))
-        return 0
-    print(f"  index: {index}")
-    print(f"  built by: schema {build.get('schema')}, pipeline {build.get('pipeline')}")
-    print(f"  records: {records:,}")
-    for provider, count in providers:
-        print(f"    {provider:<14} {count:>8,}")
-    for finding in freshness:
-        loud = {"ok": "", "warn": "  <- STALE", "broken": "  <- BROKEN"}[finding.severity]
-        print(f"  {finding.summary}{loud}")
-    if project_memory is not None:
-        _print_coverage(project_memory)
-    _print_populations(registry, indexed_episodes)
-    return 0
-
-
-def _print_coverage(coverage: dict[str, Any]) -> None:
-    """Report coverage over real projects, not over every directory ever opened.
-
-    Counting every workspace makes coverage read 2.1% while the work that
-    matters is above half. The alarming number and the useful one are different
-    numbers; this prints the useful one, and names the projects a recall would
-    answer nothing for.
-    """
-    share = 100 * coverage["covered"] / coverage["projects"] if coverage["projects"] else 0.0
-    print(
-        f"  project coverage: {coverage['covered']} of {coverage['projects']} projects "
-        f"with >={coverage['floor']} conversations have memory ({share:.0f}%)"
-    )
-    for workspace, conversations in coverage["uncovered"]:
-        print(f"    no memory: {workspace:<40} {conversations:>6,} conversations")
-
-
-def _print_populations(registry: Path | None, indexed_episodes: set[str]) -> None:
-    """Name every synthesis population and how much of it the index serves.
-
-    The active-recipe manifest silently excluded an entire producer population
-    on 2026-08-30, and it took an audit to notice. Two numbers per population:
-    what the manifest intends to serve, and how many of those episodes the
-    index actually holds -- they disagree exactly when an ingest never ran or a
-    record's output produced no index row, which is the drift worth catching.
-    """
-    from atrium.synthesize.population_report import population_report
-
-    rows = population_report(
-        registry if registry is not None else default_registry(), indexed_episodes
-    )
-    if not rows:
-        return
-    print("  synthesis populations (registry -> intended -> in index):")
-    for row in rows:
-        unlisted = "" if row["listed"] else "  (not in active recipe)"
-        missing = row["intended"] - row["indexed"]
-        drift = f"  <- {missing:,} NOT IN INDEX" if missing else ""
-        dropped = "  <- SERVES NOTHING" if row["intended"] == 0 else ""
-        print(
-            f"    {row['model']:<26} {row['records']:>7,} records "
-            f"{row['episodes']:>7,} episodes {row['intended']:>7,} intended "
-            f"{row['indexed']:>7,} indexed{unlisted}{dropped}{drift}"
-        )
 
 
 if __name__ == "__main__":

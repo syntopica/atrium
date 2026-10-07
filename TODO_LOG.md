@@ -6,6 +6,15 @@
 
 ### 2026-10
 
+- [x] 2026-10-07 — **Structural baseline 19 -> 2, coverage floor 54 -> 80.**
+  Constant-only modules declared data, every private helper moved to its own
+  file, `synthesis_registry` split one function per file, the MCP adapter
+  registers one tool per module, and the CLI's thirteen handlers live in
+  `atrium/commands/`. The two-BPY001 item from 2026-09-15 was already resolved.
+  Evidence: `uv run codeality-py gate` exit 0, 433 passed. One visible change:
+  a non-integer `--limit` now reports `invalid positive_limit value` instead of
+  `invalid _positive_limit value`.
+
 - [x] 2026-10-04 — **`atrium synthesis recent|passes|show --json` shows what
   synthesis did.** `passes` parses the wrapper's `synthesis.log` (exit codes,
   `timeout`/`killed`/`interrupted`, tallies) plus the running pass's progress;

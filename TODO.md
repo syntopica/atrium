@@ -578,15 +578,14 @@
 
 ## Quality gate
 
-- [ ] `codeality-py baseline check` reports two BPY001 findings that predate the
-      state-directory work (verified 2026-09-15 by stashing it: still 2 new on a
-      clean HEAD, and still 2 on 2026-09-16): `atrium/embed/model_repo.py` has no
-      declaration and `atrium/ingest/decode_workspace_segment.py` carries `_descend`
-      beside its unit. Every session reports the gate as "green except these two",
-      which is how a real finding would hide. Smallest step: declare
-      `model_repo.py` a data module in `codeality-py.toml` and move `_descend` to its
-      own file, then re-run the gate. Recovered from the second machine's checkout, whose
-      branch had diverged since 2026-08-27.
+- [ ] Two accepted structural findings remain (2026-10-07, codeality-py 0.2.2,
+      down from 19): `atrium/cli.py` is 388 code lines because `main` keeps one
+      flat argparse parser by design (its noqa records why), and
+      `atrium/commands/run_synthesize.py` is 227 code lines of closure-heavy
+      orchestration over the paid synthesis lanes. Smallest step for the second:
+      extract the producer selection (`max`/`codex`/`local`/`task`/`agy` branch)
+      into one function returning `(call, journaled_call, model_id,
+      worker_queue)`, with a test per lane, before touching the pass loop.
 
 ## Self-improvement
 

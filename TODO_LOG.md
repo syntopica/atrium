@@ -6,6 +6,14 @@
 
 ### 2026-10
 
+- [x] 2026-10-07 — **Structural baseline 2 -> 0 (codeality-py 0.2.5).** `atrium/cli.py`
+  keeps its dispatch; the flat parser is one module per subcommand in
+  `atrium/cli_parser/` (`--help` output byte-identical for every subcommand).
+  `run_synthesize` delegates to `atrium/synthesis_pass/` (lane selection per
+  producer, registry state, workspace filter, holding conversations, runner,
+  status publish). Evidence: `uv run codeality-py gate` exit 0, baseline empty,
+  `mypy.ini` has no ignore list; new tests for the parser and lane selection.
+
 - [x] 2026-10-07 — **Structural baseline 19 -> 2, coverage floor 54 -> 80.**
   Constant-only modules declared data, every private helper moved to its own
   file, `synthesis_registry` split one function per file, the MCP adapter

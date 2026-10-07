@@ -578,15 +578,6 @@
 
 ## Quality gate
 
-- [ ] Two accepted structural findings remain (2026-10-07, codeality-py 0.2.2,
-      down from 19): `atrium/cli.py` is 388 code lines because `main` keeps one
-      flat argparse parser by design (its noqa records why), and
-      `atrium/commands/run_synthesize.py` is 227 code lines of closure-heavy
-      orchestration over the paid synthesis lanes. Smallest step for the second:
-      extract the producer selection (`max`/`codex`/`local`/`task`/`agy` branch)
-      into one function returning `(call, journaled_call, model_id,
-      worker_queue)`, with a test per lane, before touching the pass loop.
-
 ## Self-improvement
 
 - [ ] Query log, gap detection, and brain proposals. The durable-state

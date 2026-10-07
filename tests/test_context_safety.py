@@ -67,14 +67,14 @@ def test_malformed_instance_configuration_is_visible(tmp_path, monkeypatch):
 
 def test_legacy_mcp_origin_is_preserved():
     pytest.importorskip("mcp")
-    from atrium.adapters.mcp_server import _rendered
+    from atrium.adapters.rendered_hits import rendered_hits
     from atrium.retrieve.hit import Hit
 
     hits = [
         Hit(role, role, 1.0, "words", "conversation", "hash", None, "fixture", role)
         for role in ("source", "note", "synthesis", "user", "assistant", "")
     ]
-    result = _rendered(hits)
+    result = rendered_hits(hits)
     assert [row["role"] for row in result] == [hit.role for hit in hits]
     assert [row["trust"] for row in result] == [
         "untrusted",

@@ -1,170 +1,18 @@
 """MCP adapter: atrium's retrieval, served to an agent over stdio."""
 
-import os
-import threading
-from pathlib import Path
-from typing import TYPE_CHECKING, Any
+from atrium.adapters.atrium_context import atrium_context
+from atrium.adapters.atrium_recall import atrium_recall
+from atrium.adapters.atrium_search import atrium_search
+from atrium.adapters.mcp_app import MCP
 
-from mcp.server import MCPServer
-from mcp.types import ToolAnnotations
-
-from atrium.context.context_from_index import context_from_index
-from atrium.context.lazy_embedder import LazyEmbedder
-from atrium.context.render_hit import render_hit
-from atrium.recall.project_workspace import project_workspace
-from atrium.recall.recent_episodes import recent_episodes
-from atrium.retrieve.hit import Hit
-from atrium.retrieve.search import LANES, search
-from atrium.state.state_directory import state_directory
-from atrium.store.open_store import open_store
-
-if TYPE_CHECKING:
-    from atrium.embed.embedder import Embedder
-
-# Configurable, because this server and the CLI must be able to disagree about
-# which index they serve on purpose rather than by accident -- a second index at
-# the default path would otherwise be served silently.
-INDEX = (
-    Path(os.environ["ATRIUM_INDEX"])
-    if os.environ.get("ATRIUM_INDEX")
-    else state_directory() / "index.sqlite3"
-)
-
-# A limit is a promise about how much context the answer will spend. Left
-# unbounded, one tool call can flood the agent that asked; left unchecked, a
-# negative one reaches SQLite as "no limit".
-MAX_LIMIT = 50
-
-mcp = MCPServer("atrium")
-
-# Both tools open the index read-only and neither has anything to undo, which
-# is what lets a host auto-approve them. Declaring it is not decoration: a host
-# that has to assume a tool writes will stop and ask before every recall.
-_READ_ONLY = ToolAnnotations(read_only_hint=True, destructive_hint=False, idempotent_hint=True)
-
-# Constructing the embedder costs seconds, which is most of what a one-shot
-# `atrium search` spends. This process outlives a request, so it is built once
-# on the first query that needs it and reused for the life of the server. Tools
-# run in worker threads, so the build is serialized under a lock -- the first
-# two concurrent searches would otherwise each build one and one would be
-# thrown away after paying for it. (Not lru_cache: it does not lock the miss
-# path, so both threads would still construct.)
-_embedder = None
-_embedder_lock = threading.Lock()
-
-
-def _resident_embedder() -> "Embedder":
-    global _embedder  # noqa: PLW0603 -- module singleton; the lock is the point
-    with _embedder_lock:
-        if _embedder is None:
-            from atrium.embed.embedder import Embedder
-
-            _embedder = Embedder()
-        return _embedder
-
-
-def _checked_limit(limit: int) -> int:
-    if limit < 1:
-        raise ValueError(f"limit must be at least 1, got {limit}")
-    return min(limit, MAX_LIMIT)
-
-
-def _rendered(hits: list[Hit]) -> list[dict[str, Any]]:
-    """Return whole hits.
-
-    Never the CLI's printed form: that truncates text to fit a terminal, and an
-    agent served the truncated version has no way to see what is missing.
-    """
-    return [render_hit(hit) for hit in hits]
-
-
-@mcp.tool(annotations=_READ_ONLY)
-def atrium_search(
-    query: str, limit: int = 10, lane: str = "auto", project: str | None = None
-) -> list[dict[str, Any]]:
-    """Search the conversation archive, curated notes and synthesized episodes.
-
-    Lanes: "auto" fuses lexical and semantic and is the right default; "words"
-    is whole-word lexical alone; "substring" matches fragments inside words;
-    "dense" is the semantic lane alone. Ask for "dense" when the wording of the
-    question shares nothing with the wording of the answer -- fusing a blind
-    lexical lane measurably buries the semantic signal.
-
-    ``project`` is a directory: pass one to search only the work done in the
-    project containing it, and leave it out to search everything. The archive
-    spans unrelated clients and personal work, so a question about one of them
-    is usually better asked with a project than without.
-    """
-    if lane not in LANES:
-        raise ValueError(f"unknown lane {lane!r}; expected one of {', '.join(LANES)}")
-    limit = _checked_limit(limit)
-    workspace = None
-    if project is not None:
-        workspace = project_workspace(project)
-        if workspace is None:
-            raise ValueError(f"{project!r} is in no repository, so it names no project")
-    connection = open_store(INDEX, read_only=True)
-    try:
-        embedder = _resident_embedder() if lane in ("auto", "dense") else None
-        return _rendered(
-            search(connection, query, limit, lane, embedder=embedder, workspace=workspace)
-        )
-    finally:
-        connection.close()
-
-
-@mcp.tool(annotations=_READ_ONLY)
-def atrium_recall(cwd: str, limit: int = 12) -> list[dict[str, Any]]:
-    """Return the newest synthesized episodes for the project containing ``cwd``.
-
-    This is not a search: it takes no query. It answers "what has already been
-    worked out in this project", which is what a session needs before it knows
-    what to ask.
-
-    Returns an empty list when ``cwd`` is in no repository: there is no project
-    boundary to recall within, and answering with everything would be worse
-    than answering with nothing.
-    """
-    limit = _checked_limit(limit)
-    workspace = project_workspace(cwd)
-    if workspace is None:
-        return []
-    connection = open_store(INDEX, read_only=True)
-    try:
-        return _rendered(recent_episodes(connection, workspace, limit))
-    finally:
-        connection.close()
-
-
-@mcp.tool(annotations=_READ_ONLY)
-def atrium_context(
-    query: str,
-    project: str | None = None,
-    limit: int = 8,
-    max_chars: int = 16000,
-    lane: str = "auto",
-) -> dict[str, Any]:
-    """Retrieve scoped history, curated notes and one hop of indexed note links.
-
-    Evidence text shares max_chars (1..100000); limit (1..50) caps evidence
-    records. Provenance and warnings are additional JSON metadata. History
-    requires live verification before asserting present-day operational results.
-    """
-    return context_from_index(
-        INDEX,
-        query,
-        project=project,
-        limit=limit,
-        max_chars=max_chars,
-        lane=lane,
-        state=state_directory(),
-        embedder=LazyEmbedder(_resident_embedder),
-    )
+# Importing a tool module registers it on MCP. Naming them here keeps that
+# registration explicit, in the order the host lists them.
+TOOLS = (atrium_search, atrium_recall, atrium_context)
 
 
 def main() -> None:
     """Serve over stdio until the host closes the pipe."""
-    mcp.run()
+    MCP.run()
 
 
 if __name__ == "__main__":

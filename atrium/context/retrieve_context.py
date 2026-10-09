@@ -15,6 +15,7 @@ from atrium.context.validate_request import validate_request
 from atrium.context.vector_presence import vector_presence
 from atrium.recall.project_workspace import project_workspace
 from atrium.retrieve.hit import Hit
+from atrium.sql.load_sql import load_sql
 from atrium.store.verify_build_stamp import verify_build_stamp
 
 if TYPE_CHECKING:
@@ -51,7 +52,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
             response["index_status"] = "unavailable"
             return finalize_context(response)
         response["index_status"] = (
-            "ready" if connection.execute("SELECT 1 FROM records LIMIT 1").fetchone() else "empty"
+            "ready" if connection.execute(load_sql("store/any_record")).fetchone() else "empty"
         )
         if lane in ("auto", "dense"):
             for name, curated in (("history", False), ("curated", True)):

@@ -2,6 +2,8 @@
 
 import sqlite3
 
+from atrium.sql.load_sql import load_sql
+
 
 def term_frequency(connection: sqlite3.Connection, table: str, term: str) -> int:
     """Return the number of records ``term`` matches in ``table``.
@@ -11,5 +13,6 @@ def term_frequency(connection: sqlite3.Connection, table: str, term: str) -> int
     corpus's most common word (`the`, 485,117 records of 1,417,899) and 4ms for
     an ordinary one.
     """
-    statement = f"SELECT count(*) FROM {table} WHERE {table} MATCH ?"  # noqa: S608 -- caller passes one of two hardcoded identifiers
+    # The caller passes one of two hardcoded identifiers; the term is bound.
+    statement = load_sql("retrieve/term_frequency").format(table=table)
     return int(connection.execute(statement, (term,)).fetchone()[0])

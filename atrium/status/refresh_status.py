@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from atrium.doctor.newest_content_gap import newest_content_gap
+from atrium.sql.load_sql import load_sql
 from atrium.status.freshness import freshness
 from atrium.status.indexed_synthesis_episodes import indexed_synthesis_episodes
 from atrium.status.iso_utc import iso_utc
@@ -22,9 +23,7 @@ def refresh_status(
     No record text, no paths: a dashboard stores and shows this document, so
     it carries only numbers, provider names, producer model names and instants.
     """
-    by_source = dict(
-        connection.execute("SELECT provider, count(*) FROM records GROUP BY provider ORDER BY 1")
-    )
+    by_source = dict(connection.execute(load_sql("status/provider_counts_by_name")))
     newest = newest_content_gap(connection, now).detail.get("newest_authored_at")
     authored = datetime.fromisoformat(newest.replace("Z", "+00:00")).timestamp() if newest else None
     present = archive.exists()

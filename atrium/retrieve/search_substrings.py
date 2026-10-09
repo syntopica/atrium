@@ -4,16 +4,7 @@ import sqlite3
 
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.workspace_clause import workspace_clause
-
-_QUERY = """
-SELECT r.record_id, r.text, -bm25(substrings) AS score, r.conversation_id,
-       r.source_sha256, r.authored_at, r.provider, r.role
-FROM substrings
-JOIN records r ON r.rowid = substrings.rowid
-WHERE substrings MATCH ?{scope}
-ORDER BY bm25(substrings)
-LIMIT ?
-"""
+from atrium.sql.load_sql import load_sql
 
 # FTS5's trigram tokenizer cannot match a fragment shorter than three characters.
 MIN_FRAGMENT = 3
@@ -38,7 +29,8 @@ def search_substrings(
     escaped = fragment.replace('"', '""')
     scope, scope_parameters = workspace_clause(workspace)
     rows = connection.execute(
-        _QUERY.format(scope=scope), (f'"{escaped}"', *scope_parameters, limit)
+        load_sql("retrieve/search_substrings").format(scope=scope),
+        (f'"{escaped}"', *scope_parameters, limit),
     ).fetchall()
     return [
         Hit(

@@ -7,6 +7,7 @@ from atrium.retrieve.fuse_ranked import fuse_ranked
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.search_dense import search_dense
 from atrium.retrieve.search_words import search_words
+from atrium.sql.load_sql import load_sql
 
 # Each lane contributes this many candidates to fusion regardless of the
 # requested output size. Reusing `limit` as the candidate depth returns wrong
@@ -33,7 +34,7 @@ def search_hybrid(
     """
     depth = max(limit, _FUSION_DEPTH)
     lexical = search_words(connection, query, depth, workspace)
-    if not connection.execute("SELECT 1 FROM vectors LIMIT 1").fetchone():
+    if not connection.execute(load_sql("retrieve/any_vector")).fetchone():
         return lexical[:limit]
     dense = search_dense(connection, embedder.embed([query])[0], depth, workspace)
     if not dense:

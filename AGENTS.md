@@ -57,6 +57,15 @@ These are settled by measurement, not preference. Re-measure before changing the
 - Python, snake_case, ruff-formatted, double quotes. Tests are `tests/test_*.py`.
 - One exported unit and one responsibility per file; every dependency an explicit import.
 - All code, comments, docs and commit messages in English.
+- No SQL in Python literals (codeality-py `BPY006`): every statement is a file under
+  `atrium/sql/<area>/<name>.sql`, loaded with `atrium.sql.load_sql.load_sql`; test SQL
+  lives in `tests/sql/` and loads with `tests/load_test_sql.py`. `{name}` fields are for
+  code-built identifiers and fragments only; user values stay bound parameters.
+- Gates: `uv run codeality-py gate` and `pnpm dlx @syntopica/db-quality@0.6.0 gate`. The
+  second plans every `atrium/sql` statement against `.atrium-index.sqlite3`, an ignored
+  local symlink to the live index (absent: `BDB406` is skipped). Deliberate full scans
+  (status counts, doctor and ingest batches, `LIMIT 1` probes) are carried in
+  `.codeality-db-baseline.json`.
 
 ## Continuous TODO, Work Log, and History Coverage
 

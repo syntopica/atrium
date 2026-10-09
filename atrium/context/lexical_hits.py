@@ -11,6 +11,7 @@ from atrium.retrieve.match_expression import match_expression
 from atrium.retrieve.ranked_hits import ranked_hits
 from atrium.retrieve.selective_expression import selective_expression
 from atrium.retrieve.word_verifiers import word_verifiers
+from atrium.sql.load_sql import load_sql
 
 # Both passes stream in rank order now, so these bound a pathology rather than
 # the ordinary case: measured on 1,417,899 records, the narrow pass costs 0.03s
@@ -41,22 +42,9 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
     if not match:
         return []
     scope, parameters = context_scope(curated, workspace)
-    # The scope reaches the FTS table as a join. Constraining it with
-    # `rowid IN (...)` instead makes FTS5 re-run the match per candidate rowid:
-    # 13.57s against 0.04s for the same curated query, same rows. The rank
-    # ordering is what `ranked_hits` streams; a LIMIT here would defeat it.
-    statement = f"""
-        WITH eligible AS MATERIALIZED (
-            SELECT r.rowid FROM records r WHERE 1 = 1{scope}
-        )
-        SELECT r.record_id, r.text, -bm25({table}), r.conversation_id,
-               r.source_sha256, r.authored_at, r.provider, r.role
-        FROM {table}
-        JOIN eligible e ON e.rowid = {table}.rowid
-        JOIN records r ON r.rowid = {table}.rowid
-        WHERE {table} MATCH ?
-        ORDER BY {table}.rank
-    """  # noqa: S608 -- table is one of two hardcoded identifiers, data is bound
+    # The table is one of two hardcoded identifiers and the scope is a fixed
+    # fragment; every value is bound.
+    statement = load_sql("context/lexical_hits").format(scope=scope, table=table)
     verifiers, plain = word_verifiers(query)
     verify = lane != "substring" and bool(verifiers) and not plain
     seen: set[str] = set()
@@ -83,7 +71,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
             # Only the broad pass needs this, and asking costs a query per term:
             # a narrow pass that answered must not pay for it (raised by review,
             # 2026-09-16).
-            total = int(connection.execute("SELECT count(*) FROM records").fetchone()[0])
+            total = int(connection.execute(load_sql("status/record_count")).fetchone()[0])
             expression = selective_expression(connection, table, query, total)
             if not expression:
                 continue

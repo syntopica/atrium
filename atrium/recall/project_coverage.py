@@ -3,21 +3,14 @@
 import sqlite3
 from typing import Any
 
+from atrium.sql.load_sql import load_sql
+
 # A workspace is any directory a session was opened in, so most of them are not
 # projects: 13,162 of 13,269 held fewer than five conversations on 2026-09-01.
 # Counting those makes coverage read 2.1% when the work that matters is above
 # half, which is the difference between a number that informs a decision and
 # one that only alarms.
 DEFAULT_FLOOR = 20
-
-_QUERY = """
-SELECT workspace,
-       count(DISTINCT CASE WHEN provider != 'synthesis' THEN conversation_id END) AS conversations,
-       count(CASE WHEN provider = 'synthesis' THEN 1 END) AS episodes
-FROM records
-WHERE workspace IS NOT NULL AND provider != 'brain'
-GROUP BY workspace
-"""
 
 
 def project_coverage(connection: sqlite3.Connection, floor: int = DEFAULT_FLOOR) -> dict[str, Any]:
@@ -29,7 +22,9 @@ def project_coverage(connection: sqlite3.Connection, floor: int = DEFAULT_FLOOR)
     """
     projects = [
         (workspace, conversations, episodes)
-        for workspace, conversations, episodes in connection.execute(_QUERY)
+        for workspace, conversations, episodes in connection.execute(
+            load_sql("recall/project_coverage")
+        )
         if conversations >= floor
     ]
     covered = [row for row in projects if row[2] > 0]

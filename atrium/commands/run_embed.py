@@ -12,12 +12,14 @@ def run_embed(index: Path) -> int:
     what it finished (each vector is valid alone), and the next run resumes
     from the missing ones.
     """
+    import json
     from functools import partial
 
     from atrium.embed.embedder import Embedder
     from atrium.embed.model_is_cached import model_is_cached
     from atrium.embed.model_repo import MODEL_REPO
     from atrium.embed.semantic_roles import SEMANTIC_ROLES
+    from atrium.sql.load_sql import load_sql
     from atrium.store.commit_with_retry import commit_with_retry
     from atrium.store.write_vectors import write_vectors
 
@@ -28,18 +30,9 @@ def run_embed(index: Path) -> int:
     # which is how one cost twelve minutes of diagnosis on 2026-09-01.
     print(f"  opening the index at {index}", flush=True)
     connection = open_store(index)
-    placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
-    # Ordered by text length so each sub-batch pads to a similar length: the
-    # ONNX graph's attention cost grows with the square of the padded length,
-    # and one long chunk in a batch of short ones prices the whole batch at
-    # the long one's padding.
     print("  counting the records that still need a vector", flush=True)
     pending = connection.execute(
-        # S608: interpolation is `?` placeholders only; the values are bound.
-        f"SELECT record_id, source_sha256, text FROM records WHERE role IN ({placeholders}) "  # noqa: S608
-        "AND record_id NOT IN (SELECT record_id FROM vectors) "
-        "ORDER BY length(text), record_id",
-        SEMANTIC_ROLES,
+        load_sql("embed/pending_vectors"), (json.dumps(SEMANTIC_ROLES),)
     ).fetchall()
     if not pending:
         connection.close()

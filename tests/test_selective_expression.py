@@ -1,5 +1,7 @@
 """The broad expression drops what the whole corpus says, and nothing else."""
 
+from load_test_sql import load_test_sql
+
 from atrium.record import Record
 from atrium.retrieve.selective_expression import selective_expression
 from atrium.store.open_store import open_store
@@ -33,7 +35,7 @@ def _corpus(tmp_path, count):
 
 def test_a_term_the_corpus_repeats_is_dropped(tmp_path):
     connection = _corpus(tmp_path, 200)
-    total = connection.execute("SELECT count(*) FROM records").fetchone()[0]
+    total = connection.execute(load_test_sql("count_records")).fetchone()[0]
     assert selective_expression(connection, "words", "the vault", total) == '"vault"'
 
 
@@ -42,5 +44,5 @@ def test_all_terms_survive_when_all_of_them_are_common(tmp_path):
     term would turn it into an empty expression, which retrieves nothing at all
     and reads as "the index knows nothing about this"."""
     connection = _corpus(tmp_path, 200)
-    total = connection.execute("SELECT count(*) FROM records").fetchone()[0]
+    total = connection.execute(load_test_sql("count_records")).fetchone()[0]
     assert selective_expression(connection, "words", "the meeting", total) == '"the" OR "meeting"'

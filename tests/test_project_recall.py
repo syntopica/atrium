@@ -1,9 +1,10 @@
 """Session-start recall is scoped to a project, not to an exact directory."""
 
 from atrium.recall.project_workspace import project_workspace
-from atrium.recall.recent_episodes import _QUERY, recent_episodes
+from atrium.recall.recent_episodes import recent_episodes
 from atrium.record import Record
 from atrium.retrieve.hit import Hit
+from atrium.sql.load_sql import load_sql
 from atrium.store.open_store import open_store
 from atrium.store.write_conversation import write_conversation
 
@@ -132,7 +133,10 @@ def test_recall_seeks_the_project_instead_of_scanning_every_episode(tmp_path):
     connection = open_store(tmp_path / "index.sqlite3")
     plan = " ".join(
         row[3]
-        for row in connection.execute(f"EXPLAIN QUERY PLAN {_QUERY}", ("[HOME]/p/mem",) * 5 + (12,))
+        for row in connection.execute(
+            f"EXPLAIN QUERY PLAN {load_sql('recall/recent_episodes')}",
+            ("[HOME]/p/mem",) * 5 + (12,),
+        )
     )
     connection.close()
     assert "records_context_role_workspace (role=? AND workspace>? AND workspace<?)" in plan

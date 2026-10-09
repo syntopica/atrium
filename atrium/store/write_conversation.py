@@ -4,20 +4,7 @@ import sqlite3
 from collections.abc import Iterable
 
 from atrium.record import Record
-
-_COLUMNS = (
-    "record_id, event_id, conversation_id, source_sha256, provider, role, text, "
-    "authored_at, workspace, title, event_index"
-)
-
-# S608: the only interpolation is _COLUMNS, a literal above; values are bound.
-_INSERT = f"""
-INSERT INTO records ({_COLUMNS})
-VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-"""  # noqa: S608
-
-_STORED = f"SELECT {_COLUMNS} FROM records WHERE conversation_id = ? ORDER BY record_id"  # noqa: S608
-
+from atrium.sql.load_sql import load_sql
 
 # A conversation reduced to no records writes zero rows, exactly as an
 # unchanged one does. Callers count the two differently -- one is work not done,
@@ -69,10 +56,12 @@ def write_conversation(
         )
         for record in records
     ]
-    stored = connection.execute(_STORED, (conversation_id,)).fetchall()
+    stored = connection.execute(
+        load_sql("store/stored_conversation"), (conversation_id,)
+    ).fetchall()
     if stored == sorted(rows):
         return UNCHANGED
-    connection.execute("DELETE FROM records WHERE conversation_id = ?", (conversation_id,))
+    connection.execute(load_sql("store/delete_conversation"), (conversation_id,))
     if rows:
-        connection.executemany(_INSERT, rows)
+        connection.executemany(load_sql("store/insert_record"), rows)
     return len(rows)

@@ -1,0 +1,1 @@
+DELETE FROM seen_conversations

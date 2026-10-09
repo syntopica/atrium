@@ -6,15 +6,7 @@ import numpy as np
 
 from atrium.retrieve.hit import Hit
 from atrium.retrieve.workspace_clause import workspace_clause
-
-_QUERY = """
-SELECT v.record_id, v.vector, r.text, r.conversation_id, r.source_sha256,
-       r.authored_at, r.provider, r.role
-FROM vectors v
-JOIN records r ON r.record_id = v.record_id
-WHERE 1 = 1{scope}
-ORDER BY v.record_id
-"""
+from atrium.sql.load_sql import load_sql
 
 
 def search_dense(
@@ -31,7 +23,9 @@ def search_dense(
     previous system paid for (HNSW compaction failures, index divergence).
     """
     scope, scope_parameters = workspace_clause(workspace)
-    rows = connection.execute(_QUERY.format(scope=scope), scope_parameters).fetchall()
+    rows = connection.execute(
+        load_sql("retrieve/search_dense").format(scope=scope), scope_parameters
+    ).fetchall()
     if not rows:
         return []
     matrix = np.frombuffer(b"".join(row[1] for row in rows), dtype=np.float32).reshape(

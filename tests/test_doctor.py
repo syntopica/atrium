@@ -5,6 +5,8 @@ import os
 import sqlite3
 import subprocess
 
+from load_test_sql import load_test_sql
+
 from atrium.doctor import login_search_path as login_search_path_module
 from atrium.doctor.archive_admissions import ArchiveAdmissions
 from atrium.doctor.archive_freshness import archive_freshness
@@ -74,9 +76,9 @@ def _admissions(ids, admitting=None):
 
 def test_index_coverage_reports_the_gap_it_cannot_repair(tmp_path):
     connection = sqlite3.connect(":memory:")
-    connection.execute("CREATE TABLE records (conversation_id TEXT, provider TEXT)")
+    connection.execute(load_test_sql("create_records_with_provider"))
     connection.executemany(
-        "INSERT INTO records VALUES (?, ?)",
+        load_test_sql("insert_record_pair"),
         [("a", "codex"), ("b", "codex"), ("s", "synthesis")],
     )
     finding = index_coverage(connection, _admissions({"a", "b"}))
@@ -94,8 +96,8 @@ def test_a_conversation_that_admits_nothing_is_not_missing_coverage(tmp_path):
     Counting them as drift made this check warn on every single run, which is
     how an operator learns to ignore warnings."""
     connection = sqlite3.connect(":memory:")
-    connection.execute("CREATE TABLE records (conversation_id TEXT, provider TEXT)")
-    connection.executemany("INSERT INTO records VALUES (?, ?)", [("a", "codex")])
+    connection.execute(load_test_sql("create_records_with_provider"))
+    connection.executemany(load_test_sql("insert_record_pair"), [("a", "codex")])
     finding = index_coverage(
         connection, _admissions({"a", *(f"chrome-{n}" for n in range(99))}, admitting={"a"})
     )

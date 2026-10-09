@@ -5,6 +5,7 @@ import sqlite3
 from atrium.context.link_targets import link_targets
 from atrium.context.note_path import note_path
 from atrium.retrieve.hit import Hit
+from atrium.sql.load_sql import load_sql
 
 
 def linked_hits(
@@ -26,7 +27,7 @@ def linked_hits(
             rows = []
             for candidate in candidates:
                 rows = connection.execute(
-                    "SELECT record_id, text, conversation_id, source_sha256, authored_at, provider, role FROM records WHERE role = 'note' AND provider = ? AND conversation_id = ? ORDER BY event_index, record_id LIMIT ?",
+                    load_sql("context/linked_notes"),
                     (root.provider, candidate, limit),
                 ).fetchall()
                 if rows:

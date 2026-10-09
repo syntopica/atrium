@@ -3,6 +3,7 @@
 import sqlite3
 
 from atrium.context.context_scope import context_scope
+from atrium.sql.load_sql import load_sql
 
 
 def vector_presence(
@@ -12,10 +13,7 @@ def vector_presence(
     scope, parameters = context_scope(curated, workspace)
     return (
         connection.execute(
-            "SELECT 1 FROM vectors v JOIN records r ON r.record_id = v.record_id WHERE 1 = 1"  # noqa: S608 -- fixed SQL fragments; data is bound
-            + scope
-            + " LIMIT 1",
-            parameters,
+            load_sql("context/vector_presence").format(scope=scope), parameters
         ).fetchone()
         is not None
     )

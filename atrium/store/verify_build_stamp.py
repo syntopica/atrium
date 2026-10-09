@@ -2,6 +2,7 @@
 
 import sqlite3
 
+from atrium.sql.load_sql import load_sql
 from atrium.store.build_versions import BUILD_VERSIONS
 
 
@@ -15,7 +16,7 @@ def verify_build_stamp(connection: sqlite3.Connection, *, stamp_if_empty: bool) 
     migrated -- the caller is told to delete it and re-ingest.
     """
     try:
-        stored = dict(connection.execute("SELECT key, value FROM build_metadata"))
+        stored = dict(connection.execute(load_sql("store/read_build_metadata")))
     except sqlite3.OperationalError as error:
         # Only a missing table means "unversioned". Every other operational
         # fault -- a locked database, an unreadable file, a failing disk -- is
@@ -30,7 +31,7 @@ def verify_build_stamp(connection: sqlite3.Connection, *, stamp_if_empty: bool) 
         ) from error
 
     if not stored:
-        populated = connection.execute("SELECT 1 FROM records LIMIT 1").fetchone()
+        populated = connection.execute(load_sql("store/any_record")).fetchone()
         if not stamp_if_empty or populated:
             # A populated index with no stamp predates versioning (or lost its
             # metadata); adopting and stamping it would launder unknown-pipeline
@@ -39,7 +40,7 @@ def verify_build_stamp(connection: sqlite3.Connection, *, stamp_if_empty: bool) 
                 "this index was never stamped with build versions -- delete it and re-ingest"
             )
         connection.executemany(
-            "INSERT INTO build_metadata (key, value) VALUES (?, ?)",
+            load_sql("store/insert_build_metadata"),
             sorted(BUILD_VERSIONS.items()),
         )
         return

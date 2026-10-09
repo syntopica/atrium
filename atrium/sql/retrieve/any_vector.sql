@@ -1,0 +1,1 @@
+SELECT 1 FROM vectors LIMIT 1

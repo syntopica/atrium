@@ -4,10 +4,7 @@ import sqlite3
 
 import numpy as np
 
-_GUARDED_INSERT = """
-INSERT OR REPLACE INTO vectors (record_id, vector)
-SELECT record_id, ? FROM records WHERE record_id = ? AND source_sha256 = ?
-"""
+from atrium.sql.load_sql import load_sql
 
 
 def write_vectors(
@@ -30,7 +27,7 @@ def write_vectors(
     written = 0
     for (record_id, source_sha256), vector in zip(rows, matrix, strict=True):
         cursor = connection.execute(
-            _GUARDED_INSERT,
+            load_sql("store/insert_vector_guarded"),
             (np.asarray(vector, dtype=np.float32).tobytes(), record_id, source_sha256),
         )
         written += cursor.rowcount

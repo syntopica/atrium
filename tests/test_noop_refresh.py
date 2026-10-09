@@ -10,6 +10,7 @@ no trace of the pass at all.
 import json
 
 import numpy as np
+from load_test_sql import load_test_sql
 
 from atrium.cli import main
 from atrium.embed.semantic_roles import SEMANTIC_ROLES
@@ -53,13 +54,14 @@ def _snapshot(index):
     """Everything a write would disturb: rowids, revisions, vectors, pending."""
     connection = open_store(index, read_only=True)
     rows = connection.execute(
-        "SELECT rowid, record_id, source_sha256 FROM records ORDER BY rowid"
+        load_test_sql("noop_refresh/select_record_revisions_by_rowid")
     ).fetchall()
-    vectors = connection.execute("SELECT record_id FROM vectors ORDER BY record_id").fetchall()
+    vectors = connection.execute(
+        load_test_sql("noop_refresh/select_vector_record_ids_ordered")
+    ).fetchall()
     placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
     pending = connection.execute(
-        f"SELECT count(*) FROM records WHERE role IN ({placeholders}) "  # noqa: S608
-        "AND record_id NOT IN (SELECT record_id FROM vectors)",
+        load_test_sql("count_unembedded_semantic_records").format(placeholders=placeholders),
         tuple(SEMANTIC_ROLES),
     ).fetchone()[0]
     connection.close()
@@ -80,7 +82,9 @@ def test_a_refresh_over_an_unchanged_world_writes_and_embeds_nothing(tmp_path):
     connection = open_store(index)
     placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
     pending = connection.execute(
-        f"SELECT record_id, source_sha256 FROM records WHERE role IN ({placeholders})",  # noqa: S608
+        load_test_sql("noop_refresh/select_semantic_record_revisions").format(
+            placeholders=placeholders
+        ),
         tuple(SEMANTIC_ROLES),
     ).fetchall()
     assert pending, "the notes must have produced a semantic record to embed"

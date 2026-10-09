@@ -2,6 +2,8 @@
 
 import json
 
+from load_test_sql import load_test_sql
+
 from atrium.cli import main
 from atrium.store.open_store import open_store
 
@@ -25,7 +27,9 @@ def _conversation(conversation_id, text, source="test"):
 
 def _conversation_ids(index):
     connection = open_store(index, read_only=True)
-    rows = connection.execute("SELECT DISTINCT conversation_id FROM records ORDER BY 1").fetchall()
+    rows = connection.execute(
+        load_test_sql("reconciliation_sweep/select_conversation_ids")
+    ).fetchall()
     connection.close()
     return [row[0] for row in rows]
 

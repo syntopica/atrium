@@ -2,10 +2,9 @@
 
 import sqlite3
 
+from atrium.sql.load_sql import load_sql
+
 
 def indexed_synthesis_episodes(connection: sqlite3.Connection) -> set[str]:
     """Return every synthesis record's event id, one per served episode."""
-    return {
-        row[0]
-        for row in connection.execute("SELECT event_id FROM records WHERE provider = 'synthesis'")
-    }
+    return {row[0] for row in connection.execute(load_sql("status/synthesis_event_ids"))}

@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "sqlite": {
+    "files": [],
+    "queries": {
+      "paths": [
+        "atrium/sql"
+      ],
+      "database": ".atrium-index.sqlite3",
+      "minRows": 10000
+    }
+  }
+}

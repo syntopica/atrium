@@ -5,6 +5,7 @@ import sqlite3
 
 import pytest
 from context_corpus import corpus as corpus  # noqa: PLC0414 -- explicit pytest fixture export
+from load_test_sql import load_test_sql
 
 from atrium.context.retrieve_context import retrieve_context
 from atrium.ingest.to_note_records import to_note_records
@@ -202,14 +203,14 @@ def test_semantic_notes_survive_no_word_overlap_and_unrelated_history(corpus, la
 
     with connection:
         rows = connection.execute(
-            "SELECT record_id FROM records WHERE conversation_id = 'projects/server-a/access.md'"
+            load_test_sql("context/select_server_a_access_record_ids")
         ).fetchall()
         connection.executemany(
-            "INSERT INTO vectors VALUES (?, ?)",
+            load_test_sql("insert_vector"),
             [(row[0], np.array([1.0, 0.0], dtype=np.float32).tobytes()) for row in rows],
         )
         connection.execute(
-            "INSERT INTO vectors VALUES (?, ?)",
+            load_test_sql("insert_vector"),
             ("other", np.array([1.0, 0.0], dtype=np.float32).tobytes()),
         )
     result = retrieve_context(

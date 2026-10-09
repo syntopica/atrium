@@ -6,6 +6,12 @@
 
 ### 2026-10
 
+- [x] 2026-10-10 — **The two machines' archives agree.** Conversation id sets diffed on
+  2026-10-09 ~23:58: this machine 53,909, the Mac mini 53,906; the Mac mini has nothing
+  this machine lacks, and the three it lacks are claude-code sessions of this machine
+  started 2026-10-09 19:48-20:28, not yet carried by the daily `sync-all-safe` leg. The
+  nine old conversations of 2026-09-05 are no longer missing on either side.
+
 - [x] 2026-10-09 — **Codex rollouts over 64 MiB reach the archive.** rocket-agents
   streams oversized JSONL since 2026-08-31 (its TODO_LOG), and the hourly refresh's export
   manifest reports codex `available: true`, 31,119 artifacts, `skipped: 0`

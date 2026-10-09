@@ -11,7 +11,7 @@ from atrium.synthesis_pass.registry_state import RegistryState
 from atrium.synthesize.ack_conversation_results import ack_conversation_results
 from atrium.synthesize.default_registry import default_registry
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
-from atrium.synthesize.read_worker_submissions import read_worker_submissions
+from atrium.synthesize.read_worker_job_owners import read_worker_job_owners
 from atrium.synthesize.record_worker_submission import record_worker_submission
 
 
@@ -28,13 +28,19 @@ def make_conversation_runner(
     # the rest as deferred -- still pending, not failed -- and let a later tick
     # pick them up instead of grinding failures.
     quota_wall = threading.Event()
-    submissions = read_worker_submissions(journal) if holding else {}
+    owners = read_worker_job_owners(journal) if holding else {}
 
     def settle(conversation_id: str) -> None:
         # A holding conversation that ends without error has nothing left to
-        # submit, so any result still offered for it is never collected.
-        if lane.worker_queue is not None and conversation_id in holding:
-            ack_conversation_results(lane.worker_queue, conversation_id, submissions)
+        # submit, so any result still offered for it is never collected. A
+        # failed ack is only a slot held until the worker expires it, so it
+        # must not abort the pass (raised by review, 2026-10-09).
+        if lane.worker_queue is None or conversation_id not in holding:
+            return
+        try:
+            ack_conversation_results(lane.worker_queue, conversation_id, owners)
+        except Exception as error:
+            print(f"  {conversation_id[:12]} could not release its results: {error}", flush=True)
 
     def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
         from atrium.synthesize.synthesize_conversation import synthesize_conversation

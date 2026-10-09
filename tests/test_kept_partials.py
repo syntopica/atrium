@@ -92,3 +92,14 @@ def test_without_a_partials_directory_nothing_is_kept_or_acked(tmp_path: Path, a
     reduced = synthesize_episode(EPISODE, EVENTS, _Producer())
     assert acked == []
     assert len(reduced["worker_results"]) == 3
+
+
+def test_reusing_a_partial_keeps_it_from_the_age_prune(tmp_path: Path, acked):
+    """A conversation retrying its reduce for a month must not lose the chunks it reads."""
+    import os
+
+    synthesize_episode(EPISODE, EVENTS, _Producer(), tmp_path, "model")
+    for path in tmp_path.glob("*.json"):
+        os.utime(path, (0, 0))
+    synthesize_episode(EPISODE, EVENTS, _Producer(), tmp_path, "model")
+    assert all(path.stat().st_mtime > 0 for path in tmp_path.glob("*.json"))

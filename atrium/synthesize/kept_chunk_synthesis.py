@@ -1,5 +1,6 @@
 """One producer call's synthesis, from the kept copy or from the producer."""
 
+import contextlib
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,11 @@ def kept_chunk_synthesis(  # noqa: PLR0913 -- one producer call plus where to ke
     """
     path = partial_path(partials, model_id, system_text, user_text, tool)
     kept = read_partial(path)
+    if kept is not None:
+        # Reuse is use: the 30-day prune goes by mtime, and a conversation
+        # retrying its reduce every pass must not lose the chunks it reads.
+        with contextlib.suppress(OSError):
+            path.touch()
     if kept is None:
         kept = producer(system_text, user_text, tool)
         output = kept.get("input") or {}

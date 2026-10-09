@@ -48,7 +48,7 @@ def synthesize_conversation(
             skipped += 1
             continue
         began = time.monotonic()
-        result = synthesize_episode(episode, events, producer)
+        result = synthesize_episode(episode, events, producer, registry / "partials", model_id)
         duration_ms = round((time.monotonic() - began) * 1000)
         # Worker results are acked only once the record is on disk: a crash in
         # between leaves them offered, and the next pass's drain acks them.

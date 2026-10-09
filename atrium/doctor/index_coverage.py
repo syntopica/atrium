@@ -4,6 +4,7 @@ import sqlite3
 
 from atrium.doctor.archive_admissions import ArchiveAdmissions
 from atrium.doctor.finding import Finding
+from atrium.sql.load_sql import load_sql
 
 # The index is derived and disposable, so drift is repaired by ingesting, never
 # by editing it. What matters is that drift is visible: an index missing a
@@ -27,12 +28,7 @@ def index_coverage(connection: sqlite3.Connection, admissions: ArchiveAdmissions
     as drift made this check warn on every single run. It is still reported,
     because a number that moves is worth seeing; it just is not a defect.
     """
-    indexed = {
-        row[0]
-        for row in connection.execute(
-            "SELECT DISTINCT conversation_id FROM records WHERE provider NOT IN ('synthesis', 'brain')"
-        )
-    }
+    indexed = {row[0] for row in connection.execute(load_sql("doctor/indexed_conversations"))}
     missing = admissions.admitting_ids - indexed
     extra = indexed - admissions.all_ids
     admits_nothing = len(admissions.all_ids) - len(admissions.admitting_ids)

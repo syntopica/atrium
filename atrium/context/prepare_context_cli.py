@@ -5,6 +5,7 @@ from pathlib import Path
 
 from atrium.context.context_index_specs import context_index_specs
 from atrium.context.context_indexes_ready import context_indexes_ready
+from atrium.sql.load_sql import load_sql
 from atrium.store.open_store import open_store
 
 
@@ -12,13 +13,13 @@ def prepare_context_cli(index: Path) -> int:
     """Create additive indexes and report row invariants as JSON."""
     reader = open_store(index, read_only=True)
     try:
-        before = reader.execute("SELECT count(*) FROM records").fetchone()[0]
+        before = reader.execute(load_sql("status/record_count")).fetchone()[0]
         already_ready = context_indexes_ready(reader)
     finally:
         reader.close()
     writer = open_store(index)
     try:
-        after = writer.execute("SELECT count(*) FROM records").fetchone()[0]
+        after = writer.execute(load_sql("status/record_count")).fetchone()[0]
         ready = context_indexes_ready(writer)
     finally:
         writer.close()

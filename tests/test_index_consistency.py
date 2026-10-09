@@ -4,6 +4,7 @@ import json
 from dataclasses import replace
 
 import pytest
+from load_test_sql import load_test_sql
 
 from atrium.cli import main
 from atrium.ingest.record_identity import record_identity
@@ -53,9 +54,7 @@ def test_the_same_event_id_in_two_conversations_keeps_both(tmp_path):
     assert main(["--index", str(index), "ingest", str(archive)]) == 0
 
     connection = open_store(index, read_only=True)
-    rows = connection.execute(
-        "SELECT conversation_id, source_sha256 FROM records ORDER BY conversation_id"
-    ).fetchall()
+    rows = connection.execute(load_test_sql("select_conversation_revisions")).fetchall()
     assert rows == [("conv-a", "sha-a"), ("conv-b", "sha-b")]
 
 
@@ -91,7 +90,7 @@ def test_a_malformed_archive_changes_nothing(tmp_path):
         main(["--index", str(index), "ingest", str(archive)])
 
     connection = open_store(index, read_only=True)
-    assert connection.execute("SELECT count(*) FROM records").fetchone()[0] == 0
+    assert connection.execute(load_test_sql("count_records")).fetchone()[0] == 0
 
 
 def test_search_never_returns_a_row_whose_text_changed(tmp_path):
@@ -143,17 +142,17 @@ def test_rewriting_an_unchanged_conversation_keeps_its_vectors(tmp_path):
     with connection:
         assert write_conversation(connection, "conv1", [record]) == 1
         write_vectors(connection, [("r1", "s1")], np.zeros((1, 4), dtype=np.float32))
-    assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 1
+    assert connection.execute(load_test_sql("count_vectors")).fetchone()[0] == 1
 
     with connection:
         assert write_conversation(connection, "conv1", [record]) == UNCHANGED
-    assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 1
+    assert connection.execute(load_test_sql("count_vectors")).fetchone()[0] == 1
 
     # A real revision still replaces the record, and its stale vector goes.
     revised = replace(record, source_sha256="s2", text="a corrected episode")
     with connection:
         assert write_conversation(connection, "conv1", [revised]) == 1
-    assert connection.execute("SELECT count(*) FROM vectors").fetchone()[0] == 0
+    assert connection.execute(load_test_sql("count_vectors")).fetchone()[0] == 0
     connection.close()
 
 
@@ -212,7 +211,7 @@ def test_an_unchanged_comparison_never_hides_a_real_change(tmp_path):
     connection = open_store(tmp_path / "index.sqlite3")
 
     def stored():
-        return connection.execute("SELECT count(*) FROM records").fetchone()
+        return connection.execute(load_test_sql("count_records")).fetchone()
 
     with connection:
         assert write_conversation(connection, "conv", [record("a"), record("b")]) == 2

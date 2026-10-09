@@ -1,6 +1,7 @@
 """The dense lane, its fusion, and the adaptive routing between them."""
 
 import numpy as np
+from load_test_sql import load_test_sql
 
 from atrium.record import Record
 from atrium.retrieve.fuse_ranked import fuse_ranked
@@ -83,7 +84,7 @@ def test_deleting_a_record_deletes_its_vector(tmp_path):
     connection = _store_with_vectors(tmp_path, {"old": [1.0, 0.0]})
     with connection:
         write_conversation(connection, "c", [_record("new", "replacement")])
-    remaining = connection.execute("SELECT record_id FROM vectors").fetchall()
+    remaining = connection.execute(load_test_sql("select_vector_record_ids")).fetchall()
     connection.close()
     assert remaining == []
 
@@ -134,7 +135,7 @@ def test_a_stale_revision_never_gets_its_vector_stored(tmp_path):
         written = write_vectors(
             connection, [("a", "sha-of-the-old-revision")], np.asarray([[1.0, 0.0]])
         )
-    remaining = connection.execute("SELECT count(*) FROM vectors").fetchone()[0]
+    remaining = connection.execute(load_test_sql("count_vectors")).fetchone()[0]
     connection.close()
     assert written == 0
     assert remaining == 0

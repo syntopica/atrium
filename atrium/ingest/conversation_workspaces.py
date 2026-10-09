@@ -2,6 +2,8 @@
 
 import sqlite3
 
+from atrium.sql.load_sql import load_sql
+
 
 def conversation_workspaces(connection: sqlite3.Connection) -> dict[str, str]:
     """Map conversation id to workspace for every conversation that has one.
@@ -18,11 +20,5 @@ def conversation_workspaces(connection: sqlite3.Connection) -> dict[str, str]:
     not define -- if a conversation ever does carry two, this must answer the
     same thing on every machine rather than drift between them.
     """
-    rows = connection.execute(
-        """
-        SELECT conversation_id, min(workspace) FROM records
-        WHERE workspace IS NOT NULL AND provider != 'synthesis'
-        GROUP BY conversation_id
-        """
-    )
+    rows = connection.execute(load_sql("ingest/conversation_workspaces"))
     return dict(rows)

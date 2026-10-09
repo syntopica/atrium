@@ -1,6 +1,7 @@
 """An index must refuse code it was not built by, never silently serve it."""
 
 import pytest
+from load_test_sql import load_test_sql
 
 from atrium.store.build_versions import BUILD_VERSIONS
 from atrium.store.open_store import open_store
@@ -8,7 +9,7 @@ from atrium.store.open_store import open_store
 
 def test_a_new_index_is_stamped_with_the_current_versions(tmp_path):
     connection = open_store(tmp_path / "index.sqlite3")
-    stored = dict(connection.execute("SELECT key, value FROM build_metadata"))
+    stored = dict(connection.execute(load_test_sql("build_stamp/select_build_metadata")))
     connection.close()
     assert stored == BUILD_VERSIONS
 
@@ -26,7 +27,7 @@ def test_an_index_built_by_a_different_pipeline_refuses_to_open(tmp_path):
     path = tmp_path / "index.sqlite3"
     connection = open_store(path)
     with connection:
-        connection.execute("UPDATE build_metadata SET value = 'older' WHERE key = 'pipeline'")
+        connection.execute(load_test_sql("build_stamp/age_pipeline_stamp"))
     connection.close()
     with pytest.raises(RuntimeError, match="different pipeline"):
         open_store(path)
@@ -41,11 +42,8 @@ def test_a_populated_unstamped_index_is_not_silently_adopted(tmp_path):
     path = tmp_path / "index.sqlite3"
     connection = open_store(path)
     with connection:
-        connection.execute(
-            "INSERT INTO records (record_id, event_id, conversation_id, source_sha256,"
-            " provider, role, text, event_index) VALUES ('r','e','c','s','p','user','legacy',0)"
-        )
-        connection.execute("DELETE FROM build_metadata")
+        connection.execute(load_test_sql("build_stamp/insert_legacy_record"))
+        connection.execute(load_test_sql("build_stamp/delete_build_metadata"))
     connection.close()
     with pytest.raises(RuntimeError, match="never stamped"):
         open_store(path)
@@ -55,7 +53,7 @@ def test_an_unstamped_index_refuses_read_only_opening(tmp_path):
     path = tmp_path / "index.sqlite3"
     connection = open_store(path)
     with connection:
-        connection.execute("DELETE FROM build_metadata")
+        connection.execute(load_test_sql("build_stamp/delete_build_metadata"))
     connection.close()
     with pytest.raises(RuntimeError, match="never stamped"):
         open_store(path, read_only=True)

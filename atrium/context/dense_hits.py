@@ -6,6 +6,7 @@ import numpy as np
 
 from atrium.context.context_scope import context_scope
 from atrium.retrieve.hit import Hit
+from atrium.sql.load_sql import load_sql
 
 
 def dense_hits(
@@ -19,10 +20,7 @@ def dense_hits(
     """Rank only indexed role=note vectors, using the existing cosine method."""
     scope, parameters = context_scope(curated, workspace)
     rows = connection.execute(
-        "SELECT r.record_id, r.text, r.conversation_id, r.source_sha256, r.authored_at, r.provider, r.role, v.vector FROM records r JOIN vectors v ON v.record_id = r.record_id WHERE 1 = 1"  # noqa: S608 -- fixed SQL fragments; all data is bound
-        + scope
-        + " ORDER BY r.record_id",
-        parameters,
+        load_sql("context/dense_hits").format(scope=scope), parameters
     ).fetchall()
     if not rows:
         return []

@@ -1,0 +1,1 @@
+CREATE TEMP TABLE IF NOT EXISTS seen_conversations (id TEXT PRIMARY KEY)

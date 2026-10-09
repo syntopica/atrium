@@ -3,6 +3,8 @@
 import sqlite3
 from collections.abc import Iterable
 
+from atrium.sql.load_sql import load_sql
+
 
 def delete_absent_conversations(
     connection: sqlite3.Connection, provider: str, seen_conversation_ids: Iterable[str]
@@ -19,16 +21,12 @@ def delete_absent_conversations(
     The caller owns the transaction, and must only call this for a source it
     ingested completely (a partial ingest would sweep away the rest).
     """
-    connection.execute("CREATE TEMP TABLE IF NOT EXISTS seen_conversations (id TEXT PRIMARY KEY)")
-    connection.execute("DELETE FROM seen_conversations")
+    connection.execute(load_sql("store/create_seen_conversations"))
+    connection.execute(load_sql("store/clear_seen_conversations"))
     connection.executemany(
-        "INSERT OR IGNORE INTO seen_conversations (id) VALUES (?)",
+        load_sql("store/insert_seen_conversation"),
         ((conversation_id,) for conversation_id in seen_conversation_ids),
     )
-    cursor = connection.execute(
-        "DELETE FROM records WHERE provider = ? "
-        "AND conversation_id NOT IN (SELECT id FROM seen_conversations)",
-        (provider,),
-    )
-    connection.execute("DELETE FROM seen_conversations")
+    cursor = connection.execute(load_sql("store/delete_unseen_conversations"), (provider,))
+    connection.execute(load_sql("store/clear_seen_conversations"))
     return cursor.rowcount

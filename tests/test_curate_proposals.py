@@ -4,6 +4,7 @@ import sqlite3
 from pathlib import Path
 
 import numpy as np
+from load_test_sql import load_test_sql
 
 from atrium.curate.load_page_library import load_page_library
 from atrium.curate.page_descriptor import page_descriptor
@@ -36,11 +37,7 @@ class _Embedder:
 def test_the_inbox_is_not_a_destination() -> None:
     """Unreviewed material is where claims come from, not a page they can join."""
     connection = sqlite3.connect(":memory:")
-    connection.executescript(
-        "CREATE TABLE records (record_id TEXT, conversation_id TEXT, title TEXT,"
-        " text TEXT, provider TEXT);"
-        "CREATE TABLE vectors (record_id TEXT, vector BLOB);"
-    )
+    connection.executescript(load_test_sql("curate_proposals/create_page_library_tables"))
     # A third page keeps the shared terms rare enough to score: a word every
     # chunk carries has zero inverse document frequency and ranks nothing.
     pages = [
@@ -50,8 +47,7 @@ def test_the_inbox_is_not_a_destination() -> None:
     ]
     for record_id, (path, text) in enumerate(pages, 1):
         connection.execute(
-            "INSERT INTO records (record_id, conversation_id, title, text, provider)"
-            " VALUES (?, ?, ?, ?, 'brain')",
+            load_test_sql("curate_proposals/insert_brain_page"),
             (str(record_id), path, "Pipelines", text),
         )
     library = load_page_library(connection, _Embedder(), Path("/nowhere"))

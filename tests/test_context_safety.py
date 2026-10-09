@@ -2,6 +2,7 @@
 
 import pytest
 from context_corpus import corpus as corpus  # noqa: PLC0414 -- explicit pytest fixture export
+from load_test_sql import load_test_sql
 
 from atrium.context.retrieve_context import retrieve_context
 from atrium.record import Record
@@ -20,7 +21,7 @@ def test_model_failure_degrades_explicitly_to_lexical(corpus):
 
     with connection:
         connection.execute(
-            "INSERT INTO vectors VALUES (?, ?)",
+            load_test_sql("insert_vector"),
             ("history", np.array([1.0, 0.0], dtype=np.float32).tobytes()),
         )
     result = retrieve_context(

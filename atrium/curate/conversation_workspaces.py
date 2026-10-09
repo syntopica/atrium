@@ -3,6 +3,8 @@
 import sqlite3
 from pathlib import Path
 
+from atrium.sql.load_sql import load_sql
+
 
 def conversation_workspaces(index: Path, conversation_ids: list[str]) -> dict[str, str]:
     """Map conversation id to its dominant workspace, skipping what is unknown.
@@ -24,9 +26,7 @@ def conversation_workspaces(index: Path, conversation_ids: list[str]) -> dict[st
             # The only interpolation is a run of "?" placeholders built from the
             # batch length; every value is still bound.
             rows = connection.execute(
-                "SELECT conversation_id, workspace, COUNT(*) FROM records "  # noqa: S608
-                f"WHERE conversation_id IN ({placeholders}) AND workspace IS NOT NULL "
-                "GROUP BY conversation_id, workspace",
+                load_sql("curate/conversation_workspaces").format(placeholders=placeholders),
                 batch,
             )
             for conversation_id, workspace, count in rows:

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from atrium.commands.print_coverage import print_coverage
 from atrium.commands.print_populations import print_populations
+from atrium.sql.load_sql import load_sql
 from atrium.store.open_store import open_store
 from atrium.synthesize.default_registry import default_registry
 
@@ -41,11 +42,9 @@ def run_status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     from atrium.status.status_file import status_file
 
     connection = open_store(index, read_only=True)
-    records = connection.execute("SELECT count(*) FROM records").fetchone()[0]
-    providers = connection.execute(
-        "SELECT provider, count(*) FROM records GROUP BY provider ORDER BY 2 DESC"
-    ).fetchall()
-    build = dict(connection.execute("SELECT key, value FROM build_metadata"))
+    records = connection.execute(load_sql("status/record_count")).fetchone()[0]
+    providers = connection.execute(load_sql("status/provider_counts_by_size")).fetchall()
+    build = dict(connection.execute(load_sql("store/read_build_metadata")))
     freshness = [
         archive_freshness(archive),
         refresh_health(stamp),

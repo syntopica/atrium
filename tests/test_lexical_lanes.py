@@ -2,6 +2,8 @@
 
 import time
 
+from load_test_sql import load_test_sql
+
 from atrium.record import Record
 from atrium.retrieve.search_words import search_words
 from atrium.store.open_store import open_store
@@ -49,10 +51,7 @@ def test_word_lane_does_not_match_a_longer_word(tmp_path):
 def test_substring_lane_still_finds_fragments(tmp_path):
     """The substring behaviour is not deleted, it is moved to the lane that wants it."""
     connection = _store(tmp_path, [_record("wall", "the walled garden")])
-    rows = connection.execute(
-        "SELECT r.record_id FROM substrings JOIN records r ON r.rowid = substrings.rowid "
-        "WHERE substrings MATCH 'wal'"
-    ).fetchall()
+    rows = connection.execute(load_test_sql("lexical_lanes/match_substring_wal")).fetchall()
     assert [row[0] for row in rows] == ["wall"]
 
 
@@ -232,13 +231,7 @@ def test_an_exhausted_budget_keeps_what_it_read_and_says_so(tmp_path):
     from atrium.retrieve.ranked_hits import ranked_hits
 
     connection = _store(tmp_path, [_record(f"r-{number}", "a stop hook") for number in range(400)])
-    statement = """
-        SELECT r.record_id, r.text, -bm25(words), r.conversation_id,
-               r.source_sha256, r.authored_at, r.provider, r.role
-        FROM words JOIN records r ON r.rowid = words.rowid
-        WHERE words MATCH ?
-        ORDER BY words.rank
-    """
+    statement = load_test_sql("lexical_lanes/rank_words")
     exhausted: set[str] = set()
     slow = []
 
@@ -253,7 +246,7 @@ def test_an_exhausted_budget_keeps_what_it_read_and_says_so(tmp_path):
     assert exhausted == {"lexical_budget_exhausted"}
     assert hits, "an interrupted read must keep the hits it already took"
     assert len(hits) < 400
-    assert connection.execute("SELECT count(*) FROM records").fetchone() == (400,)
+    assert connection.execute(load_test_sql("count_records")).fetchone() == (400,)
 
 
 def test_waiting_for_the_cpu_does_not_spend_the_budget(tmp_path):
@@ -264,13 +257,7 @@ def test_waiting_for_the_cpu_does_not_spend_the_budget(tmp_path):
     from atrium.retrieve.ranked_hits import ranked_hits
 
     connection = _store(tmp_path, [_record(f"r-{number}", "a stop hook") for number in range(20)])
-    statement = """
-        SELECT r.record_id, r.text, -bm25(words), r.conversation_id,
-               r.source_sha256, r.authored_at, r.provider, r.role
-        FROM words JOIN records r ON r.rowid = words.rowid
-        WHERE words MATCH ?
-        ORDER BY words.rank
-    """
+    statement = load_test_sql("lexical_lanes/rank_words")
     exhausted: set[str] = set()
 
     def accept(hit):
@@ -295,7 +282,7 @@ def test_a_broken_index_is_not_reported_as_a_spent_budget(tmp_path):
     with pytest.raises(sqlite3.OperationalError):
         ranked_hits(
             connection,
-            "SELECT * FROM a_table_that_is_not_here",
+            load_test_sql("lexical_lanes/select_missing_table"),
             (),
             5,
             2000,

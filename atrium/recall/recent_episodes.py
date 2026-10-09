@@ -3,24 +3,7 @@
 import sqlite3
 
 from atrium.retrieve.hit import Hit
-
-# Shaped for the (role, workspace) index, not for brevity. Filtering on provider
-# alone made SQLite walk all 79k episodes through `records_provider` and fetch
-# each row from a 22 GB table to read its workspace: 0.1s warm, but over 20s on
-# a cold page cache, which timed out session-start recall forty minutes after a
-# reboot on 2026-10-09. `+provider` keeps the planner off that index, and the
-# range `[prefix, prefix || '0')` -- '0' is the byte after '/' -- lets it seek to
-# the project; the exact test below then drops siblings such as `atrium-x`.
-_QUERY = """
-SELECT record_id, text, conversation_id, source_sha256, authored_at, provider, role
-FROM records
-WHERE +provider = 'synthesis'
-  AND role = 'synthesis'
-  AND workspace >= ? AND workspace < ? || '0'
-  AND (workspace = ? OR substr(workspace, 1, length(?) + 1) = ? || '/')
-ORDER BY authored_at DESC, conversation_id, record_id
-LIMIT ?
-"""
+from atrium.sql.load_sql import load_sql
 
 
 def recent_episodes(connection: sqlite3.Connection, workspace: str, limit: int) -> list[Hit]:
@@ -45,7 +28,9 @@ def recent_episodes(connection: sqlite3.Connection, workspace: str, limit: int) 
     across everything that produces a ``Hit`` -- these are ordered by time, not
     ranked by relevance, and reporting a relevance score would be a lie.
     """
-    rows = connection.execute(_QUERY, (workspace,) * 5 + (limit,)).fetchall()
+    rows = connection.execute(
+        load_sql("recall/recent_episodes"), (workspace,) * 5 + (limit,)
+    ).fetchall()
     return [
         Hit(
             record_id=row[0],

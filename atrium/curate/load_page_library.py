@@ -9,14 +9,8 @@ import numpy as np
 from atrium.curate.page_library import PageLibrary
 from atrium.embed.embedder import Embedder
 from atrium.retrieve.fold import fold
+from atrium.sql.load_sql import load_sql
 
-_QUERY = """
-SELECT r.conversation_id, r.title, r.text, v.vector
-FROM records r
-LEFT JOIN vectors v ON v.record_id = r.record_id
-WHERE r.provider = 'brain'
-ORDER BY r.record_id
-"""
 _WORD = re.compile(r"[a-z0-9_]+")
 
 
@@ -24,7 +18,7 @@ def load_page_library(
     connection: sqlite3.Connection, embedder: Embedder, root: Path
 ) -> PageLibrary:
     """Return the curated chunks, tokenised and stacked, for one proposal run."""
-    rows = connection.execute(_QUERY).fetchall()
+    rows = connection.execute(load_sql("curate/page_library")).fetchall()
     texts = [str(row[2]) for row in rows]
     embedded = [index for index, row in enumerate(rows) if row[3] is not None]
     matrix = (

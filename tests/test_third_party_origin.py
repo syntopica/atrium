@@ -6,6 +6,8 @@ searchable when the user asks, never embedded, never fused into semantic
 answers, never injected at session start.
 """
 
+from load_test_sql import load_test_sql
+
 from atrium.cli import main
 from atrium.embed.semantic_roles import SEMANTIC_ROLES
 from atrium.recall.recent_episodes import recent_episodes
@@ -43,12 +45,11 @@ def test_third_party_ingest_marks_every_record(tmp_path):
     )
     assert code == 0
     connection = open_store(index, read_only=True)
-    rows = connection.execute("SELECT DISTINCT role, provider FROM records").fetchall()
+    rows = connection.execute(load_test_sql("third_party_origin/select_role_providers")).fetchall()
     assert rows == [("source", "brain-sources")]
     placeholders = ",".join("?" for _ in SEMANTIC_ROLES)
     pending = connection.execute(
-        f"SELECT count(*) FROM records WHERE role IN ({placeholders}) "  # noqa: S608
-        "AND record_id NOT IN (SELECT record_id FROM vectors)",
+        load_test_sql("count_unembedded_semantic_records").format(placeholders=placeholders),
         tuple(SEMANTIC_ROLES),
     ).fetchone()[0]
     connection.close()
@@ -96,7 +97,7 @@ def test_recall_never_serves_third_party_text(tmp_path):
     )
     connection = open_store(index)
     with connection:
-        connection.execute("UPDATE records SET workspace = '[HOME]/p/x'")
+        connection.execute(load_test_sql("third_party_origin/set_workspace_x"))
     assert recent_episodes(connection, "[HOME]/p/x", 10) == []
     connection.close()
 

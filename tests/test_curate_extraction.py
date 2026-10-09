@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+from load_test_sql import load_test_sql
 
 from atrium.curate import extracted_claim as extracted_claim_module
 from atrium.curate.conversation_workspaces import conversation_workspaces
@@ -106,9 +107,9 @@ def test_a_workspace_with_no_project_says_so(workspace: str) -> None:
 def test_the_dominant_workspace_wins(tmp_path: Path) -> None:
     index = tmp_path / "index.sqlite3"
     connection = sqlite3.connect(index)
-    connection.execute("CREATE TABLE records (conversation_id TEXT, workspace TEXT)")
+    connection.execute(load_test_sql("create_records_with_workspace"))
     connection.executemany(
-        "INSERT INTO records VALUES (?, ?)",
+        load_test_sql("insert_record_pair"),
         [("c1", "/p/first"), ("c1", "/p/second"), ("c1", "/p/second"), ("c2", None)],
     )
     connection.commit()

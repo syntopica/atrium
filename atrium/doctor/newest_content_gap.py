@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 
 from atrium.doctor.finding import Finding
+from atrium.sql.load_sql import load_sql
 
 
 def newest_content_gap(connection: sqlite3.Connection, now: float | None = None) -> Finding:
@@ -18,9 +19,7 @@ def newest_content_gap(connection: sqlite3.Connection, now: float | None = None)
     nothing printed this number.
     """
     moment = time.time() if now is None else now
-    newest = connection.execute(
-        "SELECT max(authored_at) FROM records WHERE authored_at IS NOT NULL"
-    ).fetchone()[0]
+    newest = connection.execute(load_sql("doctor/newest_authored_at")).fetchone()[0]
     if not newest:
         return Finding(
             check="content",

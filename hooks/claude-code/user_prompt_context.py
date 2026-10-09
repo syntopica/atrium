@@ -107,13 +107,32 @@ def _retrieved(command: list[str]) -> str:
         raise
 
 
-def _emit(body: str) -> None:
+def _notice(evidence: list[dict]) -> str:
+    """The one line the person sees: what was retrieved, by kind.
+
+    `additionalContext` never reaches the transcript, so the person could not
+    tell a prompt that got evidence from one that got nothing, and the session
+    reads it either way. `systemMessage` is shown to the person and not to
+    Claude, which is the split wanted.
+    """
+    counts: dict[str, int] = {}
+    for item in evidence:
+        label = _TRUST_LABEL.get(item.get("trust", ""), "item")
+        counts[label] = counts.get(label, 0) + 1
+    kinds = ", ".join(
+        f"{count} {label}{'s' if count > 1 else ''}" for label, count in counts.items()
+    )
+    return f"atrium: {len(evidence)} retrieved ({kinds})"
+
+
+def _emit(body: str, notice: str) -> None:
     json.dump(
         {
+            "systemMessage": notice,
             "hookSpecificOutput": {
                 "hookEventName": "UserPromptSubmit",
                 "additionalContext": body,
-            }
+            },
         },
         sys.stdout,
     )
@@ -150,13 +169,13 @@ def main() -> int:
         # a cold index, the session called `atrium_context` at no point, and it
         # told the owner a mail was unanswered that had been answered. Failures
         # are rare, so one line on each costs less than one confident wrong claim.
-        _emit(_FAILURE_NOTICE)
+        _emit(_FAILURE_NOTICE, "atrium: context unavailable (failed or timed out)")
         return 0
     if result.get("index_status") not in _ANSWERED:
         # A valid answer from an index that could not be read is still a
         # failure: it arrives as JSON with no evidence, and treating it as "no
         # match" was the same silence as a timeout (raised by review, 2026-10-09).
-        _emit(_FAILURE_NOTICE)
+        _emit(_FAILURE_NOTICE, f"atrium: index not readable ({result.get('index_status')})")
         return 0
     evidence = result.get("evidence") or []
     if not evidence:
@@ -173,7 +192,7 @@ def main() -> int:
             *[_line(item) for item in evidence],
         ]
     )
-    _emit(body)
+    _emit(body, _notice(evidence))
     return 0
 
 

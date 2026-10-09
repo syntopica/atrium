@@ -63,7 +63,7 @@ def _retrieved(command: list[str]) -> str:
     review, 2026-09-16). A new session makes the whole tree one group to signal.
     """
     seconds = float(os.environ.get("ATRIUM_PROMPT_CONTEXT_TIMEOUT", _TIMEOUT_SECONDS))
-    process = subprocess.Popen(  # noqa: S603 -- fixed argv, no shell
+    process = subprocess.Popen(  # fixed argv, no shell
         command,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
@@ -96,6 +96,7 @@ def _emit(body: str) -> None:
 
 
 def main() -> int:
+    """Inject retrieved context, a failure notice, or nothing; never block the turn."""
     try:
         payload = json.load(sys.stdin)
     except Exception:

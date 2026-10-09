@@ -112,6 +112,26 @@ def test_an_unrecoverable_scratchpad_is_dropped(home: Path):
     assert canonical_workspace(workspace, home) is None
 
 
+def test_a_deleted_project_named_by_an_alias_keeps_its_memory(home: Path):
+    """`p/agents-tools` is gone from disk, but the alias map still says where it went."""
+    workspace = _scratchpad(home / "p" / "agents-tools")
+    aliases = {"[HOME]/p/agents-tools": "[HOME]/p/agents"}
+    assert canonical_workspace(workspace, home, aliases) == "[HOME]/p/agents"
+
+
+def test_an_alias_is_not_matched_by_prefix(home: Path):
+    """`p/mem-old` encodes with `p/mem` as a prefix; it is not `p/mem`."""
+    workspace = _scratchpad(home / "p" / "mem-old")
+    aliases = {"[HOME]/p/mem": "[HOME]/p/atrium"}
+    assert canonical_workspace(workspace, home, aliases) is None
+
+
+def test_two_aliases_encoding_alike_name_no_project(home: Path):
+    workspace = _scratchpad(home / "p" / "gone-tool")
+    aliases = {"[HOME]/p/gone-tool": "[HOME]/p/a", "[HOME]/p/gone/tool": "[HOME]/p/b"}
+    assert canonical_workspace(workspace, home, aliases) is None
+
+
 def test_a_scratchpad_outside_the_home_directory_is_dropped(home: Path):
     """A session run in `/private/tmp` or at `/` was in no project at all."""
     assert canonical_workspace(f"/tmp/claude-0/-private-tmp/{SESSION}/scratchpad", home) is None

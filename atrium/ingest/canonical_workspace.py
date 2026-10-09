@@ -3,6 +3,7 @@
 from collections.abc import Mapping
 from pathlib import Path
 
+from atrium.ingest.alias_for_encoded_segment import alias_for_encoded_segment
 from atrium.ingest.apply_workspace_aliases import apply_workspace_aliases
 from atrium.ingest.decode_workspace_segment import decode_workspace_segment
 from atrium.ingest.session_scratchpad_segment import session_scratchpad_segment
@@ -52,8 +53,8 @@ def canonical_workspace(
     archive yields different workspaces on a machine where a project directory
     is absent, and a project deleted tomorrow loses its scratchpad history on
     the next refresh rather than keeping the workspace it had. That is the
-    mechanism behind the 45 conversations dropped in the 2026-09-01 measurement,
-    and it means "the index is derived and rebuilt from the archive" now holds
+    mechanism behind the 45 conversations dropped in the 2026-09-01 measurement;
+    an alias naming the deleted directory now rescues them. It also means "the index is derived and rebuilt from the archive" now holds
     only up to the state of the disk at rebuild time.
     """
     if not workspace:
@@ -61,7 +62,9 @@ def canonical_workspace(
     root = str(Path(home).expanduser() if home is not None else Path.home())
     segment = session_scratchpad_segment(workspace)
     if segment is not None:
-        decoded = decode_workspace_segment(segment, root)
+        decoded = decode_workspace_segment(segment, root) or alias_for_encoded_segment(
+            segment, root, (aliases or {}).keys()
+        )
         if decoded is None:
             return None
         workspace = decoded

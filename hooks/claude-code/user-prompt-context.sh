@@ -11,10 +11,11 @@
 # a prompt is a natural-language sentence, and on a 1.4M-record index the word
 # lane ORs every common term in it -- "why does the stop hook fire on a status
 # turn" took over two minutes, against 1-3s for the same query dense. Plus a
-# hard 5s timeout and a small budget. Silence on every failure -- a hook that
-# cannot answer must never block a turn; it can still delay one by up to that
-# timeout, which is the price of injecting anything at all before the turn
-# starts. Register under "UserPromptSubmit":
+# hard 5s timeout and a small budget. A failed or timed-out retrieval injects a
+# one-line notice rather than nothing, since silence read as "nothing on record"
+# (2026-10-09); it never blocks a turn, but can delay one by up to that timeout,
+# which is the price of injecting anything at all before the turn starts.
+# Register under "UserPromptSubmit":
 #   {"type": "command", "command": "sh /path/to/hooks/claude-code/user-prompt-context.sh", "timeout": 15}
 #
 # Tunable through the environment: ATRIUM_PROMPT_CONTEXT_LIMIT (evidence items),

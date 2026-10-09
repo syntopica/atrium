@@ -127,12 +127,35 @@ def test_a_consumed_base_key_walks_to_the_next_suffix(monkeypatch, tmp_path, sta
     assert out["worker_results"] == [{"job_id": "j2", "result_id": "r1"}]
 
 
-def test_every_key_consumed_ends_in_retries_exhausted_after_four_submits(monkeypatch, tmp_path):
-    url, seen = serve([], consumed=99)
+def test_four_failed_keys_end_in_retries_exhausted(monkeypatch, tmp_path):
+    url, seen = serve([], state="failed", consumed=99)
     configure(monkeypatch, tmp_path, url)
     with pytest.raises(RuntimeError, match="worker job retries exhausted"):
         worker_lane_call(LanePrompt("sys", "user"), TOOL)
     assert len(seen["/v1/jobs"]) == 4
+
+
+def test_successes_another_caller_consumed_spend_no_failure_budget(monkeypatch, tmp_path):
+    """Identical chunk text in other conversations spent four keys on 2026-10-09."""
+    ok = {
+        "result_id": "r5",
+        "control": None,
+        "output": {"json": {"title": "t"}},
+        "usage": {},
+    }
+    url, seen = serve([ok, ok], consumed=4)
+    configure(monkeypatch, tmp_path, url)
+    out = worker_lane_call(LanePrompt("sys", "user"), TOOL)
+    assert out["input"] == {"title": "t"}
+    assert seen["/v1/jobs"][-1]["idempotency_key"].endswith(":r4")
+
+
+def test_consumed_successes_still_end_after_eight_keys(monkeypatch, tmp_path):
+    url, seen = serve([], consumed=99)
+    configure(monkeypatch, tmp_path, url)
+    with pytest.raises(RuntimeError, match="worker job retries exhausted"):
+        worker_lane_call(LanePrompt("sys", "user"), TOOL)
+    assert len(seen["/v1/jobs"]) == 8
 
 
 def test_a_first_key_success_submits_once(monkeypatch, tmp_path):

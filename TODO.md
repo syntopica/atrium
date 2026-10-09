@@ -334,16 +334,21 @@
   the log says which step grew. Smallest next step: time each stage of one run (or read
   the stall-guard artifacts' mtimes) and name the step that took the hours.
 
-- [ ] **The local lane has not finished a pass by itself since 2026-10-04
-      00:49.** `atrium synthesis passes --json` on 2026-10-04 19:00 reported
-      `unsuccessfulStreak` 15: every local pass since 01:04 ended `exit 124` at
-      the 3300 s box (two more have a start and no end), so `synthesis.json`
-      still describes the 00:49 pass. The running pass had finished 1 of
-      52,427 conversations after 26 min, its other lines `FAILED: worker job
-      still pending`, while the registry still gained 866 records that day.
-      Next step: measure how much of each pass goes to the start-up registry
-      read (`read_records` over 76k files) versus waiting on worker jobs, then
-      decide between a shorter wait budget and a longer box.
+- [~] **The local lane synthesized nothing from 2026-10-08 20:01 (deadlock, fixed
+      2026-10-09).** The worker's `atrium.synthesis` queue has `max_outstanding` 20
+      and counts unacked results; map chunks stayed unacked until their episode
+      reduced, so twenty episodes each holding one filled the queue and none could
+      submit its next chunk (429). Separately, seven conversations share one
+      46-character chunk, so one worker key, whose four retry keys other
+      conversations had consumed: "retries exhausted" every pass. Fix: every
+      producer call is kept in `<registry>/partials/` (fsynced, keyed by model,
+      prompt and schema), map chunks are acked at once, and consumed successes no
+      longer spend the failure budget. Root cause found by Codex (read-only), the fix
+      reviewed by it. Left: confirm a live pass drains the 20 and synthesizes the
+      seven; then two follow-ups: (a) `partials/` grows without bound -- delete an
+      episode's partials once its record is written, keeping shared ones; (b) a
+      conversation whose kept chunk was acked leaves the holding set, so it is
+      resumed only in newest-first order.
 - [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
       of its window (15,696 files for 14 days). If a reader ever needs it
       polled, keep per-day totals for closed days in a derived file.

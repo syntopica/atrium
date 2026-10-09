@@ -339,6 +339,12 @@
 
 ## Observability
 
+- [ ] **Refresh runs went from 12-15 min to 1-2.5 h on 2026-10-09.** `refresh.log`:
+  13:27-15:42, 16:54-19:19 and 20:19-21:28 (local), against 11-23 min for every run on
+  2026-10-08; record counts grew by only a few hundred. Unexplained: no stage timing in
+  the log says which step grew. Smallest next step: time each stage of one run (or read
+  the stall-guard artifacts' mtimes) and name the step that took the hours.
+
 - [ ] **The local lane has not finished a pass by itself since 2026-10-04
       00:49.** `atrium synthesis passes --json` on 2026-10-04 19:00 reported
       `unsuccessfulStreak` 15: every local pass since 01:04 ended `exit 124` at

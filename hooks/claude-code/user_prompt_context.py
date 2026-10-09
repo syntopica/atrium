@@ -17,6 +17,16 @@ _MIN_PROMPT_CHARACTERS = 24
 # five has already cost more than it can return (raised by review, 2026-09-16).
 _TIMEOUT_SECONDS = "5"
 _EXCERPT_CHARACTERS = 220
+_FAILURE_NOTICE = "\n".join(
+    [
+        "# atrium context unavailable for this prompt",
+        "",
+        "Retrieval failed or timed out, so nothing was checked: this is not an",
+        "empty record. Before stating anything about prior work, people, threads",
+        "or decisions, call `atrium_context` (or `atrium context`) yourself and",
+        "check the live source.",
+    ]
+)
 _TRUST_LABEL = {"curated": "note", "synthesized": "episode", "history": "transcript"}
 
 
@@ -73,6 +83,18 @@ def _retrieved(command: list[str]) -> str:
         raise
 
 
+def _emit(body: str) -> None:
+    json.dump(
+        {
+            "hookSpecificOutput": {
+                "hookEventName": "UserPromptSubmit",
+                "additionalContext": body,
+            }
+        },
+        sys.stdout,
+    )
+
+
 def main() -> int:
     try:
         payload = json.load(sys.stdin)
@@ -98,9 +120,12 @@ def main() -> int:
     try:
         result = json.loads(_retrieved(command))
     except Exception:
-        # A retrieval that cannot answer says nothing. The session-start block
-        # already tells the session memory exists; a failure line every prompt
-        # would cost more context than the feature saves.
+        # A failure is said, not swallowed. Silence read as "nothing on record":
+        # on 2026-10-09 the session-start recall and this hook both timed out on
+        # a cold index, the session called `atrium_context` at no point, and it
+        # told the owner a mail was unanswered that had been answered. Failures
+        # are rare, so one line on each costs less than one confident wrong claim.
+        _emit(_FAILURE_NOTICE)
         return 0
     evidence = result.get("evidence") or []
     if not evidence:
@@ -117,15 +142,7 @@ def main() -> int:
             *[_line(item) for item in evidence],
         ]
     )
-    json.dump(
-        {
-            "hookSpecificOutput": {
-                "hookEventName": "UserPromptSubmit",
-                "additionalContext": body,
-            }
-        },
-        sys.stdout,
-    )
+    _emit(body)
     return 0
 
 

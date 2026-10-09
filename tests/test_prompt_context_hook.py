@@ -40,13 +40,25 @@ def test_a_timeout_leaves_no_retrieval_running(tmp_path: Path) -> None:
     fake = tmp_path / "atrium"
     fake.write_text(f"#!/bin/sh\n(sleep 20; touch {marker}) &\nwait\n")
     fake.chmod(0o755)
-    assert (
-        _run(
-            {"prompt": "a prompt long enough to reach retrieval", "cwd": str(tmp_path)},
-            {"ATRIUM_PROMPT_CONTEXT_TIMEOUT": "1"},
-            tmp_path,
-        )
-        == ""
+    out = _run(
+        {"prompt": "a prompt long enough to reach retrieval", "cwd": str(tmp_path)},
+        {"ATRIUM_PROMPT_CONTEXT_TIMEOUT": "1"},
+        tmp_path,
     )
+    assert "atrium context unavailable" in out
     subprocess.run(["sleep", "3"], check=False)
     assert not marker.exists()
+
+
+def test_a_failed_retrieval_says_so_instead_of_staying_silent(tmp_path: Path) -> None:
+    """Silence after a failure reads as "nothing on record", which it is not."""
+    fake = tmp_path / "atrium"
+    fake.write_text("#!/bin/sh\nexit 1\n")
+    fake.chmod(0o755)
+    out = _run(
+        {"prompt": "a prompt long enough to reach retrieval", "cwd": str(tmp_path)},
+        {},
+        tmp_path,
+    )
+    context = json.loads(out)["hookSpecificOutput"]["additionalContext"]
+    assert "call `atrium_context`" in context

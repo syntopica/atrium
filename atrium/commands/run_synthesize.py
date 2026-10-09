@@ -12,6 +12,8 @@ from atrium.synthesis_pass.publish_pass_status import publish_pass_status
 from atrium.synthesis_pass.read_registry_state import read_registry_state
 from atrium.synthesis_pass.select_producer_lane import select_producer_lane
 from atrium.synthesize.default_registry import default_registry
+from atrium.synthesize.prune_partials import prune_partials
+from atrium.synthesize.started_conversations import started_conversations
 
 
 def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument is one flag
@@ -66,6 +68,10 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
     journal = default_registry() / "worker-submissions.jsonl"
     lane = select_producer_lane(producer, model, effort)
     state = read_registry_state(include_session_covered=include_session_covered)
+    partials = default_registry() / "partials"
+    pruned = prune_partials(partials)
+    if pruned:
+        print(f"  pruned {pruned} kept partials older than 30 days")
     holding: set[str] = set()
     if lane.worker_queue is not None:
         holding = holding_conversations(lane.worker_queue, state.recorded_results, journal)
@@ -73,7 +79,18 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
             print(
                 f"  {len(holding)} conversations hold uncollected worker results; walking them first"
             )
-            conversations.sort(key=lambda conversation: conversation["id"] not in holding)
+    # A conversation that kept and acked its map chunks holds no worker result
+    # any more, so only its started marker says it is half done. It goes first
+    # too, but unlike a holding one it still stops at a quota wall.
+    unfinished = started_conversations(partials) - holding
+    if unfinished:
+        print(f"  {len(unfinished)} conversations were left half done; walking them next")
+    conversations.sort(
+        key=lambda conversation: (
+            conversation["id"] not in holding,
+            conversation["id"] not in unfinished,
+        )
+    )
     made = skipped = failed = deferred = 0
     total = len(conversations)
     started = time.time()

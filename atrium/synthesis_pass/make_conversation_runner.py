@@ -8,8 +8,10 @@ from typing import Any
 
 from atrium.synthesis_pass.producer_lane import ProducerLane
 from atrium.synthesis_pass.registry_state import RegistryState
+from atrium.synthesize.ack_conversation_results import ack_conversation_results
 from atrium.synthesize.default_registry import default_registry
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
+from atrium.synthesize.read_worker_submissions import read_worker_submissions
 from atrium.synthesize.record_worker_submission import record_worker_submission
 
 
@@ -26,6 +28,13 @@ def make_conversation_runner(
     # the rest as deferred -- still pending, not failed -- and let a later tick
     # pick them up instead of grinding failures.
     quota_wall = threading.Event()
+    submissions = read_worker_submissions(journal) if holding else {}
+
+    def settle(conversation_id: str) -> None:
+        # A holding conversation that ends without error has nothing left to
+        # submit, so any result still offered for it is never collected.
+        if lane.worker_queue is not None and conversation_id in holding:
+            ack_conversation_results(lane.worker_queue, conversation_id, submissions)
 
     def run_one(item: tuple[int, dict[str, Any]]) -> dict[str, int]:
         from atrium.synthesize.synthesize_conversation import synthesize_conversation
@@ -40,6 +49,7 @@ def make_conversation_runner(
             walled and (conversation["id"], revision) in state.recorded_revisions
         ):
             # Covered: the session that lived it already recorded it.
+            settle(conversation["id"])
             return {"synthesized": 0, "skipped": 1, "failed": 0}
         if walled:
             return {"synthesized": 0, "skipped": 0, "failed": 0, "deferred": 1}
@@ -66,6 +76,7 @@ def make_conversation_runner(
         except Exception as error:
             print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}
+        settle(conversation["id"])
         print(
             f"  [{position}/{total}] {conversation['id'][:12]} "
             f"+{result['synthesized']} (skipped {result['skipped']})",

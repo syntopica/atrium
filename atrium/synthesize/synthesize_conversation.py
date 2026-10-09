@@ -14,6 +14,7 @@ from atrium.synthesize.has_record import has_record
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
 from atrium.synthesize.producer import Producer
 from atrium.synthesize.segment_episodes import SEGMENTATION_FINGERPRINT, segment_episodes
+from atrium.synthesize.started_marker import started_marker
 from atrium.synthesize.synthesis_prompt import PROMPT_SHA256
 from atrium.synthesize.synthesis_schema import OUTPUT_SCHEMA_VERSION
 from atrium.synthesize.synthesize_episode import synthesize_episode
@@ -37,6 +38,7 @@ def synthesize_conversation(
     events = conversation.get("events") or []
     revision = (conversation.get("provenance") or {}).get("contentSha256") or ""
     made = skipped = 0
+    marker = started_marker(registry / "partials", conversation["id"])
     for episode in segment_episodes(events):
         event_ids = [events[i].get("id") or str(i) for i in episode["event_indexes"]]
         episode_id = episode_identity(conversation["id"], event_ids)
@@ -47,6 +49,11 @@ def synthesize_conversation(
         if has_record(registry, job_key) or (done_episodes and episode_id in done_episodes):
             skipped += 1
             continue
+        # Marked before the first call and cleared only when every episode is
+        # recorded: a pass that stops in between leaves the mark, and the next
+        # pass walks this conversation first to reuse what it kept.
+        marker.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        marker.touch()
         began = time.monotonic()
         result = synthesize_episode(episode, events, producer, registry / "partials", model_id)
         duration_ms = round((time.monotonic() - began) * 1000)
@@ -95,4 +102,5 @@ def synthesize_conversation(
         )
         ack_worker_results(worker_results)
         made += 1
+    marker.unlink(missing_ok=True)
     return {"synthesized": made, "skipped": skipped}

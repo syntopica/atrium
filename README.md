@@ -95,7 +95,9 @@ prompt and injects the evidence found. The dense lane, because a prompt is a
 sentence and the word lane ORs its common terms across the whole corpus (see
 `TODO.md`). It is silent on a slash command, on a prompt under 24 characters and outside a
 project; a failed or timed-out retrieval (10s by default) injects a one-line
-notice, since silence would read as "nothing on record".
+notice, since silence would read as "nothing on record". Each answer also carries a
+one-line `systemMessage` the person sees (`atrium: 4 retrieved (2 notes, 2
+episodes)`), because `additionalContext` never reaches the transcript.
 `ATRIUM_PROMPT_CONTEXT=off` disables it without unregistering it;
 `_LIMIT`, `_CHARS`, `_LANE` and `_TIMEOUT` tune it.
 

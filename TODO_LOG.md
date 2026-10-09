@@ -6,6 +6,16 @@
 
 ### 2026-10
 
+- [x] 2026-10-09 — **Codex rollouts over 64 MiB reach the archive.** rocket-agents
+  streams oversized JSONL since 2026-08-31 (its TODO_LOG), and the hourly refresh's export
+  manifest reports codex `available: true`, 31,119 artifacts, `skipped: 0`
+  (`refresh.log`, run of 2026-10-09 22:45); the index holds 113,385 codex records.
+
+- [-] 2026-10-09 — **Re-embed the memstore palace with embeddinggemma.** memstore was
+  retired (2026-09-14) and `~/p/memstore` no longer exists; Atrium already embeds with
+  `embeddinggemma-300m`. What is left of memstore is the 26 GB retired copy, tracked under
+  Ingest / Store.
+
 - [x] 2026-10-09 — **The local lane's deadlock and shared-chunk collision are fixed and
   verified live.** Root cause and fix in atrium 31e53cb: kept partials under
   `<registry>/partials`, map chunks acked at once, consumed successes no longer spend the

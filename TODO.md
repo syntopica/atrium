@@ -47,12 +47,7 @@
       that README: which of memstore's own synthesis is worth importing rather
       than re-deriving, given Atrium already indexes the same conversation corpus.
       A bulk read over 26 GB, so a delegated pass, not an inline session.
-- [ ] Codex source unblocked 2026-08-27: rocket-agents gained
-      `--allow-partial` (commit `bfa54ec` there) and the full codex export landed
-      — 4,356 conversations -> 21,219 records ingested, manifest declares
-      `complete:false` with the two >64 MiB rollouts listed. Remaining here: once
-      rocket-agents ships the streaming exporter (its TODO), re-export codex
-      complete and re-ingest so those two rollouts join the index.
+
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable
@@ -76,8 +71,8 @@
       segment by period or by source, or make append the normal path and the full
       rewrite a compaction. Cross-project: rocket-agents.
 - [ ] **Whole conversations that have never entered the archive at all.** The
-      codex export declares `complete:false` and skips two rollouts over 64 MiB
-      outright; the Windsurf and Trae exporters emit zero conversations; ChatGPT
+      codex gap is closed (streaming export since 2026-08-31; every refresh reports
+      `skipped: 0` over 31,119 codex artifacts); the Windsurf and Trae exporters emit zero conversations; ChatGPT
       and Grok leave no local transcript, so nothing has ever been captured from
       them. Each is filed separately below and in `~/p/agents/TODO.md`, but
       together they are the answer to "is the archive complete", and today the
@@ -461,11 +456,6 @@
       `sha256(conversation_id, event_id)`; the canonical contract should carry the
       identity itself. Also: the Windsurf exporter emits 0 conversations from 4
       database artifacts. Filed in `~/p/agents/TODO.md`.
-- [ ] `memstore` fork: the live palace embeds with the English-only default
-      model over a ~77% Spanish corpus; switching to `embeddinggemma` (same 384
-      dims, config-only) nearly doubles dense quality (R@10 40.8% -> 70.4%) at
-      ~36 h CPU re-embed. Decision pending: worth doing while Atrium replaces it?
-      Filed in `~/p/memstore/TODO.md`.
 
 ## Routed from `~/p/TODO.md` (2026-10-03)
 

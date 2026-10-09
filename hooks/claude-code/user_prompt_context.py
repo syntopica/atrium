@@ -13,10 +13,11 @@ import sys
 from pathlib import Path
 
 _MIN_PROMPT_CHARACTERS = 24
-# Five seconds, not ten. The dense lane answers in 1-3s on a 1.4M-record index,
-# and this hook is in front of every turn: a retrieval that cannot answer in
-# five has already cost more than it can return (raised by review, 2026-09-16).
-_TIMEOUT_SECONDS = "5"
+# Ten seconds. Five was chosen on 2026-09-16 because the dense lane answers in
+# 1-3s warm, but after a reboot the first prompts run against a cold 22 GB index
+# and timed out, so sessions saw the failure notice instead of evidence
+# (2026-10-09). The owner chose ten; the hook is registered with a 15s budget.
+_TIMEOUT_SECONDS = "10"
 _EXCERPT_CHARACTERS = 220
 _FAILURE_NOTICE = "\n".join(
     [

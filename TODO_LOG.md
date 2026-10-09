@@ -6,6 +6,19 @@
 
 ### 2026-10
 
+- [x] 2026-10-09 — **A scratchpad naming a deleted project is rescued by the alias map.**
+  `canonical_workspace` falls back to `alias_for_encoded_segment` (exact encoded match
+  only; a prefix would file `p/mem-old` under `p/mem`). Over the archive's 20,297
+  scratchpad paths, 3,024 were undecodable and 1,021 now resolve through an alias
+  (agents 301, cristiandeluxe-dev 360, verticagtm 254, codeality 106; paths seen
+  anywhere in the archive text, so an upper bound on records affected). Projects with
+  no alias (`p/atc-prototype`, `p/thewealthadvisor`) stay unattributed until one is
+  added. Evidence: tests/test_session_scratchpad_workspace.py, 3 new cases.
+
+- [-] 2026-10-09 — **331 conversations lose their vectors on the next ingest.** A
+  one-off note from 2026-09-08; that ingest ran a month ago, so there is nothing left
+  to watch for.
+
 - [x] 2026-10-09 — **The resident MCP server no longer closes at session start.** No
   `CONNECTION_CLOSED` in 100 atrium MCP client logs over 9 days
   (`~/Library/Caches/claude-cli-nodejs/*/mcp-logs-atrium`); the session that failed

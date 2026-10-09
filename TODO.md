@@ -83,20 +83,6 @@
       together they are the answer to "is the archive complete", and today the
       answer is no.
 
-- [ ] **45 scratchpad conversations stay unattributed because their projects are gone.**
-      The scratchpad decode (`7e0ca9b`) walks the real directory tree, so a project deleted from
-      disk -- `p/atc-prototype`, `p/thewealthadvisor`, `p/agents-tools` -- cannot be decoded and its
-      sessions lose their workspace instead of gaining one. The workspace-alias map cannot rescue
-      them as things stand, because aliases are applied after the decode. Smallest step: consult the
-      alias map on the encoded form as well, which is also what would let a renamed-and-deleted
-      project keep its memory.
-
-- [ ] **331 conversations lose their vectors on the next ingest.** `write_conversation`
-      replaces rather than upserts and `vectors.record_id` cascades on delete, so every conversation
-      the scratchpad decode remaps is re-embedded on the following `embed` run. One-off and cheap at
-      this size, but it is the reason the next refresh will look slower than the ones around it --
-      worth knowing before that is diagnosed as a regression.
-
 ## Synthesis
 
 - [ ] Episode-level synthesis is the heart of the system, not phase 2: dense

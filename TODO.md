@@ -243,19 +243,6 @@
     divergence error, never resolved by timestamps.
     Only user-approved notes are proposed to brain (a tray, not a dump).
 
-- [ ] Worker lane leftovers found while fixing uncollected results
-      (2026-10-04). (1) Episodes whose transcript is identical to another's
-      share one prompt and one idempotency key; once the base key and its
-      three retry suffixes are consumed, every further such episode fails
-      `worker job retries exhausted` on every pass. Smallest step: record the
-      episode from the consumed key's sibling record, or include the episode
-      id in the key. (2) A journaled job whose conversation is otherwise done
-      (its episode recorded by another population) is never re-submitted, so
-      its result is never acked; ack such results at pass start once their
-      conversation has nothing left to make. (3) Map-reduce partials stay unacked until the whole
-      episode reduces; an episode with more chunks than `max_outstanding`
-      can never finish on the worker lane.
-
 ## Promotion pipeline
 
 - [x] Stage one, `atrium curate-screen`: 47,753 records and 306,212 facts into
@@ -330,67 +317,15 @@
   run was back to 13 min. Suspect: the import waits up to 5400 s on the archive
   lock that `sync-conversations` also takes. `refresh.log`:
   13:27-15:42, 16:54-19:19 and 20:19-21:28 (local), against 11-23 min for every run on
-  2026-10-08; record counts grew by only a few hundred. Unexplained: no stage timing in
-  the log says which step grew. Smallest next step: time each stage of one run (or read
-  the stall-guard artifacts' mtimes) and name the step that took the hours.
+  2026-10-08; record counts grew by only a few hundred. No run since the stage logging
+  landed has been slow (22:45 took 13 min), so the evidence is still to come. Smallest
+  next step: when a run passes 30 min, read the `stage` lines in `refresh.log` and name
+  the step; the archive is 6.7 GB and rewritten whole on every import, which is the
+  first suspect (see Ingest / Store).
 
-- [~] **The local lane synthesized nothing from 2026-10-08 20:01 (deadlock, fixed
-      2026-10-09).** The worker's `atrium.synthesis` queue has `max_outstanding` 20
-      and counts unacked results; map chunks stayed unacked until their episode
-      reduced, so twenty episodes each holding one filled the queue and none could
-      submit its next chunk (429). Separately, seven conversations share one
-      46-character chunk, so one worker key, whose four retry keys other
-      conversations had consumed: "retries exhausted" every pass. Fix: every
-      producer call is kept in `<registry>/partials/` (fsynced, keyed by model,
-      prompt and schema), map chunks are acked at once, and consumed successes no
-      longer spend the failure budget. Root cause found by Codex (read-only), the fix
-      reviewed by it. Left: confirm a live pass drains the 20 and synthesizes the
-      seven; then two follow-ups: (a) `partials/` grows without bound -- delete an
-      episode's partials once its record is written, keeping shared ones; (b) a
-      conversation whose kept chunk was acked leaves the holding set, so it is
-      resumed only in newest-first order.
 - [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
       of its window (15,696 files for 14 days). If a reader ever needs it
       polled, keep per-day totals for closed days in a derived file.
-
-- [~] **Status documents for dashboards** (2026-10-03): `status/refresh.json`,
-      `status/synthesis.json` and `doctor --json` are in place with tests. The refresh
-      job calls `atrium status --publish` since dotfiles 905d5cd. Open: (2) `doctor --json` measured 114-188 s and
-      620-690 MB RSS on a full instance against a 2 s / 300 MB polling budget: the
-      archive and registry scans dominate, the three cheap checks take ~0.1 s.
-      It stays an on-demand call until a cheap mode (entry points, archive,
-      refresh only) or a published doctor document exists. (3) `--publish`
-      reads the synthesis registry twice (status table and document); fold the
-      two if the refresh tail grows noticeably.
-- [ ] **Status review 2026-09-04, after four days unattended.** Working: the hourly
-      refresh has run 141 times, last done 16:08 (25-35 min per hour, all of it the whole-archive
-      rewrite filed under Ingest / Store); recall fires in both Claude profiles
-      (the second Claude profile's projects directory is a symlink into the first, so its
-      sessions are captured); the second machine's sessions reach the archive through the daily `sync-all-safe`
-      leg (verified on second-machine sessions of 09-03 and 09-04). Fixed the same day: the second machine
-      now runs Atrium with its own index and hourly refresh, memstore is gone from it, and its
-      copy of the synthesis registry is the second disk the Durability item asked for (see
-      `TODO_LOG.md` 2026-09-04). Still open:
-  - The agy drip produced **nothing on 09-01, 09-02 and 09-03** -- `drip.log` shows three
-    consecutive `sleeping 86400s` against the Gemini weekly wall -- and 405 episodes on 09-04
-    before the next wall. Newest-first ordering (`cli.py:440`) means the recent days do get
-    memory first, but ~150k episodes of backlog at ~400/day is not a plan. Same open decision as
-    the Synthesis item: pay the codex lane on a schedule, or accept partial coverage.
-  - Coverage 38 of 51 projects (75%). `client-widgets` (495 conversations) and
-    `smart-sales` (114) have zero memory; `atrium synthesize --project` can fill them the next
-    time a lane has quota.
-  - Disk: the 2026-09-04 measurements were index 20 GB, archive 5.2 GB plus one 5.2 GB backup,
-    and 94% used. Corrected 2026-09-14: the retired memstore copy is on the primary machine,
-    not the second machine (`du -sk`: 27,416,464 KiB). The named path is absent on the second machine;
-    its residual repository, launchers and plugins were backed up and removed there.
-    The second machine still measures 96% used. During the retirement task, another operation moved
-    the primary machine copy to `~/p/wiki/mem/memstore/peer-b-retired-20260904/`; its adjacent
-    README retains it as raw material for a possible Atrium ingestion pass. The retirement
-    task did not delete it or authorize ingestion. The local retirement backup also moved
-    to `~/p/wiki/mem/memstore/this-mac-retired-20260914/` and its hashes were reverified.
-    Evidence and exact before/after disk measurements: `~/p/TODO_LOG.md`, 2026-09-14.
-  - A fused search measured 20 s and a `--words` search 12.5 s while the refresh was writing the
-    index; re-measure idle before calling retrieval slow.
 
 - [~] **`atrium embed` sat at 0% CPU for twelve minutes printing nothing.** The
   network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):
@@ -435,29 +370,6 @@
       `IDLE_START=1 IDLE_RESUME=99999`: pass admitted, cut 20 s later, exit 143, lane rechosen,
       no orphan. dotfiles `21e0279`.
 
-- [~] **The session producer is built and registered; its first hook-driven record is
-  still to be observed.** 2026-09-16: `atrium session-stop` and `atrium record-session`
-  (`7e646ed`, `368720a`), design `docs/designs/session-producer.md` (revision 2 after a
-  17-finding Codex review). Verified by hand: the hook answered a real Stop payload for
-  the building session in 0.43 s with a `block` decision, froze checkpoint
-  `db873a466347eb3a`, and `record-session` wrote `355ed3ffdcd616e7544e850820a9e9eb`
-  (population `session-claude-fable-5-1`, workspace `[HOME]/p/brain`). Registered in
-  `~/.claude/settings.json` under `Stop` (dotfiles `claude-export` carries it per host).
-  **Live at 12:0x the same day:** Claude Code fired the hook in an unrelated interactive
-  session (portfolio repo), the model obeyed, record `42b23dcc6f5cb41cf1dd4378959adb57`
-  (12 facts, 5 open ends, workspace `[HOME]/p/cristian-deluxe-developer-portfolio`).
-  The terminal shows the whole reason as "Stop hook error: ..." so the reason was cut
-  to three sentences and the contract moved to `record-session --help` (recipe-2).
-  Remaining: the retry accounting has only unit tests; decide
-  whether `claude -p` sessions should be excluded outright (they are `entrypoint: cli`);
-  put `session-*` populations first in `active-recipe.json` once a few exist. 2026-09-16 pm:
-  the hub documents the hook (syntopica `c207031`); the refusal carries a `systemMessage`
-  and `suppressOutput` (`3433fbf`) but this Claude Code build still prints the whole
-  reason as "Stop hook blocking error" (claude-code #50542), so the person-facing line
-  waits on upstream; the byte limit now counts user and assistant records only, after a
-  post-compaction instruction re-read (attachments, ~100 KiB) tripped it on a one-line
-  status turn.
-
 - [ ] **One episode in 28 is a bare "structured output delivered" acknowledgement and
       still costs a full synthesis call.** Measured over the 3,165 records the drip wrote on
       2026-09-16 between 04:30 and 11:45: 111 have no facts, and their titles are variations of
@@ -466,67 +378,14 @@
       session where the last turn is only the StructuredOutput tool call and its
       acknowledgement, cut into an episode of its own by the segmentation. On the cursor lane
       each such call still pays the ~24k-token fixed prompt overhead (58.2M input tokens for
-      1,640 records that day, 35k per episode). Smallest step: in the segmentation, fold an
-      episode whose only assistant content is a tool acknowledgement into the previous
-      episode; failing that, have `synthesize` skip episodes under a content-size floor and
-      record them as skipped rather than calling. Evidence: `records/*.json` with
+      1,640 records that day, 35k per episode). Update 2026-10-09: the cost
+      half is moot -- bulk now runs on the worker's agy and local lanes, not the cursor
+      lane -- so what is left is retrieval noise: such titles show up in recall. Folding
+      them in the segmentation changes the event ids of the episode they join, so it
+      re-keys and re-pays that episode; a content-size floor that records them as
+      skipped does not. Decide which before building. Evidence: `records/*.json` with
       `output.facts == []` from that window; the agy lane records `usage` as zeros, so its
       cost for these is not measurable.
-
-- [ ] **The agy lane's Claude models cost 15x what Gemini does per record.** Antigravity
-      meters Gemini and Claude/GPT on separate 5-hour and weekly windows, so a Gemini wall
-      leaves `claude-sonnet-4-6` runnable (`--producer agy --model ...`, population
-      `agy-claude-sonnet-4-6`, `df710f6`). One measured pass, 2026-09-16 13:08-13:14, wrote
-      30 records and took the Claude/GPT weekly window from 19% to 54.7% -- ~1.2 points per
-      record, where a Gemini pass buys ~450 records before walling -- out of the same budget
-      interactive Antigravity work spends. The lane is off `LANES` (dotfiles `7196e6f`) and
-      each lane now gates on its own windows via `QUOTA_WINDOWS`. Open question: whether
-      those 30 records are enough better than Gemini's to justify a bounded run; nothing
-      compares them yet, which is the acceptance-set gap again.
-
-- [ ] **Bulk synthesis moved off Codex onto the Cursor lane, 2026-09-16.** Operator
-      directive: the Codex account's quota is for interactive work and must not be spent
-      here; the lanes are Cursor and agy. `--producer cursor` was added (`4844757`):
-      `cursor-agent -p --mode ask --output-format json`, prompt on stdin, last balanced JSON
-      object dug out of the envelope, population `cursor-<model>`. Bench in
-      `docs/studies/cursor-lane-bench.md`: `gpt-5.3-codex-low` at 0 fabrications and 15-23 s
-      per episode; `cursor-gpt-5.3-codex-low` appended last in `active-recipe.json`;
-      `lane.env` in dotfiles switched to it. Measured in aggregate, ~0.005% of the monthly
-      window per episode, so ~16,000 episodes before the 2026-10-10 reset. agy is blind, not
-      merely walled: CodexBar reports no Antigravity limits at all (`Limits: not available`),
-      so `drip-quota.py` answers 1800 for it forever and the loop would never run that lane.
-      Same day, second directive: "use agy until it breaks, forget the quota". The drip
-      (dotfiles `1d8d5ca`) now runs lanes in order, `agy cursor`: agy blind (no probe, stops at
-      its in-pass `Individual quota reached` wall), then a 3 h cooldown file `walled-agy` while
-      cursor takes the passes, then agy again. The first cursor pass lost 7 of 8 failed
-      conversations to the transcript-first prompt order (the model performed the security
-      review the transcript asked for); fixed in `0b449d1`, 1 failure in the next 35.
-      First live fall-over 2026-09-16 05:16: agy walled after 43 min and ~800 records (its
-      5-hour window; ~390 on 2026-09-04), `walled-agy` written, cursor pass started one second
-      later. Backlog counted the same day: 111,590 episodes, ~76,500 pending.
-      Cursor's third-party window (CodexBar `tertiary`, 100%) does gate gpt/gemini/claude
-      there: `gpt-5.3-codex-low` walled at 05:18 after 2.5 min; the lane runs the Cursor-native
-      `composer-2.5` since 05:21 (1 soft fabrication on 3 episodes, 21-28 s, ~5 episodes/min at
-      3 workers). `cursor-agent` leaves an `index.js worker-server` orphan per call: 38 of them
-      held 7.4 GB after an hour; fixed by running the CLI in its own session and killing the
-      group after each call (`run_cursor_in_own_session`).
-      agy's retry at 08:59 hit the wall on its first call ("Resets in 22m43s"): the fixed
-      3 h cooldown outlasted the reset, so the loop now parses "Resets in" into the cooldown
-      (dotfiles `a1061dc`). Stopping that loop showed `timeout` runs the pass in its own
-      process group: the agy pass outlived the loop by 14 min beside the new cursor pass
-      (two producers at once, the thing the lock exists to prevent), and the killed pass
-      left its `cursor-agent` sessions with parent pid 1 because SIGTERM skips `finally`.
-      The loop's trap now kills the pass group and reaps those orphans after every pass
-      (`aa39731`, `1f803e9`). Second agy window of the day: 10:14-11:01, ~450 records, then
-      "Resets in 4h13m47s"; this time the three in-flight calls sat ~10 min (the
-      `--print-timeout`) before answering the wall, so the pass outlived the box and the
-      loop's time-box branch skipped the wall check: agy was picked again at 11:14 against
-      its wall. Wall check now precedes the box branch (`95c547f`).
-      Remaining: read the first day's `run.log` and CodexBar to size `WORKERS` and confirm the
-      per-episode cost; make a SIGTERM to `atrium synthesize` end its cursor-agent sessions
-      itself (a signal handler that kills the in-flight groups) so the reaping is not the
-      drip's job; find why CodexBar lost the Antigravity windows (it read them on
-      2026-09-04) so agy can be gated again instead of walled.
 
 ## Measurement
 
@@ -550,29 +409,23 @@
   emits VS Code workspace metadata instead of dialogue. Both filed in
   `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
-- [~] **The UserPromptSubmit context hook is silent on most prompts under
-  load.** Progress 2026-10-09: a timeout, a non-zero exit or an unreadable index
-  now injects a one-line notice (7c22866, 1c7a31d); the query is embedded once per
-  request (759f2ef). Warm profile: 0.9 s total, model load 0.65 s, SQL under 0.1 s
-  warm but 1.5 s with a cold page cache, so the cost under load is I/O and model
-  load, not a slow statement. Left: decide the timeout (item below). Observed 2026-09-30 in a compratuentrada session (load average 28):
-  only 1 of ~15 prompts got a context block. The hook caps retrieval at
-  `ATRIUM_PROMPT_CONTEXT_TIMEOUT=5` s; `atrium context --lane dense --limit 4
-  --max-chars 1400 --project .` measured 2.5, 4.5, 5.2, 6.5 and 7.5 s in a row,
-  so the kill path returns nothing and the session never learns why. For a new
-  repository it also falls back: warnings
-  `history_vectors_missing_lexical_fallback` and `lexical_budget_exhausted`,
-  history candidates 0, so only curated notes can answer. The Stop hook
-  (`record-session`) worked on every turn. Smallest next step: time each stage
-  (embedder load, curated dense pass, history words pass) under load, and make
-  a timeout emit a one-line "context timed out" notice instead of nothing.
 
-- [ ] **Decide whether to raise `ATRIUM_PROMPT_CONTEXT_TIMEOUT` from 5 s to 10
-  s.** The trade is more prompts that get a context block against up to 10 s of
-  extra wait per prompt; the owner has not answered, so
-  `~/.claude/settings.json` stays unchanged. Smallest next step: ask for the
-  choice, or measure after the stage timing in the silent-hook item above. Found
-  in compratuentrada session 2026-10-01.
+- [ ] **Show atrium in the Claude Code TUI through a Claude Mod** (researched
+      2026-10-09). Claude Code v2.1.287 (2026-10-01; 2.1.296 installed) runs plugin
+      "mods": JavaScript handlers that can draw in the terminal. Done the same day
+      without a mod: the prompt hook and the session-start recall return a
+      `systemMessage` the person sees (atrium a726caf, dotfiles 83d79f1) and both hooks
+      name themselves in the spinner (`statusMessage`, dotfiles 5a1064b). A mod would
+      add: `$.ui.status` for a persistent "atrium: 12 recalled, 4 for this prompt"
+      line; a `prompt.submit` handler that replaces the shell hook and logs a compact
+      evidence list with `$.ui.log` (person-only); a `/recall` pane listing the
+      session-start episodes with search through `atrium_search`; a `ToolResult`
+      renderer that turns `atrium_context` JSON into a short list. Docs:
+      code.claude.com/docs/en/plugins/mods/{overview,api,events,interface,reference}.md;
+      examples in anthropics/claude-code-playground (claude-code/mods). Mods draw only
+      in the terminal and the Desktop Code tab, so the hooks stay the fallback.
+      Smallest next step: a mod with `prompt.submit` that calls `atrium context --json`
+      and shows `$.ui.status`, behind `claude plugin validate`.
 
 ## Quality gate
 

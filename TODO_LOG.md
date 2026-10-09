@@ -6,6 +6,62 @@
 
 ### 2026-10
 
+- [x] 2026-10-09 — **The local lane's deadlock and shared-chunk collision are fixed and
+  verified live.** Root cause and fix in atrium 31e53cb: kept partials under
+  `<registry>/partials`, map chunks acked at once, consumed successes no longer spend the
+  failure budget. The 23:35 pass synthesized all seven "retries exhausted" conversations
+  (`4299d9a5ff18`, `61ecf36c111c`, `75c2a807acfb`, `8efe5765fd01`, `a40796f79d59`,
+  `e8582c66b2eb`, `f6b9cd0d8cf1`, each +1), succeeded-unacked jobs fell from 20 to 8
+  and 82 partials were kept. Follow-ups in 2d7c02c: a started marker walks half-done
+  conversations next, holding conversations with nothing left ack what they hold, and
+  partials older than 30 days are pruned. Codex found the root cause and reviewed both.
+
+- [x] 2026-10-09 — **Worker lane leftovers of 2026-10-04.** (1) Identical transcripts
+  sharing one worker key: they share one kept partial now (31e53cb). (2) A journaled job
+  whose conversation is otherwise done: acked when that conversation ends without error
+  (2d7c02c, `ack_conversation_results`). (3) Map-reduce partials unacked until reduce:
+  acked once kept (31e53cb). Tests: `test_kept_partials.py`, `test_started_conversations.py`,
+  `test_ack_conversation_results.py`.
+
+- [x] 2026-10-09 — **The prompt context hook waits 10 s and is visible.** Owner chose 10 s
+  over 5 s (atrium dab9700): the cold index after a reboot timed out at 5. The hook and
+  the session-start recall now return a `systemMessage` the person sees ("atrium: 4
+  retrieved (2 notes, 2 episodes)", "atrium: 12 episodes recalled for this project"),
+  because `additionalContext` never reaches the transcript (a726caf, dotfiles 83d79f1);
+  both hooks name themselves in the spinner (dotfiles 5a1064b). Closes the silent-hook
+  item too: failures had emitted a notice since 7c22866 and 1c7a31d. Live check: the
+  hook answered a real prompt in this repository with 4 items.
+
+- [x] 2026-10-09 — **Archived client projects keep their sessions.** Owner approved
+  aliases for `p/atc-prototype` and `p/thewealthadvisor`; both map to themselves, which
+  is what the encoded-path rescue needs once the directory is gone (dotfiles 6449b41).
+  Verified: `canonical_workspace` resolves both scratchpad paths.
+
+- [x] 2026-10-09 — **Status documents for dashboards.** `doctor --json` stays too slow to
+  poll (114-188 s), but the refresh job publishes `status/doctor.json` at its end
+  (dotfiles 6e766e6; last written 2026-10-09 23:00, "doctor published: ok"), which is
+  the published document the item asked for. The double registry read in
+  `status --publish` stays as it is: the refresh tail has not grown.
+
+- [x] 2026-10-09 — **The session producer records from the Stop hook.** 1,631 records
+  with `model_requested: session-*` sit in the registry. They are served even though no
+  `session-*` entry is in `active-recipe.json`, because `choose_served_records` ranks an
+  unlisted population last instead of dropping it, and their episode ids are
+  session-cut, so they never compete with archive episodes. `claude -p` sessions remain
+  included; nothing in the records argues for excluding them yet.
+
+- [-] 2026-10-09 — **Cursor lane remainder and the agy Claude-model cost question.** The
+  cursor lane was removed and drip-loop.sh retired on 2026-10-01 (see that entry); bulk
+  synthesis goes through the worker on agy or local models. The SIGTERM handler for
+  `cursor-agent`, the CodexBar Antigravity windows and the Claude-on-agy cost comparison
+  have no lane left to apply to.
+
+- [-] 2026-10-09 — **Status review of 2026-09-04.** Its open points were the agy drip's
+  output (lane retired), project coverage, disk and slow searches during a refresh.
+  Disk and the memstore copy are tracked in the memstore item under Ingest / Store;
+  coverage is on demand with `status --coverage`; the slow-search note asked for an idle
+  re-measurement, and warm dense context now answers in 0.87-0.95 s (759f2ef).
+
 - [x] 2026-10-09 — **A scratchpad naming a deleted project is rescued by the alias map.**
   `canonical_workspace` falls back to `alias_for_encoded_segment` (exact encoded match
   only; a prefix would file `p/mem-old` under `p/mem`). Over the archive's 20,297

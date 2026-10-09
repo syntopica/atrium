@@ -346,16 +346,15 @@
 > found had been running silently for days, and none of them were subtle --
 > they were invisible because nothing reported the right number.
 
-- [ ] **The dotfiles auto-sync manufactures conflicts and leaves them.**
-      `com.cristian.sync-all-safe` merges the two machines and commits, but a
-      conflict stops it mid-merge and nothing resolves or reports it. One sat
-      unresolved from 2026-08-29 until it was found by accident on 2026-08-30, and
-      a second appeared within a day of that -- both in `agent-guidance/shared.md`
-      and `claude/settings.json`, which are exactly the files that carry agent
-      guidance and confirmation rules. A repo left with `UU` paths also blocks
-      every later commit, so an unnoticed conflict silently stops the sync
-      entirely. It needs to either resolve deterministically, or fail loudly
-      enough that someone looks. Cross-project: dotfiles.
+- [!] **The dotfiles auto-sync manufactures conflicts and leaves them.** Since
+      2026-09-07 `sync-all-safe` refuses a repository that is mid-merge or carries
+      markers and logs `PROBLEM ...`; since 2026-10-10 a run that logs any PROBLEM also
+      raises a macOS notification (dotfiles 206c86f). That surfaced what the log had hidden:
+      `PROBLEM COMMIT_FAILED secrets` on every run, because `~/p/dotfiles/secrets`
+      (BusiRocket/secrets) has no `user.email` while `user.useConfigOnly` is true; its last
+      commit is 2026-07-03 and 15 paths are uncommitted. Blocked on the owner: setting the
+      identity (presumably `info@busirocket.com`, a BusiRocket repository) makes the next
+      run commit and push those secrets to GitHub. Cross-project: dotfiles.
 
 - [x] **The drip runs under launchd and the local lane waits for an empty desk.** 2026-09-16:
       `com.cristian.atrium-drip` runs `drip-launch.sh` (guard, then the loop), restarting the

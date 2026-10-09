@@ -339,7 +339,10 @@
 
 ## Observability
 
-- [ ] **Refresh runs went from 12-15 min to 1-2.5 h on 2026-10-09.** `refresh.log`:
+- [~] **Refresh runs went from 12-15 min to 1-2.5 h on 2026-10-09.** Each stage now
+  logs its start (dotfiles db6b097), so the next slow run names its step; the 22:45
+  run was back to 13 min. Suspect: the import waits up to 5400 s on the archive
+  lock that `sync-conversations` also takes. `refresh.log`:
   13:27-15:42, 16:54-19:19 and 20:19-21:28 (local), against 11-23 min for every run on
   2026-10-08; record counts grew by only a few hundred. Unexplained: no stage timing in
   the log says which step grew. Smallest next step: time each stage of one run (or read
@@ -556,8 +559,12 @@
   emits VS Code workspace metadata instead of dialogue. Both filed in
   `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
-- [ ] **The UserPromptSubmit context hook is silent on most prompts under
-  load.** Observed 2026-09-30 in a compratuentrada session (load average 28):
+- [~] **The UserPromptSubmit context hook is silent on most prompts under
+  load.** Progress 2026-10-09: a timeout, a non-zero exit or an unreadable index
+  now injects a one-line notice (7c22866, 1c7a31d); the query is embedded once per
+  request (759f2ef). Warm profile: 0.9 s total, model load 0.65 s, SQL under 0.1 s
+  warm but 1.5 s with a cold page cache, so the cost under load is I/O and model
+  load, not a slow statement. Left: decide the timeout (item below). Observed 2026-09-30 in a compratuentrada session (load average 28):
   only 1 of ~15 prompts got a context block. The hook caps retrieval at
   `ATRIUM_PROMPT_CONTEXT_TIMEOUT=5` s; `atrium context --lane dense --limit 4
   --max-chars 1400 --project .` measured 2.5, 4.5, 5.2, 6.5 and 7.5 s in a row,
@@ -575,12 +582,6 @@
   `~/.claude/settings.json` stays unchanged. Smallest next step: ask for the
   choice, or measure after the stage timing in the silent-hook item above. Found
   in compratuentrada session 2026-10-01.
-- [ ] **The resident `atrium` MCP server closes its connection
-  (`CONNECTION_CLOSED`), so `atrium_context` is unavailable at session start.**
-  The CLI (`atrium context ... --json`) works as the fallback. Smallest next
-  step: start the server by hand, read its stderr and the client log to see why
-  it exits, and fix or add a restart. Found in compratuentrada session
-  2026-10-01.
 
 ## Quality gate
 

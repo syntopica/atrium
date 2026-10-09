@@ -6,6 +6,20 @@
 
 ### 2026-10
 
+- [x] 2026-10-09 — **The resident MCP server no longer closes at session start.** No
+  `CONNECTION_CLOSED` in 100 atrium MCP client logs over 9 days
+  (`~/Library/Caches/claude-cli-nodejs/*/mcp-logs-atrium`); the session that failed
+  recall at 20:27Z connected in 2.6 s, and `atrium_context` answered over MCP in this
+  session. Some logs show a version-negotiation probe timing out and then
+  connecting, without failure.
+
+- [x] 2026-10-09 — **Session-start recall seeks the project instead of scanning.**
+  e65a4cf: 0.1 s warm but over 20 s cold scan of 79k episodes replaced by a range on
+  `records_context_role_workspace` (819 rows for atrium). Plus: lockfile refresh
+  (0e85013), every SQL statement in `atrium/sql` with codeality-py BPY006 enforced and
+  db-quality 0.6.0 gating the plans (f81e89c, 4a91e0b), hook failure notices
+  (7c22866, 1c7a31d). Evidence: `uv run codeality-py gate` and
+  `pnpm dlx @syntopica/db-quality@0.6.0 gate` exit 0, 453 tests.
 - [x] 2026-10-07 — **Structural baseline 2 -> 0 (codeality-py 0.2.5).** `atrium/cli.py`
   keeps its dispatch; the flat parser is one module per subcommand in
   `atrium/cli_parser/` (`--help` output byte-identical for every subcommand).

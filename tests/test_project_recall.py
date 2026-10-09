@@ -1,7 +1,7 @@
 """Session-start recall is scoped to a project, not to an exact directory."""
 
 from atrium.recall.project_workspace import project_workspace
-from atrium.recall.recent_episodes import recent_episodes
+from atrium.recall.recent_episodes import _QUERY, recent_episodes
 from atrium.record import Record
 from atrium.retrieve.hit import Hit
 from atrium.store.open_store import open_store
@@ -86,10 +86,12 @@ def test_recall_covers_the_project_and_stops_at_its_edge(tmp_path):
             [_episode(2, "synthesis/b", "[HOME]/p/mem/docs", "2026-08-02T00:00:00Z")],
         )
         # A sibling whose name merely starts with the project's must not leak in.
+        # `mem-old` sorts inside the indexed range `[mem, mem0)`, so this is the
+        # case the exact prefix test exists for.
         write_conversation(
             connection,
             "synthesis/c",
-            [_episode(3, "synthesis/c", "[HOME]/p/atrium-old", "2026-08-03T00:00:00Z")],
+            [_episode(3, "synthesis/c", "[HOME]/p/mem-old", "2026-08-03T00:00:00Z")],
         )
     hits = recent_episodes(connection, "[HOME]/p/mem", 10)
     connection.close()
@@ -123,6 +125,17 @@ def test_a_project_with_no_episodes_injects_nothing():
     from atrium.recall.render_snapshot import render_snapshot
 
     assert render_snapshot("[HOME]/p/nothing", []) == ""
+
+
+def test_recall_seeks_the_project_instead_of_scanning_every_episode(tmp_path):
+    """A provider scan fetched 79k rows and timed out recall on a cold cache."""
+    connection = open_store(tmp_path / "index.sqlite3")
+    plan = " ".join(
+        row[3]
+        for row in connection.execute(f"EXPLAIN QUERY PLAN {_QUERY}", ("[HOME]/p/mem",) * 5 + (12,))
+    )
+    connection.close()
+    assert "records_context_role_workspace (role=? AND workspace>? AND workspace<?)" in plan
 
 
 def test_a_path_is_a_path_not_a_like_pattern(tmp_path):

@@ -10,10 +10,17 @@ const ANSWER = {
   ],
 }
 
-// The footer as the engine draws it beneath the plugin: its mode labels, dim.
+// The footer as drawn beneath the plugin: an empty Box when there are no mode
+// labels, else a keyed row of its own that the mod must keep.
 function engineFooter($, e) {
-  const { Text } = $.ui.resolve(e)
-  return h(Text, { dimColor: true }, e.props.modes.join(' & '))
+  const { Box, Text } = $.ui.resolve(e)
+  if (!e.props.modes.length) return h(Box, null)
+  return h(
+    Box,
+    { key: 'engine-modes' },
+    h(Text, { bold: true }, 'mode:'),
+    h(Text, { dimColor: true }, ' ' + e.props.modes.join(' & ')),
+  )
 }
 
 // The green line at the right of the prompt footer, or undefined when the
@@ -175,13 +182,58 @@ test('a failure after a healthy prompt takes the green line down', async ($, on)
   expect(await footer($)).toBeUndefined()
 })
 
-test('keeps the footer mode labels beside the green line', async ($, on) => {
+test('keeps what is drawn beneath and adds the green line after it', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus'] } })
-  expect(await ui.find({ type: 'Text', text: /focus · / })).toBeDefined()
+  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus', 'memory paused'] } })
+  const beneath = await ui.find({ key: 'engine-modes' })
+  expect(beneath?.text).toBe('mode: focus & memory paused')
+  expect(await ui.find({ type: 'Text', text: 'mode:' })).toBeDefined()
   const green = (await ui.findAll({ type: 'Text' })).filter((found) => found.props.color === 'success')
   expect(green.map((found) => found.text)).toEqual(['Atrium · 1 past session, 1 note'])
   await ui.unmount()
+})
+
+test('draws only what is beneath when there is no healthy line', async ($, on) => {
+  stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, {})
+  await $.prompt.submit({ text: PROMPT })
+  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus'] } })
+  expect((await ui.find({ key: 'engine-modes' }))?.text).toBe('mode: focus')
+  expect(await ui.find({ type: 'Text', text: /Atrium/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('a skipped prompt after a healthy one takes the green line down', async ($, on) => {
+  const seen: any = {}
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } }, seen)
+  await $.prompt.submit({ text: PROMPT })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+  await $.prompt.submit({ text: '/compact' })
+  expect(await footer($)).toBeUndefined()
+  await $.prompt.submit({ text: PROMPT })
+  await $.prompt.submit({ text: 'ok thanks' })
+  expect(await footer($)).toBeUndefined()
+})
+
+test('leaving a project after a healthy prompt takes the green line down', async ($, on) => {
+  const seen: any = {}
+  const runs = [
+    { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } },
+    { value: { exitCode: 2, stdout: '', stderr: 'not a project' } },
+  ]
+  on('ui.render', engineFooter)
+  on('session.cwd', () => ({ value: '/work/repo' }))
+  on('process.run', () => runs.shift())
+  on('ui.status', () => ({ value: undefined }))
+  on('ui.log', () => ({ value: undefined }))
+  on('prompt.submit', ($, e) => {
+    seen.context = e.context
+    return { text: e.text }
+  })
+  await $.prompt.submit({ text: PROMPT })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+  await $.prompt.submit({ text: PROMPT })
+  expect(await footer($)).toBeUndefined()
+  expect(seen.context ?? []).toEqual([])
 })

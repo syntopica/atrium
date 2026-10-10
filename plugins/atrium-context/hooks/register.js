@@ -22,7 +22,14 @@ const SUMMARY = { plugin: 'atrium-context', key: 'summary' }
 // `$` into functions declared in the hooks module itself, never across an import.
 export function register(on) {
   on('prompt.submit', async ($, e, next) => {
-    if (shouldSkip(e.text)) return next(e)
+    // A skipped prompt got no context, so the green line, which says what this
+    // prompt was given, goes; a pinned warning stays, since the failure it
+    // names is still the state of retrieval. Hiding the line on a short aside
+    // costs one footer label; keeping it would claim context that was not sent.
+    if (shouldSkip(e.text)) {
+      await $.state.set(SUMMARY, null).catch(() => {})
+      return next(e)
+    }
     let answer
     try {
       const cwd = await $.session.cwd()
@@ -32,7 +39,12 @@ export function register(on) {
       await showDegraded($, 'context unavailable (' + (error?.message ?? 'failed or timed out') + ')')
       return next({ ...e, context: [...(e.context ?? []), FAILURE_NOTICE] })
     }
-    if (answer === null) return next(e)
+    // Not a project: nothing applies to this directory, healthy or not.
+    if (answer === null) {
+      $.ui.status(undefined)
+      await $.state.set(SUMMARY, null).catch(() => {})
+      return next(e)
+    }
     const evidence = answer.evidence ?? []
     const reason = degradation(answer)
     if (!evidence.length) {
@@ -46,17 +58,21 @@ export function register(on) {
     return next({ ...e, context: [...(e.context ?? []), renderEvidence(evidence)] })
   })
 
-  // The footer's mode labels as the engine draws them, then the healthy line
-  // in the theme's success color; passes when there is no healthy line.
+  // Whatever draws the footer's mode labels beneath this mod (the engine, or
+  // another mod), then the healthy line in the theme's success color; passes
+  // when there is no healthy line. `next(e)` resolves to the tree drawn beneath
+  // (a RenderElement, never null, even with no labels), so the separator
+  // follows the labels rather than the tree.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     const { value: summary } = await $.state.get(SUMMARY)
     if (!summary) return next(e)
-    const { Text } = $.ui.resolve(e)
-    const modes = e.props.modes.join(' & ')
+    const beneath = await next(e)
+    const { Box, Text } = $.ui.resolve(e)
     return h(
-      Text,
-      null,
-      h(Text, { dimColor: true }, ' ' + (modes ? modes + ' · ' : '')),
+      Box,
+      { flexDirection: 'row' },
+      beneath,
+      h(Text, { dimColor: true }, e.props.modes.length ? ' · ' : ' '),
       h(Text, { color: 'success' }, summary),
     )
   })

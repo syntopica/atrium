@@ -1,0 +1,14 @@
+{
+  "name": "atrium",
+  "description": "Claude Code plugins for atrium, the project memory index",
+  "owner": {
+    "name": "Syntopica"
+  },
+  "plugins": [
+    {
+      "name": "atrium-context",
+      "source": "./plugins/atrium-context",
+      "description": "Retrieves atrium context for each prompt and shows what was retrieved under the prompt"
+    }
+  ]
+}

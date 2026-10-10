@@ -1,0 +1,4 @@
+{
+  "description": "The atrium-context hooks module",
+  "modules": ["./register.js"]
+}

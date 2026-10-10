@@ -107,6 +107,16 @@ episodes)`), because `additionalContext` never reaches the transcript.
  "timeout": 15}
 ```
 
+On Claude Code 2.1.287 or later, the `atrium-context` mod in
+`plugins/atrium-context` does the same retrieval from a `prompt.submit` hook
+and keeps the result in a line under the prompt (`atrium-context: 4 retrieved (2 notes,
+2 episodes)`), so the person still sees it once the transcript scrolls. Use the
+mod or the shell hook, never both, or every prompt retrieves twice:
+
+```
+/plugin install atrium-context --marketplace syntopica/atrium
+```
+
 ## One context call for agents
 
 Use `atrium_context` through MCP for questions that depend on project history

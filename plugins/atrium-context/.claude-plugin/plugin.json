@@ -1,0 +1,8 @@
+{
+  "name": "atrium-context",
+  "version": "0.1.0",
+  "description": "Retrieves atrium context for each prompt and shows what was retrieved under the prompt",
+  "author": { "name": "Syntopica" },
+  "repository": "https://github.com/syntopica/atrium",
+  "license": "MIT"
+}

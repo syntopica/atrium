@@ -75,7 +75,7 @@
 
 ## Synthesis
 
-- [!] **Synthesis coverage and quality.** Built 2026-08-28 (`6263938`); the lane question is
+- [ ] **Synthesis coverage and quality.** Built 2026-08-28 (`6263938`); the lane question is
       settled by the owner routing rule of 2026-09-30 (bulk on the worker's agy and local
       lanes, cursor cancelled, `drip-loop.sh` retired). The build history, the lane
       economics and the pinned design moved verbatim to `TODO_LOG.md` (2026-10-10).
@@ -88,19 +88,19 @@
       transcript, gitleaks' "no leaks found" restated as "no memory leaks", and an Edit
       mismatch blamed on whitespace when the comment had been renumbered. Three of eight
       substantive episodes is a high error rate for the population now writing most new
-      records. **Owner question:** keep qwen local as the bulk lane as is, add a
-      faithfulness check (a second-model judge on a sample, or claim-to-transcript
-      grounding) before ingest, or re-route new bulk to Codex on the GPT-6 family? The
-      2026-09-01 bench (`docs/studies/synthesis-producer-bench.md`) predates it and found
-      that lowering effort made `gpt-5.6-sol` fabricate, so `gpt-6-luna` and `gpt-6-sol`
-      at low effort (both answer on this account, probed 2026-10-10) need the same blind
-      bench before either takes bulk. First probe the same day, on the three episodes
-      qwen got wrong (atrium's own system prompt and output schema, `codex exec -s
-      read-only`, transcript only): both made no false claim on any of them, said the
-      missing review findings were absent instead of inventing a verdict, and kept
-      "no leaks found" as a leak scan; `gpt-6-sol` also named the real Edit cause (the
-      comment renumbered 8 -> 9). Three episodes rank the lanes, they do not size the
-      error rate; the open cost is that Codex spends the interactive quota.
+      records. **Decided 2026-10-10 (owner):** no Codex for bulk; the order is agy,
+      OpenRouter, local, Codex last or only to verify (`~/p/wiki/CLAUDE.md`, Model
+      routing). The worker ladder for `atrium.synthesis` already follows it. The
+      shadow judge agrees with the spot-check (30 days, `worker quality --days 30
+      --json`): OpenRouter `qwen/qwen3.8-27b:free` 4.73 mean over 22 judged, agy
+      `gemini-3.8-flash-medium` 4.05/19, dots 3.74/43, nemotron 3.64/67, local
+      `qwen3.6:35b` 3.09/44. Local takes most volume only because agy rests and the
+      OpenRouter route stops at its `daily_cap` of 350 (the free key's daily
+      allowance is shared by every queue). Within the allowed lanes the remaining
+      levers are: a longer `local_after_s` for this backlog queue (higher quality,
+      lower throughput), a better local model, or a faithfulness pass by an allowed
+      lane before ingest. Owner choice between throughput and quality; nothing
+      changed yet.
 
 ## Promotion pipeline
 

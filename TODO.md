@@ -28,6 +28,15 @@
       Build plan once it exists: the table plus its triggers in the schema, refreshed by
       `ingest-notes`, behind the curated lane's broad pass only, compared on that set.
 
+- [ ] **`atrium context --lane auto` (MCP and CLI) takes 1.7-7 s cold.** Profiled
+      2026-10-10 in-process with the resident matrix: 87% of the time is FTS execution in
+      `ranked_hits`; dense ranking is ~0.1 s. The curated broad pass alone costs 1.1-2.2 s
+      cold (0.04 s warm) because 6,324 notes share one `words` index with 1.94M records,
+      so the doclists of the whole corpus are walked and then joined to the notes. This
+      is the latency case for the notes-only FTS item above. Also: the broad pass runs
+      `SELECT count(*) FROM records` each time (1.5 s cold, cached afterwards); the total
+      can come from build metadata. The per-prompt hook (`--lane dense`) is unaffected.
+
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
@@ -39,6 +48,46 @@
 
 ## Ingest / Store
 
+- [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured
+      2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);
+      `substrings_data` 3,800,043 blocks against `words_data` 387,204, roughly 15 GB
+      against 1.5 GB at FTS5's ~4 KB blocks. Every insert pays both lanes through
+      `records_ai`. Usage since 2026-09-01 across every Claude Code transcript: 0 calls
+      with lane `substring` (152 `atrium_context`, 35 `atrium_search`, 2 of them dense,
+      no CLI `--lane substring`). Smallest next step: `dbstat` per object on a quiet
+      machine to replace the block estimate, then an owner decision between dropping the
+      raw-corpus trigram table (fragment search answered by `instr` over a `words`
+      prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
+      "word-level separate from substring" decision is about ranking, not about trigram
+      over 1.9M raw records, but it must be re-read before changing the schema.
+- [ ] **A fifth of the corpus is the pipeline indexing itself.** 2026-10-10: 43,085
+      conversations (of 54,026 in the archive) have workspace
+      `/var/folders/.../T/atrium-codex-*`, the codex synthesis lane's temp dirs of
+      2026-08-28..2026-09-04: 92,715 records, and 18,850 synthesis episodes that
+      re-summarise the episodes those prompts carried, misattributed to the temp
+      workspace (23% of synthesis records, 22% of the 86,486 vectors in the dense
+      matrix). Other temp automations add ~2.6k more (`T/brain`, `T/worker`, `T/clips`,
+      `T/bench`, `T/judge`). Smallest next step: an ingest exclusion for automation
+      workspaces (Atrium side; capture-side exclusion filed in rocket-agents), then one
+      reconcile pass that removes those records and their vectors, and confirm the
+      worker and agy lanes leave no captured sessions.
+- [ ] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
+      (2026-10-10, ~7.2k user records) by bytes: atrium synthesis prompts 23%, other
+      records over 5k chars 20%, human-sized prompts 17%, tool-output-shaped text (Read
+      `N<tab>` listings, `[TOOL ...]`, search results) 16.5%, `<tag>` harness text
+      11.6%, the security-review template 7.4%, app batch prompts (Vexa classifier,
+      invoice extraction) 3.8%, skill bodies 1%. Average user record 2,967 chars against
+      288 for assistant. These bloat both FTS lanes and crowd lexical ranking. Smallest
+      next step: find which archive event kinds these come from (claude-code tool results
+      with string content are admitted as `user`), then reject them in the adapter with a
+      test per shape.
+- [ ] **Ingest re-reads every stored conversation to find six changes.** `write_conversation`
+      fetches each conversation's stored rows, text included, and compares them, for all
+      54,026 conversations every refresh: the 19:41 run took 3.6 min to write 2,462
+      records for 6 changed conversations. A per-conversation fingerprint table
+      (conversation id, revision sha, pipeline version) would skip unchanged ones before
+      building records or reading text. `ingest-synthesis` has the same shape (2.5 min,
+      48 records of 32,384 conversations). Independent of the archive v2 cursor below.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable
@@ -65,6 +114,10 @@
       everything forever, so the format has to stop being rewritten whole --
       segment by period or by source, or make append the normal path and the full
       rewrite a compaction. Cross-project: rocket-agents.
+      Measured 2026-10-10 19:29-19:48: a 19-minute refresh to add 1 conversation and
+      update 5 (export 7.1 min re-reading 47,957 artifacts, import 4.6 min rewriting the
+      6.8 GB archive plus a 6.8 GB backup, ingest 3.6, ingest-synthesis 2.5, embed 1.2);
+      refreshes start every 30-50 min, so the machine is refreshing about half the time.
 - [ ] **Whole conversations that have never entered the archive at all.** The
       codex gap is closed (streaming export since 2026-08-31; every refresh reports
       `skipped: 0` over 31,119 codex artifacts); the Windsurf and Trae exporters emit zero conversations; ChatGPT

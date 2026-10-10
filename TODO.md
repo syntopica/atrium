@@ -153,7 +153,16 @@
       also needs a worker change: `ollama_request_body` and `probe_quiet` send
       `think: false`, on which `gpt-oss:20b` with a `format` hung for over 15 min;
       it answered with `think: "low"`. Next step: a 20-30 episode sample judged
-      against GPT-6 before changing the local model.
+      against GPT-6 before changing the local model. A different lever measured
+      the same day: OpenJev, an open-weights decision model (MLX 4-bit, local,
+      `~/models/openjev`), asked one yes/no "is this claim supported by the
+      transcript" per fact. It scored all 8 invented claims from those runs
+      0.20-0.84 and all 12 supported ones 0.92-0.98; a 0.9 cut gets 20 of 20 at
+      ~1-3.5 s a claim. It is a candidate faithfulness gate on facts before ingest,
+      whichever model generated them. Next: rerun it on the 20-30 episode sample
+      above before wiring anything. Recipe and caveats are in the wiki at
+      `brain/topics/openjev.md`. Its weights are CC BY-NC 4.0, which suits this
+      personal use.
 
 ## Promotion pipeline
 

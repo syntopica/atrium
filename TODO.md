@@ -26,10 +26,28 @@
       time: a concurrent `ollama pull gemma4:26b` (about 17 GB written), the 12:15-12:28
       refresh and four local synthesis workers. Once those ended the same call took 5.1 s
       at 96% CPU, still half the budget (it was 0.8-1.0 s on 2026-10-09 with a smaller
-      corpus). Smallest next step: rank on `record_id` plus `vector` only, ideally from a
-      covering index `(workspace, role, record_id)` so the scope scan never touches the
-      text-bearing table, then fetch text and metadata for the top `limit` ids; measure
-      before and after with the hook's exact argv.
+      corpus).
+      Design study 2026-10-10 (Codex gpt-6-sol, read-only on the index, under a bounded
+      2 GiB `F_NOCACHE` reader and 8 CPU workers; same top four on every path): current
+      full-row scan 49-63 s, 6.6 GB of physical reads for 207 MiB returned; a compact
+      float32 artifact of the 60,082 ids and vectors (92 MiB) ranked plus a four-row fetch
+      in 0.10-0.13 s; a fresh-process first embedding 0.75-1.6 s. The two-phase query
+      (ids and vectors first, text for the top four) measured 3.1-3.3 s there, but
+      re-checked here it took 46.6 s when run first on a cold cache and 3.4 s for the
+      full-row scan right after it: it only helps when the pages are already cached, so
+      it is not the fix for saturation. A `(workspace, role, record_id)` index does not
+      cover `vectors.vector`, which lives in another table.
+      Recommended design: an exact float32 vector artifact (ids, vectors, role and
+      workspace slices; no text) built from one WAL read snapshot, validated, published
+      by atomic manifest replace, keyed to a dense generation counter that every
+      record and vector writer bumps in the same transaction; served by one resident
+      per-user process holding the embedder and the matrix, reached by the hook over a
+      Unix socket, with an internal 7-8 s deadline that returns an explicit degraded
+      answer before the hook's 10 s kill, and the hook surfacing degraded warnings
+      instead of "nothing retrieved". Keep float32 (float16 kept the top four 32/32,
+      int8 only 19/32). Smallest next step: the generation counter plus the artifact
+      builder, then the service; acceptance is the real hook under a concurrent refresh,
+      cold-ish cache, I/O and CPU load, recording p50/p95/p99 and degraded counts.
 
 - [!] **A notes-only FTS table is worth building; enabling it waits on the acceptance set.**
       Re-measured 2026-10-10 (Codex, re-run and spot-checked here; artifacts in the instance

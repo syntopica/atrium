@@ -6,6 +6,16 @@
 
 ### 2026-10
 
+- [x] 2026-10-10 — **The retired MemPalace store is processed into the Brain and deleted.**
+  Four palaces (three from the Mac mini, one in this Mac's retirement tarball) were classified
+  against the archive: over 99% re-derivable from archived sessions, Codex rollouts or files on
+  disk. Two Codex review rounds over the 2,988 remaining records accepted 182 as 85 sourced
+  facts in 13 Brain pages (wiki `355885351`); the 1,912 graph triples were rejected for lacking
+  record provenance. After a SHA-256 manifest of all 1,514 source files and the owner's
+  confirmation, `~/p/wiki/mem/mempalace` (26 GB) was removed. Ledgers, the redacted residue
+  JSONL, `work/verify.py` (PASS) and the manifest stay in
+  `~/p/wiki/mem/mempalace-processing-20261010/` (162 MB, this Mac only).
+
 - [x] 2026-10-10 — **Atrium shows in the Claude Code TUI through a mod.**
   `plugins/atrium-context` (atrium f05920b): a `prompt.submit` hook runs `atrium context
   --json`, adds the evidence as context, and keeps `atrium-context: N retrieved (...)` in

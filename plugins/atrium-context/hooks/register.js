@@ -1,3 +1,4 @@
+import { degradation } from './degradation.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
 import { renderEvidence } from './render-evidence.js'
 import { retrievalNotice } from './retrieval-notice.js'
@@ -25,7 +26,8 @@ export function register(on) {
     if (answer === null) return next(e)
     const evidence = answer.evidence ?? []
     if (!evidence.length) {
-      $.ui.status('nothing retrieved for the last prompt')
+      const reason = degradation(answer)
+      $.ui.status('nothing retrieved for the last prompt' + (reason ? ' (' + reason + ')' : ''))
       return next(e)
     }
     const notice = retrievalNotice(evidence)

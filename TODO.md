@@ -133,13 +133,18 @@
       So it works as a precise flag, not as a gate. The freeze came from
       OpenJev MLX (~15 GB) running beside the worker's `qwen3.6:35b` (22 GB at
       131k context) and the session load. Never run the two together.
-      [!] To finish the 260 remaining claims, the worker's local lane has to be
-      held, and that is the owner's call. The script resumes:
-      `score.py` skips claims already in `jev_scores.json`. The sample,
-      labels, scores and scripts are in
+      Finished the same afternoon on nova (CPU, capped transient unit,
+      client TTFB unaffected): all 341 claims give AUC 0.881. A 0.5 cut flags
+      13 claims, 12 of them truly unsupported (92% precision), but that is only
+      27% of the 44. A 0.9 cut catches 70% and flags 16% of the supported
+      claims. It catches structural fabrication (`[~]` read as done, a refused
+      command reported as run, an unshown cause) and misses subtle number and
+      attribution errors. Decision input: at most a cheap flag at ~0.5 before
+      ingest, not a faithfulness gate. Wiring it in remains open. The
+      artifacts, including `shim_llamacpp.py`, are in
       `~/p/wiki/atrium/evaluations/openjev-faithfulness-2026-10-10/` (local,
-      git-ignored). Recipe and caveats are in
-      the wiki at `brain/topics/openjev.md`; the owner holds a commercial licence.
+      git-ignored). The recipe is in the wiki at `brain/topics/openjev.md`;
+      the owner holds a commercial licence.
 
 ## Promotion pipeline
 

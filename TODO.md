@@ -36,24 +36,17 @@
 
 ## Ingest / Store
 
-- [~] **Process the retired MemPalace store into Atrium, then delete it** (owner,
-      2026-09-16: "tenemos que procesarlo y luego borrarlo"; approved again 2026-10-10).
-      The copy is `~/p/wiki/mem/mempalace/macmini-retired-20260904` (26 GB, `uchg`, the only
-      copy, ignored by the wiki repo); `this-mac-retired-20260914` beside it is 116 MB.
-      Sampled read-only 2026-10-10 (Codex review): `palace/chroma.sqlite3` holds 464,413
-      embeddings in one collection, `mempalace_drawers`: 462,311 conversation ingests, 880
-      registry records, 2,058 diary entries (`CHECKPOINT` tails); `knowledge_graph.sqlite3`
-      2,897 entities, 1,912 triples, byte-identical in all three palaces. The older Chroma
-      stores hold 773,187 (`palace.pre-merge-20260811`) and 1,136,075
-      (`palace.pre-rebuild-20260821-002808`) embeddings, so they may carry records the
-      current palace lost. Plan: conversation chunks and diaries are re-derivable from the
-      archive; export only registry, diary-free synthesis (`runbooks`, `gotchas`,
-      `decisions`) and the triples to a redacted JSONL with source ids and content hashes,
-      drop what matches the archive, existing synthesis or Brain notes, publish the rest as
-      sourced Brain notes, then `ingest-notes`. Vectors and triples never go into the
-      disposable index directly. Deletion only after a hash manifest of all three palaces,
-      every snapshot-only record reviewed, and the owner confirming the exact target.
-
+- [!] **Delete the retired MemPalace copies** (owner, 2026-09-16: "tenemos que
+      procesarlo y luego borrarlo"). Processing is done (2026-10-10): all four palaces
+      (three in `~/p/wiki/mem/mempalace/macmini-retired-20260904`, 26 GB; one inside
+      `this-mac-retired-20260914/mempalace-data.tar.gz`, 116 MB) were classified against
+      the archive, over 99% re-derivable; the 2,988 records nothing else holds went
+      through two Codex review rounds, and 182 accepted records landed as 85 sourced
+      facts in 13 Brain pages (wiki `355885351`). The 1,912 graph triples were rejected
+      for lacking record provenance. Ledgers, `work/verify.py` (PASS) and a SHA-256
+      manifest of all 1,514 source files are in `~/p/wiki/mem/mempalace-processing-20261010/`.
+      Blocked on: the owner's explicit yes on the two exact paths; then
+      `chflags -R nouchg ~/p/wiki/mem/mempalace` and remove that directory.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable

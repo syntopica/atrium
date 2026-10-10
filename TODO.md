@@ -126,20 +126,28 @@
       Unsupported: OpenRouter qwen3.8-27b 6.1%, nemotron 9.8%, local qwen3.6
       21-23%, agy flash 23.1%, gpt-oss 23.9%. Matched episodes give the same
       order: on nemotron's 8 episodes, nemotron 9.8% against 24-35% for the
-      rest; on qwen3.8's 8, qwen3.8 6.1% against 10-26%. So gpt-oss is no
-      better than qwen3.6 and slower (median 44 s on nova CPU against 20 s), and
-      switching the local model buys nothing. The quality lever is OpenRouter,
-      and its key already reaches the 850 cap most days. A longer
-      `local_after_s` only delays the backlog until the next day's quota;
-      the owner decides whether quality is worth that. agy flash, first in the
-      routing order, was no better than local here. This used atrium's own agy
-      prompt, not the worker's agy runner. Summaries are the weak field in
-      every lane (37-79% unsupported, against 11-15% for facts): one wrong
-      detail sinks a long summary. Next step: a shorter, fact-bound summary
+      rest; on qwen3.8's 8, qwen3.8 6.1% against 10-26%. A Codex review
+      (same day) confirmed the numbers but limited the conclusions. The
+      OpenRouter outputs are the served records, picked with at least two
+      facts, while the other lanes were generated fresh. Served and fresh
+      qwen3.6 on the same 8 episodes score alike (23.0% against 22.9%), but
+      that does not remove the selection effect. The agy lane used atrium's
+      prompt, not the worker's runner. gpt-oss ran on llama.cpp on nova's CPU,
+      not on Ollama, so its 44 s against qwen3.6's 20 s describes these hosts.
+      Provisional reading: gpt-oss:20b shows no faithfulness gain over
+      qwen3.6, and OpenRouter looks like the quality lever. Its key already
+      reaches the 850 cap most days, so a longer `local_after_s` only delays
+      the backlog. Next step to confirm: generate fresh OpenRouter qwen3.8-27b
+      and nemotron outputs for the same 24 episodes (48 requests) after the
+      daily quota resets, through the worker's agy runner as well, and judge
+      them the same way. Summaries are the weak field in every lane (37-79%
+      unsupported, against 11-15% for facts): one wrong detail sinks a long summary. Next step: a shorter, fact-bound summary
       in the synthesis prompt, measured on the same 24 episodes. Also found:
       worker-lane records named the requested `qwen3.6:35b` whatever answered
-      (fixed in `3504408`; older records keep the wrong label, and the truth is
-      in the worker's `attempts` table). A different lever measured
+      (fixed in `3504408`; a result without an executor now records `unknown`.
+      Older records keep the wrong label, and so may a new record built from a
+      kept partial saved before the fix; the truth is in the worker's
+      `attempts` table). A different lever measured
       the same day: OpenJev, an open-weights decision model (MLX 4-bit, local,
       `~/models/openjev`), asked one yes/no "is this claim supported by the
       transcript" per fact. It scored all 8 invented claims from those runs

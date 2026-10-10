@@ -117,8 +117,10 @@
       verdict; qwen3.6:35b erred on 2. Three episodes are not a verdict. Switching
       also needs a worker change: `ollama_request_body` and `probe_quiet` send
       `think: false`, on which `gpt-oss:20b` with a `format` hung for over 15 min;
-      it answered with `think: "low"`. Next step: a 20-30 episode sample judged
-      against GPT-6 before changing the local model. A different lever measured
+      it answered with `think: "low"`. Next step: a 20-30 episode held-out
+      sample judged against GPT-6, comparing current routing, a later local
+      fallback (`local_after_s`) and another local model, with quality, latency
+      and quota use, before changing the local model. A different lever measured
       the same day: OpenJev, an open-weights decision model (MLX 4-bit, local,
       `~/models/openjev`), asked one yes/no "is this claim supported by the
       transcript" per fact. It scored all 8 invented claims from those runs
@@ -140,7 +142,12 @@
       claims. It catches structural fabrication (`[~]` read as done, a refused
       command reported as run, an unshown cause) and misses subtle number and
       attribution errors. Decision input: at most a cheap flag at ~0.5 before
-      ingest, not a faithfulness gate. Wiring it in remains open. The
+      ingest, not a faithfulness gate. Decided 2026-10-10 after a read-only
+      GPT-6 review: do not wire it. Ingest indexes title, summary, facts and
+      open ends as one text record (`atrium/ingest/to_synthesis_records.py`),
+      so a per-claim flag changes nothing served. It also costs ~3 min per
+      episode on nova, and the sample has no OpenRouter output. Reconsider only
+      if it beats the baseline in the 20-30 episode comparison below. The
       artifacts, including `shim_llamacpp.py`, are in
       `~/p/wiki/atrium/evaluations/openjev-faithfulness-2026-10-10/` (local,
       git-ignored). The recipe is in the wiki at `brain/topics/openjev.md`;

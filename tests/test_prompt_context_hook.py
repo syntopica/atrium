@@ -101,15 +101,15 @@ def test_a_session_outside_any_project_is_not_told_retrieval_failed(tmp_path: Pa
     assert out == ""
 
 
-def test_the_person_sees_one_line_saying_what_was_retrieved(tmp_path: Path) -> None:
-    """`additionalContext` is invisible in the transcript; `systemMessage` is not."""
+def test_a_healthy_retrieval_shows_the_person_no_warning(tmp_path: Path) -> None:
+    """Claude Code draws `systemMessage` as a warning, so success carries none."""
     evidence = [
         {"trust": "curated", "text": "a note", "note_path": "brain/a.md"},
         {"trust": "synthesized", "text": "one", "conversation_id": "synthesis/abc"},
         {"trust": "synthesized", "text": "two", "conversation_id": "synthesis/def"},
     ]
     out = json.loads(_answering(tmp_path, {"index_status": "ready", "evidence": evidence}))
-    assert out["systemMessage"] == "atrium: 3 retrieved (1 note, 2 episodes)"
+    assert "systemMessage" not in out
     assert "a note" in out["hookSpecificOutput"]["additionalContext"]
 
 

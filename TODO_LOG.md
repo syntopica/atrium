@@ -6,6 +6,15 @@
 
 ### 2026-10
 
+- [x] 2026-10-10 — **A healthy retrieval no longer shows a warning on every prompt.**
+  `$.ui.status` is drawn as a pinned warning (yellow, with the warning glyph; Claude Code
+  2.1.296 hard-codes `color ?? "warning"` for pinned notices), and a hook's `systemMessage`
+  is documented as a "Warning message shown to the user". The `atrium-context` mod (0.2.0)
+  now draws a healthy result green at the right of the prompt footer through a `ui.render`
+  hook on `SessionMode` (`Atrium · 2 notes, 2 past sessions`, `Atrium · nothing relevant`)
+  and pins a warning only for a failure or a real degradation; `dense_matrix_stale_rebuilding`
+  joined the routine warnings. The shell hook drops `systemMessage` on success. Evidence:
+  `claude plugin test` 13 pass, `claude plugin validate` passes, `uv run pytest -q` 498 pass.
 - [x] 2026-10-10 — **Per-prompt dense retrieval no longer scans the index (3f4497b, 308064d).**
   `atrium serve-context` (launchd `com.cristian.atrium-context`, dotfiles 6d277d5) keeps the
   embedder and an exact float32 matrix of every vector resident and answers `atrium context`

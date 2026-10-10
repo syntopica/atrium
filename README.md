@@ -95,9 +95,9 @@ prompt and injects the evidence found. The dense lane, because a prompt is a
 sentence and the word lane ORs its common terms across the whole corpus (see
 `TODO.md`). It is silent on a slash command, on a prompt under 24 characters and outside a
 project; a failed or timed-out retrieval (10s by default) injects a one-line
-notice, since silence would read as "nothing on record". Each answer also carries a
-one-line `systemMessage` the person sees (`atrium: 4 retrieved (2 notes, 2
-episodes)`), because `additionalContext` never reaches the transcript.
+notice, since silence would read as "nothing on record". A failure also carries a
+one-line `systemMessage`, which Claude Code draws as a warning; a healthy retrieval
+carries none, so the warning keeps meaning something.
 `ATRIUM_PROMPT_CONTEXT=off` disables it without unregistering it;
 `_LIMIT`, `_CHARS`, `_LANE` and `_TIMEOUT` tune it.
 
@@ -109,9 +109,11 @@ episodes)`), because `additionalContext` never reaches the transcript.
 
 On Claude Code 2.1.287 or later, the `atrium-context` mod in
 `plugins/atrium-context` does the same retrieval from a `prompt.submit` hook
-and keeps the result in a line under the prompt (`atrium-context: 4 retrieved (2 notes,
-2 episodes)`), so the person still sees it once the transcript scrolls. Use the
-mod or the shell hook, never both, or every prompt retrieves twice:
+and shows the result where the person keeps seeing it once the transcript scrolls:
+a healthy retrieval is a green line at the right of the prompt footer (`Atrium · 2
+notes, 2 past sessions`, or `Atrium · nothing relevant`), and a failed or degraded
+one is a warning pinned under the prompt that names the cause. Use the mod or the
+shell hook, never both, or every prompt retrieves twice:
 
 ```
 /plugin install atrium-context --marketplace syntopica/atrium

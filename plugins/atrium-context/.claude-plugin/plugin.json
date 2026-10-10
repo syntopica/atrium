@@ -1,8 +1,11 @@
 {
   "name": "atrium-context",
-  "version": "0.1.1",
-  "description": "Retrieves atrium context for each prompt and shows what was retrieved under the prompt",
-  "author": { "name": "Syntopica" },
+  "version": "0.2.0",
+  "description": "Retrieves atrium context for each prompt: a green line at the right of the footer when it works, a warning under the prompt when it does not",
+  "author": {
+    "name": "Syntopica"
+  },
   "repository": "https://github.com/syntopica/atrium",
-  "license": "MIT"
+  "license": "MIT",
+  "types": "./types/index.d.ts"
 }

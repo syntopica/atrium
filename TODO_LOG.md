@@ -6,6 +6,53 @@
 
 ### 2026-10
 
+- [x] 2026-10-10 — **Per-prompt dense retrieval no longer scans the index (3f4497b, 308064d).**
+  `atrium serve-context` (launchd `com.cristian.atrium-context`, dotfiles 6d277d5) keeps the
+  embedder and an exact float32 matrix of every vector resident and answers `atrium context`
+  over `<state>/context.sock`; a `dense_generation` counter (triggers on vectors, installed on
+  the next writable open) tells it when to rebuild in the background; the CLI answers
+  `context_service_timeout` after 7 s instead of starting the scan; the mod names the
+  degradation. Measured with the hook's argv: MacBook 0.22-0.27 s idle, 0.33-0.48 s with
+  eight CPU workers and a 6 GB write (load average up to 70; first call 4.2 s); mini 0.48-1.7 s.
+  Same evidence as the in-process path on two live queries; 497 tests, ruff, mypy,
+  codeality-py and db-quality pass. Not measured: a request during a refresh write and a
+  service crash/restart under load. The original entry:
+
+  - [x] **Per-prompt `--lane dense` blows the mod's 10 s budget under disk contention.**
+        2026-10-10, MacBook: the `prompt.submit` mod reported `atrium-context: context
+        unavailable ($.process.run(atrium) aborted: still running after 10000ms)` on every
+        prompt; the same command measured 40-57 s at 19% CPU (cProfile: 26 of 28 s in
+        `dense_hits`' one `execute`, the main thread in `pread` under
+        `sqlite3BtreeTableMoveto`). The history scope for `~/p` is 60,082 vector-bearing
+        records, and `sql/context/dense_hits.sql` reads every one of them in full, text
+        included (112 MB of text plus 92 MB of vectors, then a temp B-tree for the
+        `ORDER BY`), scattered over a 22 GB index, only to keep the top 4. Contention at the
+        time: a concurrent `ollama pull gemma4:26b` (about 17 GB written), the 12:15-12:28
+        refresh and four local synthesis workers. Once those ended the same call took 5.1 s
+        at 96% CPU, still half the budget (it was 0.8-1.0 s on 2026-10-09 with a smaller
+        corpus).
+        Design study 2026-10-10 (Codex gpt-6-sol, read-only on the index, under a bounded
+        2 GiB `F_NOCACHE` reader and 8 CPU workers; same top four on every path): current
+        full-row scan 49-63 s, 6.6 GB of physical reads for 207 MiB returned; a compact
+        float32 artifact of the 60,082 ids and vectors (92 MiB) ranked plus a four-row fetch
+        in 0.10-0.13 s; a fresh-process first embedding 0.75-1.6 s. The two-phase query
+        (ids and vectors first, text for the top four) measured 3.1-3.3 s there, but
+        re-checked here it took 46.6 s when run first on a cold cache and 3.4 s for the
+        full-row scan right after it: it only helps when the pages are already cached, so
+        it is not the fix for saturation. A `(workspace, role, record_id)` index does not
+        cover `vectors.vector`, which lives in another table.
+        Recommended design: an exact float32 vector artifact (ids, vectors, role and
+        workspace slices; no text) built from one WAL read snapshot, validated, published
+        by atomic manifest replace, keyed to a dense generation counter that every
+        record and vector writer bumps in the same transaction; served by one resident
+        per-user process holding the embedder and the matrix, reached by the hook over a
+        Unix socket, with an internal 7-8 s deadline that returns an explicit degraded
+        answer before the hook's 10 s kill, and the hook surfacing degraded warnings
+        instead of "nothing retrieved". Keep float32 (float16 kept the top four 32/32,
+        int8 only 19/32). Smallest next step: the generation counter plus the artifact
+        builder, then the service; acceptance is the real hook under a concurrent refresh,
+        cold-ish cache, I/O and CPU load, recording p50/p95/p99 and degraded counts.
+
 - [x] 2026-10-10 — **Closed items that had stayed in `TODO.md`, moved here verbatim.**
 
   - [x] Stage one, `atrium curate-screen`: 47,753 records and 306,212 facts into

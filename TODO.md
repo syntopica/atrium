@@ -90,8 +90,11 @@
       substantive episodes is a high error rate for the population now writing most new
       records. **Owner question:** keep qwen local as the bulk lane as is, add a
       faithfulness check (a second-model judge on a sample, or claim-to-transcript
-      grounding) before ingest, or re-route new bulk to a lane that benched clean
-      (`gpt-5.6-terra` low, `docs/studies/synthesis-producer-bench.md`)?
+      grounding) before ingest, or re-route new bulk to Codex on the GPT-6 family? The
+      2026-09-01 bench (`docs/studies/synthesis-producer-bench.md`) predates it and found
+      that lowering effort made `gpt-5.6-sol` fabricate, so `gpt-6-luna` and `gpt-6-sol`
+      at low effort (both answer on this account, probed 2026-10-10) need the same blind
+      bench before either takes bulk.
 
 ## Promotion pipeline
 

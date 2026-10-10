@@ -61,16 +61,17 @@ def test_refuses_above_the_byte_limit_and_freezes_the_boundary(tmp_path):
     cwd, transcript, environ = _session(tmp_path)
     _big_session(transcript)
     decision = session_stop_decision(_payload(cwd, transcript), environ, NOW)
-    assert decision is not None and decision["decision"] == "block"
+    assert decision is not None
+    output = decision["hookSpecificOutput"]
+    assert output["hookEventName"] == "Stop"
+    # Non-error feedback: no block, no warning line for the person.
+    assert "decision" not in decision and "systemMessage" not in decision
     state = json.loads(session_state_path("s1", environ).read_text())
     pending = state["pending"]
     assert pending["boundary_uuid"] == "a1"
     assert pending["since"] == "2026-09-16T11:00:00.000Z"
     assert pending["model"] == "claude-fable-5-1"
-    assert f"--checkpoint {pending['id']}" in decision["reason"]
-    assert decision["systemMessage"].startswith("atrium: recording")
-    assert pending["id"] in decision["systemMessage"]
-    assert decision["suppressOutput"] is True
+    assert f"--checkpoint {pending['id']}" in output["additionalContext"]
     assert state["workspace"].endswith("/p/proj")
 
 
@@ -132,7 +133,8 @@ def test_ignored_refusal_is_repeated_twice_then_left_pending(tmp_path):
     assert state["pending"]["attempts"] == 3
     # The next ordinary turn re-issues it with the same id.
     again = session_stop_decision(_payload(cwd, transcript), environ, NOW)
-    assert again is not None and state["pending"]["id"] in again["reason"]
+    assert again is not None
+    assert state["pending"]["id"] in again["hookSpecificOutput"]["additionalContext"]
 
 
 def test_consumed_checkpoint_silences_the_active_turn(tmp_path):

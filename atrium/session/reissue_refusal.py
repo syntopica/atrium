@@ -31,4 +31,4 @@ def reissue_refusal(
     context.state["pending"] = pending
     write_session_state(context.state_path, context.state)
     reason = refusal_reason(str(pending["id"]), pending.get("since"), retry=True)
-    return stop_refusal(reason, str(pending["id"]), pending.get("since"), retry=True)
+    return stop_refusal(reason)

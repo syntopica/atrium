@@ -19,7 +19,7 @@ from atrium.session.write_session_state import write_session_state
 def session_stop_decision(
     payload: dict[str, Any], environ: Mapping[str, str], now: datetime | None = None
 ) -> dict[str, object] | None:
-    """Return the ``{"decision": "block", "reason": ...}`` to print, or None.
+    """Return the Stop feedback JSON to print, or None.
 
     Silent (None) is the common answer: excluded sessions, nothing new, or a
     checkpoint already consumed. A refusal freezes the checkpoint first, so
@@ -64,4 +64,4 @@ def session_stop_decision(
     )
     write_session_state(context.state_path, context.state)
     reason = refusal_reason(checkpoint["id"], baseline_at, retry=False)
-    return stop_refusal(reason, checkpoint["id"], baseline_at)
+    return stop_refusal(reason)

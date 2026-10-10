@@ -14,6 +14,23 @@
 
 ## Retrieval
 
+- [ ] **Per-prompt `--lane dense` blows the mod's 10 s budget under disk contention.**
+      2026-10-10, MacBook: the `prompt.submit` mod reported `atrium-context: context
+      unavailable ($.process.run(atrium) aborted: still running after 10000ms)` on every
+      prompt; the same command measured 40-57 s at 19% CPU (cProfile: 26 of 28 s in
+      `dense_hits`' one `execute`, the main thread in `pread` under
+      `sqlite3BtreeTableMoveto`). The history scope for `~/p` is 60,082 vector-bearing
+      records, and `sql/context/dense_hits.sql` reads every one of them in full, text
+      included (112 MB of text plus 92 MB of vectors, then a temp B-tree for the
+      `ORDER BY`), scattered over a 22 GB index, only to keep the top 4. Contention at the
+      time: a concurrent `ollama pull gemma4:26b` (about 17 GB written), the 12:15-12:28
+      refresh and four local synthesis workers. Once those ended the same call took 5.1 s
+      at 96% CPU, still half the budget (it was 0.8-1.0 s on 2026-10-09 with a smaller
+      corpus). Smallest next step: rank on `record_id` plus `vector` only, ideally from a
+      covering index `(workspace, role, record_id)` so the scope scan never touches the
+      text-bearing table, then fetch text and metadata for the top `limit` ids; measure
+      before and after with the hook's exact argv.
+
 - [!] **A notes-only FTS table is worth building; enabling it waits on the acceptance set.**
       Re-measured 2026-10-10 (Codex, re-run and spot-checked here; artifacts in the instance
       state, `atrium/evaluations/notes-only-fts-2026-10-10/`): an external-content FTS5

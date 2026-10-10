@@ -157,7 +157,7 @@ def test_a_crash_between_registry_write_and_ack_is_settled_by_the_next_pass(
 
     counts = _next_pass(registry)
 
-    assert counts == {"synthesized": 0, "skipped": 1, "drained": 1}
+    assert counts == {"synthesized": 0, "skipped": 1, "trivial": 0, "drained": 1}
     assert len(list((registry / "records").glob("*.json"))) == 1
     assert coordinator.acked == [{"path": "/v1/jobs/j1/ack", "result_id": "r-j1", "decline": False}]
     assert coordinator.unacked() == []

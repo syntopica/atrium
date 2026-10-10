@@ -11,6 +11,8 @@ from atrium.status.iso_utc import iso_utc
 _TALLY = re.compile(
     r"synthesized (\d+), already present (\d+), failed conversations (\d+), deferred (\d+)"
 )
+# Printed since 2026-10-10; an older pass line has none, so its count stays null.
+_TRIVIAL = re.compile(r"harness echoes not synthesized (\d+)")
 
 
 def closed_pass(entry: dict[str, Any], stamp: str, exit_code: int, tail: str) -> dict[str, Any]:
@@ -30,4 +32,7 @@ def closed_pass(entry: dict[str, Any], stamp: str, exit_code: int, tail: str) ->
     if tally is not None:
         for index, key in enumerate(("synthesized", "skipped", "failed", "deferred"), start=1):
             closed[key] = int(tally.group(index))
+    trivial = _TRIVIAL.search(tail)
+    if trivial is not None:
+        closed["trivial"] = int(trivial.group(1))
     return closed

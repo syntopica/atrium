@@ -44,6 +44,7 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
     are exactly the ones nothing but this archive can still account for.
     """
     from atrium.recall.project_workspace import project_workspace
+    from atrium.synthesize.is_trivial_episode import is_trivial_episode
     from atrium.synthesize.segment_episodes import segment_episodes
 
     target = workspace
@@ -60,7 +61,11 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
     if limit is not None:
         conversations = conversations[:limit]
     if dry_run:
-        episodes = sum(len(segment_episodes(c.get("events") or [])) for c in conversations)
+        episodes = sum(
+            not is_trivial_episode(episode["event_indexes"], c.get("events") or [])
+            for c in conversations
+            for episode in segment_episodes(c.get("events") or [])
+        )
         print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
         return 0
     # A worker lane journals each job it submits against its conversation, so
@@ -91,7 +96,7 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
             conversation["id"] not in unfinished,
         )
     )
-    made = skipped = failed = deferred = 0
+    made = skipped = failed = deferred = trivial = 0
     total = len(conversations)
     started = time.time()
     run_one = make_conversation_runner(lane, state, holding, journal, total)
@@ -101,10 +106,13 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
             skipped += result["skipped"]
             failed += result["failed"]
             deferred += result.get("deferred", 0)
+            trivial += result.get("trivial", 0)
     print(
         f"  synthesized {made}, already present {skipped}, failed conversations {failed}, "
-        f"deferred {deferred}, "
+        f"deferred {deferred}, harness echoes not synthesized {trivial}, "
         f"registry {default_registry()}"
     )
-    publish_pass_status(producer, started, time.time(), (total, made, skipped, failed, deferred))
+    publish_pass_status(
+        producer, started, time.time(), (total, made, skipped, failed, deferred, trivial)
+    )
     return 0 if failed == 0 else 1

@@ -26,4 +26,5 @@ def opened_pass(stamp: str, lane: str, flags: str) -> dict[str, Any]:
         "skipped": None,
         "failed": None,
         "deferred": None,
+        "trivial": None,
     }

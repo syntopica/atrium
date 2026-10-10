@@ -1,6 +1,6 @@
 {
   "name": "atrium-context",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Retrieves atrium context for each prompt: a green line at the right of the footer when it works, a warning under the prompt when it does not",
   "author": {
     "name": "Syntopica"

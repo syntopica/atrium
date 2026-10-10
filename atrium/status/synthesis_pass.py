@@ -15,3 +15,4 @@ class SynthesisPass:
     skipped: int
     failed: int
     deferred: int
+    trivial: int = 0

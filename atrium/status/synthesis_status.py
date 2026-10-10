@@ -21,5 +21,6 @@ def synthesis_status(last: SynthesisPass, now: float) -> dict[str, Any]:
             "skipped": last.skipped,
             "failed": last.failed,
             "deferred": last.deferred,
+            "trivial": last.trivial,
         },
     }

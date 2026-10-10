@@ -7,9 +7,9 @@ def publish_pass_status(
     producer: str,
     started: float,
     finished: float,
-    counts: tuple[int, int, int, int, int],
+    counts: tuple[int, int, int, int, int, int],
 ) -> None:
-    """``counts`` is (total, made, skipped, failed, deferred)."""
+    """``counts`` is (total, made, skipped, failed, deferred, trivial)."""
     from atrium.status.publish_json_atomically import publish_json_atomically
     from atrium.status.status_file import status_file
     from atrium.status.synthesis_pass import SynthesisPass

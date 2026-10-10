@@ -94,10 +94,12 @@
       shadow judge agrees with the spot-check (30 days, `worker quality --days 30
       --json`): OpenRouter `qwen/qwen3.8-27b:free` 4.73 mean over 22 judged, agy
       `gemini-3.8-flash-medium` 4.05/19, dots 3.74/43, nemotron 3.64/67, local
-      `qwen3.6:35b` 3.09/44. Local takes most volume only because agy rests and the
-      OpenRouter route stops at its `daily_cap` of 350 (the free key's daily
-      allowance is shared by every queue). Within the allowed lanes the remaining
-      levers are: a longer `local_after_s` for this backlog queue (higher quality,
+      `qwen3.6:35b` 3.09/44. Local took most volume because agy rests and the
+      OpenRouter route stopped at a fixed `daily_cap` of 350 while the key spent only
+      402-876 of its 1,000 a day (2026-10-06..10). Fixed the same day: worker
+      `4917c02` adds `daily_key_cap`, and the queue now uses OpenRouter until the whole
+      key reaches 850, leaving 150 for the other queues (wiki `968b99623`). Remaining
+      levers within the allowed lanes: a longer `local_after_s` for this backlog queue (higher quality,
       lower throughput), a better local model, or a faithfulness pass by an allowed
       lane before ingest. Owner choice between throughput and quality; nothing
       changed yet.

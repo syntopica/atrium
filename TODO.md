@@ -117,10 +117,29 @@
       verdict; qwen3.6:35b erred on 2. Three episodes are not a verdict. Switching
       also needs a worker change: `ollama_request_body` and `probe_quiet` send
       `think: false`, on which `gpt-oss:20b` with a `format` hung for over 15 min;
-      it answered with `think: "low"`. Next step: a 20-30 episode held-out
-      sample judged against GPT-6, comparing current routing, a later local
-      fallback (`local_after_s`) and another local model, with quality, latency
-      and quota use, before changing the local model. A different lever measured
+      it answered with `think: "low"`. Held-out comparison done 2026-10-10
+      (`~/p/wiki/atrium/evaluations/lane-faithfulness-2026-10-10/`, local,
+      git-ignored). It used 24 episodes, 8 each served by OpenRouter nemotron,
+      OpenRouter qwen3.8-27b and local qwen3.6. Each was re-synthesized by local
+      qwen3.6, agy `gemini-3.8-flash-medium` and `gpt-oss:20b` (llama.cpp on
+      nova). GPT-6 judged all 1,021 title/summary/fact/open-end claims blind.
+      Unsupported: OpenRouter qwen3.8-27b 6.1%, nemotron 9.8%, local qwen3.6
+      21-23%, agy flash 23.1%, gpt-oss 23.9%. Matched episodes give the same
+      order: on nemotron's 8 episodes, nemotron 9.8% against 24-35% for the
+      rest; on qwen3.8's 8, qwen3.8 6.1% against 10-26%. So gpt-oss is no
+      better than qwen3.6 and slower (median 44 s on nova CPU against 20 s), and
+      switching the local model buys nothing. The quality lever is OpenRouter,
+      and its key already reaches the 850 cap most days. A longer
+      `local_after_s` only delays the backlog until the next day's quota;
+      the owner decides whether quality is worth that. agy flash, first in the
+      routing order, was no better than local here. This used atrium's own agy
+      prompt, not the worker's agy runner. Summaries are the weak field in
+      every lane (37-79% unsupported, against 11-15% for facts): one wrong
+      detail sinks a long summary. Next step: a shorter, fact-bound summary
+      in the synthesis prompt, measured on the same 24 episodes. Also found:
+      worker-lane records named the requested `qwen3.6:35b` whatever answered
+      (fixed in `3504408`; older records keep the wrong label, and the truth is
+      in the worker's `attempts` table). A different lever measured
       the same day: OpenJev, an open-weights decision model (MLX 4-bit, local,
       `~/models/openjev`), asked one yes/no "is this claim supported by the
       transcript" per fact. It scored all 8 invented claims from those runs

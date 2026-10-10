@@ -107,35 +107,22 @@ def _retrieved(command: list[str]) -> str:
         raise
 
 
-def _notice(evidence: list[dict]) -> str:
-    """The one line the person sees: what was retrieved, by kind.
+def _emit(body: str, notice: str = "") -> None:
+    """Hand ``body`` to Claude, and ``notice`` to the person when one is given.
 
-    `additionalContext` never reaches the transcript, so the person could not
-    tell a prompt that got evidence from one that got nothing, and the session
-    reads it either way. `systemMessage` is shown to the person and not to
-    Claude, which is the split wanted.
+    Claude Code draws a hook's `systemMessage` as a warning, so a healthy
+    retrieval carries none: a warning on every prompt that worked taught the
+    person to read past the one that did not (2026-10-10). Failures keep it.
     """
-    counts: dict[str, int] = {}
-    for item in evidence:
-        label = _TRUST_LABEL.get(item.get("trust", ""), "item")
-        counts[label] = counts.get(label, 0) + 1
-    kinds = ", ".join(
-        f"{count} {label}{'s' if count > 1 else ''}" for label, count in counts.items()
-    )
-    return f"atrium: {len(evidence)} retrieved ({kinds})"
-
-
-def _emit(body: str, notice: str) -> None:
-    json.dump(
-        {
-            "systemMessage": notice,
-            "hookSpecificOutput": {
-                "hookEventName": "UserPromptSubmit",
-                "additionalContext": body,
-            },
+    output: dict = {
+        "hookSpecificOutput": {
+            "hookEventName": "UserPromptSubmit",
+            "additionalContext": body,
         },
-        sys.stdout,
-    )
+    }
+    if notice:
+        output["systemMessage"] = notice
+    json.dump(output, sys.stdout)
 
 
 def main() -> int:
@@ -192,7 +179,7 @@ def main() -> int:
             *[_line(item) for item in evidence],
         ]
     )
-    _emit(body, _notice(evidence))
+    _emit(body)
     return 0
 
 

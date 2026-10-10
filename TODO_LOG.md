@@ -6,6 +6,25 @@
 
 ### 2026-10
 
+- [x] 2026-10-10 — **Atrium shows in the Claude Code TUI through a mod.**
+  `plugins/atrium-context` (atrium f05920b): a `prompt.submit` hook runs `atrium context
+  --json`, adds the evidence as context, and keeps `atrium-context: N retrieved (...)` in
+  the status line under the prompt plus a person-only log line; same skip rules, 10 s
+  budget, failure notice and rendering as the shell hook, exit 2 silent. The repo is a
+  marketplace. `claude plugin validate --strict .` passes, `claude plugin test` 7 pass.
+  Live: with the mod one `# atrium context` block, without it and the hook off none; same
+  on the Mac mini (2.1.295). The UserPromptSubmit shell hook is unregistered on both
+  machines (dotfiles b5e838c) so prompts do not retrieve twice; it stays in the repo as
+  the fallback for hosts without mods. Not built, on Codex's advice: the `/recall` pane
+  and the `atrium_context` ToolResult renderer.
+
+- [x] 2026-10-10 — **The secrets repository commits again.** `~/p/dotfiles/secrets` got
+  the local identity `info@busirocket.com` (owner approved). Backups and the
+  `config.d_check` probe were ignored and unstaged first, since `snapshot_repo` runs
+  `git add -A`; the four new keypairs, `ssh/config` and the retired
+  `busirocket-clientes` pair (`ssh/retired/` already held two) went to the private
+  BusiRocket/secrets in 4d086af. The next `sync-all-safe` run is not yet observed.
+
 - [x] 2026-10-10 — **The two machines' archives agree.** Conversation id sets diffed on
   2026-10-09 ~23:58: this machine 53,909, the Mac mini 53,906; the Mac mini has nothing
   this machine lacks, and the three it lacks are claude-code sessions of this machine

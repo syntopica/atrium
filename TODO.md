@@ -36,17 +36,23 @@
 
 ## Ingest / Store
 
-- [ ] **Process the retired memstore store into Atrium, then delete it** (owner,
-      2026-09-16: "tenemos que procesarlo y luego borrarlo"; routed from
-      `~/p/TODO.md` 2026-09-20). `~/p/wiki/mem/memstore/peer-b-retired-20260904`
-      is 26 GB in three palaces (`palace.pre-rebuild-20260821-002808` 14 GB,
-      `palace.pre-merge-20260811` 8.3 GB, `palace` 3.6 GB) plus `hallways.json`;
-      `this-mac-retired-20260914` is another 116 MB. primary machine only; its README says
-      there is no second copy and `wiki/.gitignore` ignores `/mem/`, so nothing is
-      pushed anywhere: do not delete before the ingestion runs. Open question from
-      that README: which of memstore's own synthesis is worth importing rather
-      than re-deriving, given Atrium already indexes the same conversation corpus.
-      A bulk read over 26 GB, so a delegated pass, not an inline session.
+- [~] **Process the retired MemPalace store into Atrium, then delete it** (owner,
+      2026-09-16: "tenemos que procesarlo y luego borrarlo"; approved again 2026-10-10).
+      The copy is `~/p/wiki/mem/mempalace/macmini-retired-20260904` (26 GB, `uchg`, the only
+      copy, ignored by the wiki repo); `this-mac-retired-20260914` beside it is 116 MB.
+      Sampled read-only 2026-10-10 (Codex review): `palace/chroma.sqlite3` holds 464,413
+      embeddings in one collection, `mempalace_drawers`: 462,311 conversation ingests, 880
+      registry records, 2,058 diary entries (`CHECKPOINT` tails); `knowledge_graph.sqlite3`
+      2,897 entities, 1,912 triples, byte-identical in all three palaces. The older Chroma
+      stores hold 773,187 (`palace.pre-merge-20260811`) and 1,136,075
+      (`palace.pre-rebuild-20260821-002808`) embeddings, so they may carry records the
+      current palace lost. Plan: conversation chunks and diaries are re-derivable from the
+      archive; export only registry, diary-free synthesis (`runbooks`, `gotchas`,
+      `decisions`) and the triples to a redacted JSONL with source ids and content hashes,
+      drop what matches the archive, existing synthesis or Brain notes, publish the rest as
+      sourced Brain notes, then `ingest-notes`. Vectors and triples never go into the
+      disposable index directly. Deletion only after a hash manifest of all three palaces,
+      every snapshot-only record reviewed, and the owner confirming the exact target.
 
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
@@ -346,16 +352,6 @@
 > found had been running silently for days, and none of them were subtle --
 > they were invisible because nothing reported the right number.
 
-- [!] **The dotfiles auto-sync manufactures conflicts and leaves them.** Since
-      2026-09-07 `sync-all-safe` refuses a repository that is mid-merge or carries
-      markers and logs `PROBLEM ...`; since 2026-10-10 a run that logs any PROBLEM also
-      raises a macOS notification (dotfiles 206c86f). That surfaced what the log had hidden:
-      `PROBLEM COMMIT_FAILED secrets` on every run, because `~/p/dotfiles/secrets`
-      (BusiRocket/secrets) has no `user.email` while `user.useConfigOnly` is true; its last
-      commit is 2026-07-03 and 15 paths are uncommitted. Blocked on the owner: setting the
-      identity (presumably `info@busirocket.com`, a BusiRocket repository) makes the next
-      run commit and push those secrets to GitHub. Cross-project: dotfiles.
-
 - [x] **The drip runs under launchd and the local lane waits for an empty desk.** 2026-09-16:
       `com.cristian.atrium-drip` runs `drip-launch.sh` (guard, then the loop), restarting the
       pair after a crash but not after a clean finish. The `local` lane leads `LANES` but is
@@ -403,23 +399,6 @@
   emits VS Code workspace metadata instead of dialogue. Both filed in
   `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
-
-- [ ] **Show atrium in the Claude Code TUI through a Claude Mod** (researched
-      2026-10-09). Claude Code v2.1.287 (2026-10-01; 2.1.296 installed) runs plugin
-      "mods": JavaScript handlers that can draw in the terminal. Done the same day
-      without a mod: the prompt hook and the session-start recall return a
-      `systemMessage` the person sees (atrium a726caf, dotfiles 83d79f1) and both hooks
-      name themselves in the spinner (`statusMessage`, dotfiles 5a1064b). A mod would
-      add: `$.ui.status` for a persistent "atrium: 12 recalled, 4 for this prompt"
-      line; a `prompt.submit` handler that replaces the shell hook and logs a compact
-      evidence list with `$.ui.log` (person-only); a `/recall` pane listing the
-      session-start episodes with search through `atrium_search`; a `ToolResult`
-      renderer that turns `atrium_context` JSON into a short list. Docs:
-      code.claude.com/docs/en/plugins/mods/{overview,api,events,interface,reference}.md;
-      examples in anthropics/claude-code-playground (claude-code/mods). Mods draw only
-      in the terminal and the Desktop Code tab, so the hooks stay the fallback.
-      Smallest next step: a mod with `prompt.submit` that calls `atrium context --json`
-      and shows `$.ui.status`, behind `claude plugin validate`.
 
 ## Quality gate
 

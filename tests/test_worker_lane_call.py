@@ -80,7 +80,7 @@ def test_submits_personal_job_and_returns_the_result_unacked(monkeypatch, tmp_pa
     out = worker_lane_call(LanePrompt("sys", "user"), TOOL, "qwen3.6:35b")
     assert out == {
         "input": {"title": "t"},
-        "model": "qwen3.6:35b",
+        "model": "unknown",
         "usage": {"input_tokens": 5, "output_tokens": 2},
         "worker_results": [{"job_id": "j1", "result_id": "r1"}],
     }

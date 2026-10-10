@@ -63,12 +63,13 @@ def worker_lane_call(
         elif result and result["control"] is None:
             usage = result.get("usage") or {}
             # The worker may answer from OpenRouter or a runner instead of the
-            # requested local model, so the record names the executor that did.
+            # requested local model, so the record names the executor that did;
+            # without one it is unknown, never the model that was only asked for.
             executor = result.get("executor") or {}
             runner, resolved = executor.get("provider", ""), executor.get("model", "")
             return {
                 "input": result["output"]["json"],
-                "model": f"{runner}-{resolved}" if runner and resolved else model,
+                "model": f"{runner}-{resolved}" if runner and resolved else "unknown",
                 "usage": {
                     "input_tokens": usage.get("tokens_in", 0),
                     "output_tokens": usage.get("tokens_out", 0),

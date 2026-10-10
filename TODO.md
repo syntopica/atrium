@@ -101,7 +101,14 @@
       key reaches 850, leaving 150 for the other queues (wiki `968b99623`). Remaining
       levers within the allowed lanes: a longer `local_after_s` for this backlog queue (higher quality,
       lower throughput), a better local model, or a faithfulness pass by an allowed
-      lane before ingest. Owner choice between throughput and quality; nothing
+      lane before ingest. `qwen3.8:27b` locally was tried 2026-10-10 and is not it
+      yet: Ollama 0.40 serves it only on the MLX runner, which answers any `format`
+      with `501 structured output is unavailable`, and the worker always sends the
+      schema. Speed is no obstacle on the M4 Max (18-32 tok/s generation against
+      23-27 for the 35B MoE, 9-14 s per episode, 18 GB against 22), but with the JSON
+      asked in the prompt it repeated the failures: a review verdict invented on one
+      of the three episodes qwen3.6 got wrong, a failed Edit reported as applied on
+      another. The OpenRouter score for the same model (4.73) does not carry over. Owner choice between throughput and quality; nothing
       changed yet.
 
 ## Promotion pipeline

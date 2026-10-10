@@ -126,7 +126,16 @@
       asked in the prompt it repeated the failures: a review verdict invented on one
       of the three episodes qwen3.6 got wrong, a failed Edit reported as applied on
       another. The OpenRouter score for the same model (4.73) does not carry over. Owner choice between throughput and quality; nothing
-      changed yet.
+      changed yet. Same three episodes, 2026-10-10, newer local candidates: Ollama's
+      default `gemma4:26b` (nvfp4) is MLX and 501s too; its GGUF
+      `gemma4:26b-a4b-it-q4_K_M` runs (8-30 s) but erred on 2 of 3, inventing a
+      repository name and the review verdict, so it was removed. `gpt-oss:20b`
+      (12 GB, 6-10 s) erred on 1 of 3, the same invented "no vulnerabilities"
+      verdict; qwen3.6:35b erred on 2. Three episodes are not a verdict. Switching
+      also needs a worker change: `ollama_request_body` and `probe_quiet` send
+      `think: false`, on which `gpt-oss:20b` with a `format` hung for over 15 min;
+      it answered with `think: "low"`. Next step: a 20-30 episode sample judged
+      against GPT-6 before changing the local model.
 
 ## Promotion pipeline
 

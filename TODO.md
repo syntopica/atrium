@@ -36,17 +36,6 @@
 
 ## Ingest / Store
 
-- [!] **Delete the retired MemPalace copies** (owner, 2026-09-16: "tenemos que
-      procesarlo y luego borrarlo"). Processing is done (2026-10-10): all four palaces
-      (three in `~/p/wiki/mem/mempalace/macmini-retired-20260904`, 26 GB; one inside
-      `this-mac-retired-20260914/mempalace-data.tar.gz`, 116 MB) were classified against
-      the archive, over 99% re-derivable; the 2,988 records nothing else holds went
-      through two Codex review rounds, and 182 accepted records landed as 85 sourced
-      facts in 13 Brain pages (wiki `355885351`). The 1,912 graph triples were rejected
-      for lacking record provenance. Ledgers, `work/verify.py` (PASS) and a SHA-256
-      manifest of all 1,514 source files are in `~/p/wiki/mem/mempalace-processing-20261010/`.
-      Blocked on: the owner's explicit yes on the two exact paths; then
-      `chflags -R nouchg ~/p/wiki/mem/mempalace` and remove that directory.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable

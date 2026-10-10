@@ -305,6 +305,13 @@
   next step: when a run passes 30 min, read the `stage` lines in `refresh.log` and name
   the step; the archive is 6.7 GB and rewritten whole on every import, which is the
   first suspect (see Ingest / Store).
+  Update 2026-10-10: 18 runs since the stage logging (2026-10-09 21:45 to
+  2026-10-10 11:00), all 10-17 min, none slow. Typical split: export 4-7 min,
+  import 3-4.5, ingest 3-3.5, ingest-synthesis 2, ingest-notes 12 s, embed 1-3,
+  doctor 2. The slow window stays unexplained (2026-10-09 11:38-20:19 only);
+  close as not reproduced if another week passes without a run over 30 min.
+  Per-prompt retrieval (`--lane dense --limit 4`) measured 0.8-1.0 s warm,
+  well inside the mod's 10 s budget.
 
 - [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
       of its window (15,696 files for 14 days). If a reader ever needs it

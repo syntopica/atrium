@@ -124,10 +124,22 @@
       transcript" per fact. It scored all 8 invented claims from those runs
       0.20-0.84 and all 12 supported ones 0.92-0.98; a 0.9 cut gets 20 of 20 at
       ~1-3.5 s a claim. It is a candidate faithfulness gate on facts before ingest,
-      whichever model generated them. Next: rerun it on the 20-30 episode sample
-      above before wiring anything. Recipe and caveats are in the wiki at
-      `brain/topics/openjev.md`. Its weights are CC BY-NC 4.0, which suits this
-      personal use.
+      whichever model generated them. The larger sample did not hold that
+      result. It used 30 registry episodes and 341 claims, which GPT-6 labelled
+      in one Codex call, marking 44 unsupported (qwen3.6 40 of 310, agy-gemini 4
+      of 31). On the 81 claims OpenJev scored before the Mac froze, its AUC was
+      0.86. A 0.6 cut flags 5 claims, all of them truly unsupported. A 0.9 cut
+      catches 8 of 12 but flags 21 of 69 supported claims. Median ~12 s a claim.
+      So it works as a precise flag, not as a gate. The freeze came from
+      OpenJev MLX (~15 GB) running beside the worker's `qwen3.6:35b` (22 GB at
+      131k context) and the session load. Never run the two together.
+      [!] To finish the 260 remaining claims, the worker's local lane has to be
+      held, and that is the owner's call. The script resumes:
+      `score.py` skips claims already in `jev_scores.json`. The sample,
+      labels, scores and scripts are in
+      `~/p/wiki/atrium/evaluations/openjev-faithfulness-2026-10-10/` (local,
+      git-ignored). Recipe and caveats are in
+      the wiki at `brain/topics/openjev.md`; the owner holds a commercial licence.
 
 ## Promotion pipeline
 

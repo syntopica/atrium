@@ -1,3 +1,5 @@
+import { runFailure } from './run-failure.js'
+
 // `atrium context --project` exits 2 when the directory names no project, such
 // as a session opened in the home directory. That is a refusal, not a failure.
 const NOT_A_PROJECT = 2
@@ -8,7 +10,7 @@ const ANSWERED = ['ready', 'empty']
 // directory is not a project; throws on any other failure.
 export function readAnswer(run) {
   if (run.exitCode === NOT_A_PROJECT) return null
-  if (run.exitCode !== 0) throw new Error('atrium context exited ' + run.exitCode)
+  if (run.exitCode !== 0) throw new Error(runFailure(run))
   const answer = JSON.parse(run.stdout)
   if (!ANSWERED.includes(answer.index_status)) throw new Error('index not readable (' + answer.index_status + ')')
   return answer

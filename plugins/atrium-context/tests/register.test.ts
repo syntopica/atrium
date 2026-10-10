@@ -92,3 +92,20 @@ test('skips slash commands and short asides without retrieving', async ($, on) =
   await $.prompt.submit({ text: 'ok thanks' })
   expect(seen.argv).toBeUndefined()
 })
+
+test('names the service timeout instead of an exit code', async ($, on) => {
+  const seen: any = {}
+  const timedOut = { index_status: 'unavailable', evidence: [], warnings: ['context_service_timeout'] }
+  stubs(on, { value: { exitCode: 1, stdout: JSON.stringify(timedOut), stderr: '' } }, seen)
+  await $.prompt.submit({ text: PROMPT })
+  expect(seen.status).toBe('context unavailable (context_service_timeout)')
+  expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
+})
+
+test('says why nothing was retrieved when retrieval was degraded', async ($, on) => {
+  const seen: any = {}
+  const stale = { index_status: 'ready', evidence: [], warnings: ['no_matches', 'dense_matrix_stale_rebuilding'] }
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(stale), stderr: '' } }, seen)
+  await $.prompt.submit({ text: PROMPT })
+  expect(seen.status).toBe('nothing retrieved for the last prompt (dense_matrix_stale_rebuilding)')
+})

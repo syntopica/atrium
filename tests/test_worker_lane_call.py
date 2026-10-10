@@ -94,6 +94,20 @@ def test_submits_personal_job_and_returns_the_result_unacked(monkeypatch, tmp_pa
     assert "/v1/jobs/j1/ack" not in seen
 
 
+def test_the_record_names_the_executor_that_answered(monkeypatch, tmp_path):
+    ok = {
+        "result_id": "r1",
+        "control": None,
+        "output": {"text": "{}", "json": {"title": "t"}},
+        "usage": {},
+        "executor": {"node": "n", "provider": "openrouter", "model": "qwen/qwen3.8-27b:free"},
+    }
+    url, _ = serve([ok])
+    configure(monkeypatch, tmp_path, url)
+    out = worker_lane_call(LanePrompt("sys", "user"), TOOL, "qwen3.6:35b")
+    assert out["model"] == "openrouter-qwen/qwen3.8-27b:free"
+
+
 def test_a_split_request_is_declined_and_waiting_continues(monkeypatch, tmp_path):
     split = {"result_id": "r0", "control": "split_requested", "output": None, "usage": None}
     ok = {

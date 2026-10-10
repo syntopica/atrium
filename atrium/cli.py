@@ -143,6 +143,10 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             )
         except ValueError as error:
             parser.error(str(error))
+    if args.command == "serve-context":
+        from atrium.serve.serve_context import serve_context
+
+        return serve_context(args.index, state, args.interval)
     if args.command == "recall":
         return run_recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
     return run_status(

@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, Any
 from atrium.context.context_hits import context_hits
 from atrium.context.context_indexes_ready import context_indexes_ready
 from atrium.context.context_response import context_response
+from atrium.context.dense_matrix_scope import dense_matrix_scope
 from atrium.context.finalize_context import finalize_context
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.linked_hits import linked_hits
@@ -20,6 +21,7 @@ from atrium.store.verify_build_stamp import verify_build_stamp
 
 if TYPE_CHECKING:
     from atrium.context.context_embedder import ContextEmbedder
+    from atrium.context.dense_matrix import DenseMatrix
 
 
 def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
@@ -32,6 +34,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
     lane: str = "auto",
     embedder: "ContextEmbedder | None" = None,
     state: Path | None = None,
+    dense_matrix: "DenseMatrix | None" = None,
 ) -> dict[str, Any]:
     """Combine scoped history with curated notes and bounded indexed links.
 
@@ -56,7 +59,12 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         )
         if lane in ("auto", "dense"):
             for name, curated in (("history", False), ("curated", True)):
-                if not vector_presence(connection, curated=curated, workspace=workspace):
+                present = (
+                    dense_matrix_scope(dense_matrix, curated=curated, workspace=workspace).any()
+                    if dense_matrix is not None
+                    else vector_presence(connection, curated=curated, workspace=workspace)
+                )
+                if not present:
                     response["route"][f"{name}_lane"] = "words"
                     response["warnings"].append(f"{name}_vectors_missing_lexical_fallback")
         active_embedder = embedder if embedder is not None else LazyEmbedder()
@@ -74,6 +82,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 active_embedder,
                 curated=True,
                 exhausted=exhausted,
+                dense_matrix=dense_matrix,
             )
             history = context_hits(
                 connection,
@@ -84,6 +93,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 curated=False,
                 workspace=workspace,
                 exhausted=exhausted,
+                dense_matrix=dense_matrix,
             )
         except (OSError, RuntimeError, ValueError):
             if lane not in ("auto", "dense"):

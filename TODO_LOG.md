@@ -23,7 +23,12 @@
   `atrium: 12 episodes recalled` and `atrium · brain: 1 cited, 3 read, 1 lookup`.
   Found on the way: Codex's `[mcp_servers.atrium]` had no `SYNTOPICA_DATA`, so every
   Codex MCP call answered `index_unavailable_or_incompatible`; pinned in
-  `~/.codex/config.toml`. New Codex hooks still need `/hooks` review once.
+  `~/.codex/config.toml`. The five new Codex hooks were then trusted through
+  `/hooks` and ran without `--dangerously-bypass-hook-trust` (Codex 0.159.2 and
+  0.162.1). That trial exposed two defects, both fixed: the literal `brain/...md`
+  placeholder counted as a cited note (`7f06b19`, mod 0.3.1), and `lane="lexical"`
+  failed as a bare `Error executing tool` (`e75278b`, lanes now a schema enum; a
+  real `codex exec` call got the validation message naming the four lanes).
 
 - [x] 2026-10-11 — **Cold `atrium context --lane auto` re-measured on the updated index.**
   Five fresh-process CLI queries took 1.5-2.1 s, with one 5.6 s outlier on the first,

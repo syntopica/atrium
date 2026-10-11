@@ -40,6 +40,7 @@ def run_status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     from atrium.status.publish_json_atomically import publish_json_atomically
     from atrium.status.refresh_status import refresh_status
     from atrium.status.status_file import status_file
+    from atrium.store.read_excluded_conversations import read_excluded_conversations
 
     connection = open_store(index, read_only=True)
     records = connection.execute(load_sql("status/record_count")).fetchone()[0]
@@ -51,6 +52,7 @@ def run_status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
         newest_content_gap(connection),
     ]
     indexed_episodes = indexed_synthesis_episodes(connection)
+    excluded = read_excluded_conversations(connection)
     # Scanning every record for coverage costs ~44s against 1.1M rows, so the
     # hourly refresh does not pay for a number that moves by fractions of a
     # percent between runs. Ask for it when the question is being asked.
@@ -82,5 +84,5 @@ def run_status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
         print(f"  {finding.summary}{loud}")
     if project_memory is not None:
         print_coverage(project_memory)
-    print_populations(registry, indexed_episodes)
+    print_populations(registry, indexed_episodes, excluded)
     return 0

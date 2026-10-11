@@ -219,7 +219,8 @@ one writer, and is published atomically (temporary file in the same directory,
 - `refresh.json`: written by `atrium status --publish`, which only the refresh
   job runs, as its last step. Records per source; archive, refresh and newest
   content instants (`at`, `ageSeconds` at writing time); per synthesis
-  population `records`, `episodes`, `intended`, `indexed`; `writtenAt`.
+  population `records`, `episodes`, `intended`, `indexed`, `excluded` (episodes of
+  automation the ingest refuses, not counted as intended); `writtenAt`.
 - `synthesis.json`: written by `atrium synthesize` when a pass ends (never on
   `--dry-run`). `lastPass` holds `producer`, `startedAt`, `finishedAt`,
   `conversations`, `synthesized`, `skipped`, `failed`, `deferred`; `writtenAt`.

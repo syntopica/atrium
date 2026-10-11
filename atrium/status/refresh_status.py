@@ -13,6 +13,7 @@ from atrium.status.iso_utc import iso_utc
 from atrium.status.population_counts import population_counts
 from atrium.status.refresh_stamp_time import refresh_stamp_time
 from atrium.status.status_schema_version import STATUS_SCHEMA_VERSION
+from atrium.store.read_excluded_conversations import read_excluded_conversations
 
 
 def refresh_status(
@@ -38,5 +39,9 @@ def refresh_status(
         },
         "refresh": freshness(refresh_stamp_time(stamp), now),
         "content": freshness(authored, now),
-        "populations": population_counts(registry, indexed_synthesis_episodes(connection)),
+        "populations": population_counts(
+            registry,
+            indexed_synthesis_episodes(connection),
+            read_excluded_conversations(connection),
+        ),
     }

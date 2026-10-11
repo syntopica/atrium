@@ -57,6 +57,14 @@
 
 ## Ingest / Store
 
+- [ ] **The hourly refresh runs the working tree, committed or not.** `atrium-refresh`
+      calls `uv run atrium` from `~/p/atrium`, whose venv installs the checkout editable,
+      so every hourly run imports whatever is on disk. On 2026-10-11 03:11 it ran the
+      uncommitted, unreviewed phase-C `run_ingest.py` against the live index (the run
+      at 02:35 was still HEAD code). Smallest next step: have the refresh run a pinned
+      install (a `uv tool install` from a tag, or a worktree at `origin/main`) so that
+      only pushed code reaches the live index.
+
 - [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured
       2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);
       `substrings_data` 3,800,043 blocks against `words_data` 387,204, roughly 15 GB

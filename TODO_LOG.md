@@ -6,6 +6,13 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **Scribe archives harness-only `<tag>` text as role `system`.** Scribe
+  `72c0e7d`: an event whose whole text is harness tags (system-reminder, command-*,
+  local-command-*, task-notification, user-prompt-submit-hook) becomes kind `message`, role
+  `system`; any other text keeps `user`. New events only, archived `user` variants kept, no
+  backfill, contract fixture unchanged. Checked in atrium: `to_records` drops role `system`,
+  and `turn_blocks` attaches it to the current turn instead of opening one.
+
 - [x] 2026-10-11 — **Scribe archives Claude Code tool output as role `tool`.** Scribe
   `199f393`: a line holding only `tool_result` blocks becomes kind `message`, role `tool`;
   mixed lines stay `user`; schemaVersion 2, event ids unchanged, archived events keep

@@ -319,14 +319,30 @@
 
 ## Measurement
 
-- [~] Hand-labeled acceptance set — blocks the measurement phase. **Protocol decided
+- [~] Acceptance set — built; the measurement phase is unblocked. **Protocol decided
   2026-10-11 (owner):** GPT-6 labels, Claude audits a sample, rather than the owner
   labeling by hand. In progress in the instance state
   (`atrium/evaluations/acceptance-2026-10-11/`, private: `syntopica/atrium` is public):
   90 sources sampled from the index (35 recent, 35 old conversations, 20 notes; half
   `no-overlap`), GPT-6 writes one question per source, a candidate pool from the
   words/dense/auto lanes goes to a GPT-6 judge for other answering sources, then the
-  audit. Earlier text: The 365/389
+  audit. **Built and audited 2026-10-11:** `labeled.jsonl`, 85 questions (es 47 / en 38,
+  conversation 65 / note 20, overlap 41 / no-overlap 44 by a mechanical two-shared-word
+  rule, recent 32 / old 33). The judge read 1,402 pooled candidates: 13 `answers`,
+  68 `partial`; 10 questions carry alternatives. Claude's audit (`audit.md`): 15/15
+  gists supported by their source; q030, q036, q060 vague; two judge `answers` doubtful.
+  **First baseline (`baseline.py`, R@10 / MRR@10 by source conversation, live index):**
+  all: words 0.28/0.18, dense 0.20/0.10, auto 0.28/0.17. overlap (41): words 0.56,
+  dense 0.27, auto 0.56. no-overlap (44): words 0.02, dense 0.14, auto 0.02. notes (20):
+  words 0.10, dense 0.30, auto 0.10. So the 80% R@10 of the machine-extracted set does
+  not survive human-shaped questions, and `auto` behaves as `words`: on no-overlap
+  questions the OR-match lexical lane almost never comes back empty, so
+  `search_hybrid` fuses and buries the dense hit (dense alone finds 6 of 44, auto 1).
+  Same on notes. Next steps, each measured on this set: (1) the routing rule in
+  `search_hybrid` (when to trust dense over a weak lexical match), (2) the notes-only
+  FTS table below, (3) the dense-over-raw reserve lane. Known defect in `baseline.py`:
+  the `note` kind and `note` age share a group key, so that row prints n=40; rates are
+  unaffected. Earlier text: The 365/389
   question-answer pairs used so far are machine-extracted and not valid for
   production decisions ("better than memstore" needs a number). Smallest
   unblock: the user labels a stratified question set over the corpus, or

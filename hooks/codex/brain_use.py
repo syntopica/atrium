@@ -27,7 +27,9 @@ import tempfile
 from pathlib import Path
 
 _NOTE_PATH = re.compile(r"\bbrain/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md\b")
-_EVIDENCE_NOTE = re.compile(r'note_path\\?"\s*:\s*\\?"(brain/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md)')
+_EVIDENCE_NOTE = re.compile(
+    r'note_path\\?"\s*:\s*\\?"(brain/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md)'
+)
 _ATRIUM_TOOL = re.compile(r"^mcp__(plugin_.+_)?atrium__")
 _ATRIUM_COMMAND = re.compile(r"\b(atrium\s+(context|search|recall)|brain\s+query)\b")
 _SHELL_TOOLS = frozenset({"Bash", "exec_command", "shell"})
@@ -95,7 +97,11 @@ def _instance_notes(command: str) -> list[str]:
     if not data or not _READ_COMMAND.search(command):
         return []
     return _note_paths(
-        command, re.compile(re.escape(data + "/") + r"(brain/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md)\b")
+        command,
+        re.compile(
+            re.escape(data + "/")
+            + r"(brain/(?:[A-Za-z0-9][A-Za-z0-9._-]*/)*[A-Za-z0-9][A-Za-z0-9._-]*\.md)\b"
+        ),
     )
 
 

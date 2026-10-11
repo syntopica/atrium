@@ -79,17 +79,14 @@
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
       "word-level separate from substring" decision is about ranking, not about trigram
       over 1.9M raw records, but it must be re-read before changing the schema.
-- [ ] **Most archived conversations are the pipeline indexing itself.** 2026-10-10: 43,085
-      conversations (of 54,026 in the archive) have workspace
-      `/var/folders/.../T/atrium-codex-*`, the codex synthesis lane's temp dirs of
-      2026-08-28..2026-09-04: 92,715 records (4.8% of all records), and 18,850 synthesis episodes that
-      re-summarise the episodes those prompts carried, misattributed to the temp
-      workspace (23% of synthesis records, 22% of the 86,486 vectors in the dense
-      matrix). Other temp automations add ~2.6k more (`T/brain`, `T/worker`, `T/clips`,
-      `T/bench`, `T/judge`). Smallest next step: an ingest exclusion for automation
-      workspaces (Atrium side; capture-side exclusion filed in rocket-agents), then one
-      reconcile pass that removes those records and their vectors, and confirm the
-      worker and agy lanes leave no captured sessions.
+- [~] **Other temp automations are still indexed.** The codex synthesis lane's own
+      sessions (`/var/folders/.../T/atrium-codex-*`) are excluded since `e224b74`: the live
+      refresh of 2026-10-11 03:11 excluded 24,628 conversations, removed their raw rows and
+      18,457 synthesis rows (vectors 87,642 -> 69,262). Still indexed: ~2.6k from other
+      temp workspaces (`T/brain`, `T/worker`, `T/clips`, `T/bench`, `T/judge`). Smallest
+      next step: find what creates each prefix, then add it to `atrium_codex_workspace`'s
+      sibling predicate with a test; confirm the worker and agy lanes leave no captured
+      sessions. Capture-side exclusion belongs to scribe.
 - [ ] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
       (2026-10-10, ~7.2k user records) by bytes: atrium synthesis prompts 23%, other
       records over 5k chars 20%, human-sized prompts 17%, tool-output-shaped text (Read

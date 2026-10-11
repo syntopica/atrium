@@ -6,6 +6,15 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **`bench-*` and `judge-*` traced and excluded.** All 15 codex
+  conversations ran 2026-09-01 03:37-03:45 from a one-off synthesis model bench that
+  Claude session `adfb9b599d27` wrote outside any repository (`tempfile.
+  TemporaryDirectory(prefix="bench-")` and `"judge-"`, found with `atrium search
+  --substring`). `automation_workspaces.py` now matches exactly those prefixes with
+  the eight-character suffix, tested. The `codex-access-*` named in the item is
+  `/T/codex-accesslog`, one fixed-name directory that reads as human-directed work, so
+  it stays indexed. The next ingest marks the 15 as `excluded_automation`.
+
 - [x] 2026-10-11 — **Curated note chunks no longer stand as a bare heading.** A
   heading-only section is folded into the section after it (`fold_bare_headings`), a
   trailing one is dropped unless it is the whole note, and `split_to_size` keeps a

@@ -5,6 +5,7 @@ import sys
 from atrium.cli_parser.build_parser import build_parser
 from atrium.commands.run_doctor import run_doctor
 from atrium.commands.run_embed import run_embed
+from atrium.commands.run_erase import run_erase
 from atrium.commands.run_ingest import run_ingest
 from atrium.commands.run_ingest_notes import run_ingest_notes
 from atrium.commands.run_ingest_synthesis import run_ingest_synthesis
@@ -13,6 +14,7 @@ from atrium.commands.run_rekey_synthesis import run_rekey_synthesis
 from atrium.commands.run_search import run_search
 from atrium.commands.run_status import run_status
 from atrium.commands.run_synthesize import run_synthesize
+from atrium.commands.search_lane import search_lane
 from atrium.state.archive_path import archive_path
 from atrium.state.record_refresh import record_refresh
 from atrium.state.state_directory import state_directory
@@ -115,6 +117,8 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         return run_record_session_cli(
             args.checkpoint, default_registry(), nothing_durable=args.nothing_durable
         )
+    if args.command == "erase":
+        return run_erase(args.index, args.plan, archive, apply=args.apply)
     if args.command == "rekey-synthesis":
         return run_rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":
@@ -122,15 +126,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             args.index, args.archive, refresh_stamp, as_json=args.json, publish=args.publish
         )
     if args.command == "search":
-        lane = (
-            "substring"
-            if args.substring
-            else "words"
-            if args.words
-            else "dense"
-            if args.dense
-            else "auto"
-        )
+        lane = search_lane(args)
         append_lane_event(state, "cli.search", lane)
         return run_search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "prepare-context":

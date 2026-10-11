@@ -318,10 +318,10 @@ def test_a_conversation_erased_upstream_loses_its_rows_and_vectors(tmp_path, mon
     assert _vectors(index) == 1
 
 
-def test_the_synthesis_of_an_erased_conversation_is_still_served(tmp_path, monkeypatch):
-    """Known gap, pinned so its fix is visible (TODO, "Derived records of an erased
-    conversation"): the sweep removes the raw rows, but the registry still holds the
-    episode, and nothing tells the synthesis ingest that its source is gone."""
+def test_absence_alone_does_not_retract_a_synthesis(tmp_path, monkeypatch):
+    """By design: a session record exists before its conversation is archived, so a
+    missing raw conversation does not mean an erased one. Only `atrium erase` with
+    scribe's applied plan removes the synthesis (tests/test_scribe_segment_contract.py)."""
     state, index, archive = _state(tmp_path, monkeypatch)
     _write_archive(archive, [_conversation("erased")])
     main(["--index", str(index), "ingest", str(archive)])

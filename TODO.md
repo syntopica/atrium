@@ -331,6 +331,22 @@
 
 ## Integrations
 
+- [ ] Codex gets no pushed atrium context. `~/.codex/hooks.json` (2026-10-11)
+  has no atrium entry on SessionStart or UserPromptSubmit; `~/.codex/hooks/recall.sh`
+  is the old mempalace recall and is not wired. Codex only has the `atrium` MCP
+  server, which the model must choose to call. Claude Code has recall on
+  SessionStart, the `atrium-context` plugin on every prompt, episode capture on
+  Stop and refresh on SessionEnd. Smallest step: a `hooks/codex/` pair (recall,
+  per-prompt context as `additionalContext`) after checking current Codex hook
+  docs for the output shape.
+- [ ] Brain use is invisible. The footer counts what was injected
+  ("Atrium · 2 notes"), not what the model used. Two observable signals, both in
+  the plugin, not in the brain engine: PostToolUse on `mcp__atrium__*`, the
+  `atrium` CLI and reads under the wiki instance; and a Stop-time scan of the
+  last reply for the injected `note_path`s, after `renderEvidence` asks the model
+  to cite the note it relies on. Subagents also get no per-prompt context
+  (no SubagentStart entry).
+
 - [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
   emits 0 conversations from its 4 database artifacts, and the Trae exporter
   emits VS Code workspace metadata instead of dialogue. Both filed in

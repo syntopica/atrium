@@ -7,7 +7,9 @@ from atrium.adapters.resident_embedder import resident_embedder
 from atrium.adapters.served_index import INDEX
 from atrium.context.context_from_index import context_from_index
 from atrium.context.lazy_embedder import LazyEmbedder
+from atrium.retrieve.search import LANES
 from atrium.state.state_directory import state_directory
+from atrium.telemetry.append_lane_event import append_lane_event
 
 
 @MCP.tool(annotations=READ_ONLY)
@@ -24,6 +26,10 @@ def atrium_context(
     records. Provenance and warnings are additional JSON metadata. History
     requires live verification before asserting present-day operational results.
     """
+    if lane not in LANES:
+        raise ValueError(f"unknown lane {lane!r}; expected one of {', '.join(LANES)}")
+    state = state_directory()
+    append_lane_event(state, "mcp.context", lane)
     return context_from_index(
         INDEX,
         query,
@@ -31,6 +37,6 @@ def atrium_context(
         limit=limit,
         max_chars=max_chars,
         lane=lane,
-        state=state_directory(),
+        state=state,
         embedder=LazyEmbedder(resident_embedder),
     )

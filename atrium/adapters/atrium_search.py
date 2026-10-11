@@ -9,7 +9,9 @@ from atrium.adapters.resident_embedder import resident_embedder
 from atrium.adapters.served_index import INDEX
 from atrium.recall.project_workspace import project_workspace
 from atrium.retrieve.search import LANES, search
+from atrium.state.state_directory import state_directory
 from atrium.store.open_store import open_store
+from atrium.telemetry.append_lane_event import append_lane_event
 
 
 @MCP.tool(annotations=READ_ONLY)
@@ -37,6 +39,7 @@ def atrium_search(
         workspace = project_workspace(project)
         if workspace is None:
             raise ValueError(f"{project!r} is in no repository, so it names no project")
+    append_lane_event(state_directory(), "mcp.search", lane)
     connection = open_store(INDEX, read_only=True)
     try:
         embedder = resident_embedder() if lane in ("auto", "dense") else None

@@ -11,6 +11,8 @@ def add_status_parser(subcommands: SubParsers, archive: Path, refresh_stamp: Pat
     status.add_argument("--archive", type=Path, default=archive)
     status.add_argument("--refresh-stamp", type=Path, default=refresh_stamp)
     status.add_argument("--synthesis-registry", type=Path, default=None)
+    status.add_argument("--lanes", action="store_true", help="Report bounded lane usage telemetry")
+    status.add_argument("--days", type=int, default=30, help="Lane usage window in days (1..365)")
     status.add_argument(
         "--coverage",
         action="store_true",

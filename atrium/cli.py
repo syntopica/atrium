@@ -17,6 +17,8 @@ from atrium.state.archive_path import archive_path
 from atrium.state.record_refresh import record_refresh
 from atrium.state.state_directory import state_directory
 from atrium.synthesize.default_registry import default_registry
+from atrium.telemetry.append_lane_event import append_lane_event
+from atrium.telemetry.run_lane_status import run_lane_status
 
 
 def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand; a dispatch table would hide the arg wiring this makes greppable, and the parser it dispatches on stays flat in cli_parser/build_parser.py
@@ -129,6 +131,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
             if args.dense
             else "auto"
         )
+        append_lane_event(state, "cli.search", lane)
         return run_search(args.index, args.query, args.limit, lane, args.project)
     if args.command == "prepare-context":
         from atrium.context.prepare_context_cli import prepare_context_cli
@@ -138,6 +141,7 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
         from atrium.context.run_context_cli import run_context_cli
 
         try:
+            append_lane_event(state, "cli.context", args.lane)
             return run_context_cli(
                 args.index, args.query, args.project, args.limit, args.max_chars, args.lane, state
             )
@@ -148,7 +152,12 @@ def main(argv: list[str] | None = None) -> int:  # noqa: PLR0911, PLR0912, PLR09
 
         return serve_context(args.index, state, args.interval)
     if args.command == "recall":
+        append_lane_event(state, "cli.recall", "recent")
         return run_recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)
+    if args.lanes:
+        if not 1 <= args.days <= 365:  # noqa: PLR2004 -- documented retention window
+            parser.error("--days must be between 1 and 365")
+        return run_lane_status(state, args.days, args.json)
     return run_status(
         args.index,
         args.archive,

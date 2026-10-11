@@ -12,6 +12,7 @@ from atrium.retrieve.ranked_hits import ranked_hits
 from atrium.retrieve.selective_expression import selective_expression
 from atrium.retrieve.word_verifiers import word_verifiers
 from atrium.sql.load_sql import load_sql
+from atrium.store.read_record_total import read_record_total
 
 # Both passes stream in rank order now, so these bound a pathology rather than
 # the ordinary case: measured on 1,417,899 records, the narrow pass costs 0.03s
@@ -71,7 +72,7 @@ def lexical_hits(  # noqa: PLR0913 -- shared scope and lane contract
             # Only the broad pass needs this, and asking costs a query per term:
             # a narrow pass that answered must not pay for it (raised by review,
             # 2026-09-16).
-            total = int(connection.execute(load_sql("status/record_count")).fetchone()[0])
+            total = read_record_total(connection)
             expression = selective_expression(connection, table, query, total)
             if not expression:
                 continue

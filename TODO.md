@@ -58,9 +58,10 @@
     index other than the instance's, and an archive whose manifest does not name the
     plan's `toGenerationId` as `generationId` or in `generationLineage`. Codex reviewed
     it in 8 rounds.
-  - **Blocked on scribe:** `export-materialized` (and `export-pending`) must stamp
-    `generationId` and `generationLineage` (the ancestor generation ids, newest first)
-    in the manifest line. Until then every `erase --apply` refuses, by design.
+  - Done: scribe `293a740` stamps `generationId` and `generationLineage` (ancestors,
+    newest first) on `export-materialized` and `export-pending`. Its
+    `materialized-after-erasure.jsonl` is vendored and the apply tests run against it.
+    Not yet run against the live archive.
   - [ ] Writers outside the instance lock: `ingest-synthesis`, the `curate-*` commands and
     `record-session` run by hand take no lock, so one active during an erase can write
     erased material back. Have them take the same locks (smallest step: `hold_locks`

@@ -21,11 +21,13 @@
   358,294 human-sized (40-2000 chars) user/assistant records in 11,509 of them. Embedding
   them ran at 7 records/s on this Mac under load (about 14 h of CPU at ~600% and 4 GB RSS,
   pushing load to 190), so the run was stopped at 4,000. **Owner chose nova (2026-10-11).**
-  Running there since 17:55 UTC: `/root/atrium-embed/nova_embed.py run` (atrium's own
-  `Embedder` code and model; parity with the Mac min cosine 0.9999999 on 64 rows), at
-  nice 19 / ionice idle, shortest text first, into `sorted.f32` + `order.npy`;
-  `guard.sh` kills the process group if `sorted.f32` stops growing for 20 min. Next:
-  copy both files into the evaluation directory, run `raw_dense.py score`, record the
+  Running there since 18:02 UTC: `/root/atrium-embed/run_shards.sh` starts 12
+  `nova_embed.py <k> 12` workers (atrium's own `Embedder` code and model, 2 ONNX threads
+  each; parity with the Mac min cosine 0.9999999 on 64 rows), at nice 19 / ionice idle,
+  shortest text first, into `shard_<k>.f32` + `order.npy`. 12x2 threads ran 30/s against
+  20.8/s for one 26-thread process on median texts. `guard.sh` kills the process group
+  if the shards stop growing for 20 min; `done.flag` marks the end. Next: copy the shards
+  and `order.npy` into the evaluation directory, run `raw_dense.py score`, record the
   result here, and remove `/root/atrium-embed` (it holds the private texts). Original text: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

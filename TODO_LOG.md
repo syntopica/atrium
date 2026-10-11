@@ -6,6 +6,23 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **The in-index dense scan no longer reads every record.** `dense_hits.sql`
+  ordered by `r.record_id`, so SQLite walked all 1.86M records by primary key to test their
+  role: 213 s per unscoped query, and 115 s end to end for an MCP `atrium_context` call
+  without a project. Driven from the ~70k vectors with a `CROSS JOIN`, the scan takes 0.6 s
+  (`75ac8da`); `tests/test_dense_hits_plan.py` pins the plan and fails on the old SQL. Also
+  `4f99a1f`: `retrieve/lane.py` declared a data module, which had failed the codeality gate.
+- [x] 2026-10-11 — **Curated notes fuse 30/70 lexical to dense** (`14aa1ab`). Acceptance
+  set, 20 note questions: 0.70/0.50 R@10/MRR offline against 0.50/0.40 at 0.7; end to end
+  through `retrieve_context` 0.55/0.47 against 0.45/0.39. Codex review: no regression. The
+  context service was restarted to serve it (2.2 s warm).
+- [-] 2026-10-11 — **Notes-only FTS table: rejected.** On the acceptance set's 20 note
+  questions the unpruned OR over a notes-only table scored R@10 0.10 / MRR 0.02, against
+  0.50 / 0.29 for the shipped curated lexical pass (`selective_expression` drops corpus-wide
+  terms; the notes-only OR lets stopwords rank). The 2026-10-10 gain (8/12 against 5/12)
+  came from 12 questions written from note titles. Fused at 0.3 it only matched dense alone
+  (0.65). Evidence: `notes_fts.py` in `atrium/evaluations/acceptance-2026-10-11/`.
+
 - [x] 2026-10-11 — **MCP caller mistakes come back with their reason.** The MCP SDK
   (2.3.0) hands the model only a `ToolError`'s text, so `checked_limit`, `atrium_search`'s
   "names no project" and `atrium_context`'s request checks (empty query, `limit` /

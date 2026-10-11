@@ -39,35 +39,37 @@
 
 ## Ingest / Store
 
-- [ ] **Segment archive v2 stage 3, workstream 2 (scribe plan
-  `docs/plans/2026-10-11-segment-archive-v2-stage-3.md`, scribe `d96eea6`).** No live
-  cutover before the parity and recoverability checks pass. State on 2026-10-11:
-  - Waiting on scribe: `segments export-pending`, `ack-pending`, `export-materialized`,
-    `segments inventory --json`, the slice fixture under `fixtures/archive-contract/v2/`,
-    and `erase plan` output. Then: vendor the slice fixture and test `ingest --partial`
-    writes its conversations and touches nothing else.
-  - Decided: `--partial` must not call `mark_revision_backfill`. The stamp tells the
-    synthesis ingest that revisions cover every archived conversation, so it trusts
-    their workspaces and absences; a slice covers a subset. Already pinned by
-    `test_only_a_full_ingest_marks_the_revisions_complete`.
+- [~] **Segment archive v2 stage 3, workstream 2 (scribe plan
+  `docs/plans/2026-10-11-segment-archive-v2-stage-3.md`, contracts at scribe `31d70f8`).**
+  No live cutover before the parity and recoverability checks pass. State on 2026-10-11:
+  - Done: the slice fixture is vendored (`tests/fixtures/scribe_pending_slice_v2.jsonl`)
+    and `ingest --partial` writes its conversation and leaves every other row and vector
+    untouched (`tests/test_scribe_segment_contract.py`). `--partial` never calls
+    `mark_revision_backfill`: that stamp tells the synthesis ingest that revisions cover
+    every archived conversation, and a slice covers a subset.
   - Done: a full ingest after a generation change removes an erased conversation's rows,
-    revision and vectors (`test_a_conversation_erased_upstream_loses_its_rows_and_vectors`).
-  - **Derived records of an erased conversation** (gap pinned by
-    `test_the_synthesis_of_an_erased_conversation_is_still_served`). Absence cannot drive
-    it: session records are synthesized before their conversation is archived, so "no
-    raw revision" does not mean "erased", and an erasure must delete the registry files on
-    disk, not just stop serving them. Decided: driven by scribe's erase plan. `atrium
-    erase --plan <file>` deletes every registry record (all populations, session records
-    included) whose `conversation_id` the plan names, then the index rows of the
-    conversation and of `synthesis/<id>`, with vectors by cascade, and forces a dense
-    matrix rebuild. Each host runs it against its own registry. Needs from scribe: the
-    plan JSON lists the erased conversation ids (field name to fix with scribe).
-  - Decided: after cutover `archive_path()` stays the full materialized export, which the
-    refresh regenerates on every generation change, so `doctor` coverage and `recall` keep
-    reading one file. Freshness moves to the segment inventory: record the ingested
-    generation id in the index and report stale when the inventory's id differs or
-    `pending_deliveries` is non-empty.
-  - Workstream 4 support: rebuild a test index from `export-materialized` and compare
+    revision and vectors.
+  - Done: `atrium erase --plan <applied plan> [--apply]` (fixture
+    `tests/fixtures/scribe_erasure_plan_v2.json`). Under `refresh.lock` and
+    `synthesis/synthesis.lock` it journals every identifier, then deletes the registry
+    records (backups included), the raw and `synthesis/` rows and revisions (vectors by
+    cascade), every partial, the curation rows, files and proposal runs that name them
+    (matrix kept aligned with its id list), and the saved dense matrix. It refuses an
+    index other than the instance's, and an archive whose manifest does not name the
+    plan's `toGenerationId` as `generationId` or in `generationLineage`. Codex reviewed
+    it in 8 rounds.
+  - **Blocked on scribe:** `export-materialized` (and `export-pending`) must stamp
+    `generationId` and `generationLineage` (the ancestor generation ids, newest first)
+    in the manifest line. Until then every `erase --apply` refuses, by design.
+  - [ ] Writers outside the instance lock: `ingest-synthesis`, the `curate-*` commands and
+    `record-session` run by hand take no lock, so one active during an erase can write
+    erased material back. Have them take the same locks (smallest step: `hold_locks`
+    around `run_ingest_synthesis` and each `curate-*` writer).
+  - [ ] Freshness after cutover: `archive_path()` stays the full materialized export,
+    regenerated on every generation change, so `doctor` coverage and `recall` keep reading
+    one file. Record the ingested generation id in the index; report stale when
+    `scribe segments-inventory`'s `generationId` differs or `pendingDeliveries` > 0.
+  - [ ] Workstream 4 support: rebuild a test index from `export-materialized` and compare
     raw records, both FTS lanes, synthesis records and vector identities against the live
     inventory, read-only against live.
 

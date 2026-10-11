@@ -10,6 +10,7 @@ from atrium.cli_parser.add_curate_neighbours_parser import add_curate_neighbours
 from atrium.cli_parser.add_curate_propose_parser import add_curate_propose_parser
 from atrium.cli_parser.add_curate_publishable_parser import add_curate_publishable_parser
 from atrium.cli_parser.add_doctor_parser import add_doctor_parser
+from atrium.cli_parser.add_erase_parser import add_erase_parser
 from atrium.cli_parser.add_ingest_notes_parser import add_ingest_notes_parser
 from atrium.cli_parser.add_ingest_parser import add_ingest_parser
 from atrium.cli_parser.add_prepare_context_parser import add_prepare_context_parser
@@ -51,6 +52,7 @@ def build_parser(
     add_record_session_parser(subcommands)
     add_doctor_parser(subcommands, archive)
     add_rekey_synthesis_parser(subcommands, archive)
+    add_erase_parser(subcommands)
     add_search_parser(subcommands)
     add_prepare_context_parser(subcommands)
     add_context_parser(subcommands)

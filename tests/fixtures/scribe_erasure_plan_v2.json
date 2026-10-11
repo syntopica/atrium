@@ -1,0 +1,21 @@
+{
+  "kind": "rocket-agents-conversation-erasure-plan",
+  "schemaVersion": 2,
+  "fromGenerationId": "12427b86c6a2515425bb2f2f7a8164feab639684dd7f6d9d0729bdc6fd659df4",
+  "segmentSetSha256": "b900c05ebcabb37f91445fc66ce086706f85a28e687f7e3d831541d97a915450",
+  "createdAt": "2026-08-19T10:00:00.000Z",
+  "reason": "erasure",
+  "conversationIds": [
+    "e322478280e4391e62a625d08b33bd2011e87e7323bc721290a389b7ecca9504"
+  ],
+  "conversations": [
+    {
+      "conversationId": "e322478280e4391e62a625d08b33bd2011e87e7323bc721290a389b7ecca9504",
+      "removedFragmentSha256": [
+        "d50a016688200fed749ecf05d4a577d180eabfd36b18cf7b5f83ade3245032bf"
+      ],
+      "removesConversation": true
+    }
+  ],
+  "toGenerationId": "bba3d08d0f7ccb75243be7707403811547dfc2668af6f3a05288e6e44fa81cd0"
+}

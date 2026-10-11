@@ -48,9 +48,13 @@
       against 1.5 GB at FTS5's ~4 KB blocks. Every insert pays both lanes through
       `records_ai`. Usage since 2026-09-01 across every Claude Code transcript: 0 calls
       with lane `substring` (152 `atrium_context`, 35 `atrium_search`, 2 of them dense,
-      no CLI `--lane substring`). Smallest next step: `dbstat` per object on a quiet
-      machine to replace the block estimate, and review `atrium status --lanes` after a
-      stated observation window (new daily telemetry has no historical coverage).
+      no CLI `--lane substring`). `dbstat` on 2026-10-11 (read-only, 416 s, 20,875 MiB
+      over all objects): `substrings_data` 15,092 MiB (72%), `records` 3,361,
+      `words_data` 1,580, `vectors` 169, every index under 160. The first day of lane
+      telemetry logged 2 `substring` calls out of 96; the same day's trace of the
+      `bench-`/`judge-` workspaces used `--substring`, a real fragment lookup that a
+      `words` prefilter plus `instr` would also have answered. Smallest next step: re-read
+      `atrium status --lanes` on 2026-11-11, after a 30-day window.
       Then obtain an owner decision between dropping the
       raw-corpus trigram table (fragment search answered by `instr` over a `words`
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's

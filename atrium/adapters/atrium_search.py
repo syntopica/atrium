@@ -8,6 +8,7 @@ from atrium.adapters.rendered_hits import rendered_hits
 from atrium.adapters.resident_embedder import resident_embedder
 from atrium.adapters.served_index import INDEX
 from atrium.recall.project_workspace import project_workspace
+from atrium.retrieve.lane import Lane
 from atrium.retrieve.search import LANES, search
 from atrium.state.state_directory import state_directory
 from atrium.store.open_store import open_store
@@ -16,7 +17,7 @@ from atrium.telemetry.append_lane_event import append_lane_event
 
 @MCP.tool(annotations=READ_ONLY)
 def atrium_search(
-    query: str, limit: int = 10, lane: str = "auto", project: str | None = None
+    query: str, limit: int = 10, lane: Lane = "auto", project: str | None = None
 ) -> list[dict[str, Any]]:
     """Search the conversation archive, curated notes and synthesized episodes.
 

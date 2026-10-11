@@ -3,6 +3,7 @@
 from collections.abc import Iterator
 
 from atrium.ingest.first_heading import first_heading
+from atrium.ingest.fold_bare_headings import fold_bare_headings
 from atrium.ingest.record_identity import record_identity
 from atrium.ingest.split_on_headings import split_on_headings
 from atrium.ingest.split_to_size import split_to_size
@@ -28,7 +29,11 @@ def to_note_records(
     """
     text = note["text"]
     title = first_heading(text) or note["path"]
-    chunks = [piece for section in split_on_headings(text) for piece in split_to_size(section)]
+    chunks = [
+        piece
+        for section in fold_bare_headings(split_on_headings(text))
+        for piece in split_to_size(section)
+    ]
     for index, chunk in enumerate(chunks):
         yield Record(
             record_id=record_identity(note["path"], f"chunk-{index:04d}"),

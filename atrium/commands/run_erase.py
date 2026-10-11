@@ -14,6 +14,7 @@ from atrium.erase.journaled_identifiers import journaled_identifiers
 from atrium.erase.read_erasure_plan import read_erasure_plan
 from atrium.erase.scrub_curation import scrub_curation
 from atrium.serve.dense_matrix_file import dense_matrix_file
+from atrium.sql.load_sql import load_sql
 from atrium.state.state_directory import state_directory
 from atrium.store.open_store import open_store
 from atrium.synthesize.default_registry import default_registry
@@ -85,6 +86,13 @@ def run_erase(index: Path, plan_path: Path, archive: Path, *, apply: bool) -> in
                     report["index_rows_removed"] = delete_erased_rows(
                         connection, sorted(conversation_ids)
                     )
+                # The WAL still holds the pre-delete pages until a checkpoint
+                # writes them back and truncates it; a reader holding an old
+                # snapshot keeps it busy, which the report says.
+                checkpoint = list(
+                    connection.execute(load_sql("store/wal_checkpoint_truncate")).fetchone()
+                )
+                report["wal_checkpoint"] = checkpoint
             finally:
                 connection.close()
             report["partials_removed"] = clear_partials(registry / "partials")
@@ -98,4 +106,7 @@ def run_erase(index: Path, plan_path: Path, archive: Path, *, apply: bool) -> in
         return 3
     report["applied"] = True
     print(json.dumps(report, sort_keys=True))
+    if checkpoint[0]:
+        print("incomplete: a reader kept the WAL from truncating; run erase again once it is idle")
+        return 4
     return 0

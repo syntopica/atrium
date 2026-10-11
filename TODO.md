@@ -14,24 +14,16 @@
 
 ## Retrieval
 
-- [ ] **A notes-only FTS table is worth building; the acceptance set now exists (2026-10-11, Measurement below), so it can be compared.**
-      Re-measured 2026-10-10 (Codex, re-run and spot-checked here; artifacts in the instance
-      state, `atrium/evaluations/notes-only-fts-2026-10-10/`): an external-content FTS5
-      table over the 6,310 curated notes, same tokenizer as `words`, builds in 0.42 s at
-      13.5 MiB. On 12 probe questions, the real `lexical_hits(curated=True)` against an
-      unpruned OR on the notes table: median 146 ms vs 4.7 ms (27x), no budget
-      exhaustion either way, top-5 holds the answering note for 5/12 vs 8/12 (three gained,
-      none lost), median top-10 overlap 2/10. The low overlap is the bm25 statistics
-      changing with the corpus, which is the ranking risk this item named. Twelve
-      questions written from known note titles cannot license a ranking change, so this is
-      blocked by the same condition as Measurement below: the hand-labeled acceptance set.
-      Build plan once it exists: the table plus its triggers in the schema, refreshed by
-      `ingest-notes`, behind the curated lane's broad pass only, compared on that set.
-      It is also the remaining latency case: a fresh-process `atrium context --lane auto`
-      measured 1.5-2.1 s on 2026-10-11, of which lexical ranking is ~1.0 s (the curated
-      broad pass walking the shared `words` doclists) and the CLI's embedder load 0.6 s.
-
-- [ ] Dense-over-raw stays an explicit reserve lane (unblocked 2026-10-11 by the acceptance set; baseline dense R@10 0.14 on its 44 no-overlap questions): even with an oracle
+- [!] Dense-over-raw stays an explicit reserve lane. **Measured 2026-10-11 on the acceptance
+  set:** the dense layer holds only synthesis (63,527) and notes (6,170); 29 of the 65
+  conversation answers have no synthesis record, and dense finds 0 of them (11 of 36 when
+  synthesis exists). So the lane would only matter for unsynthesized conversations:
+  358,294 human-sized (40-2000 chars) user/assistant records in 11,509 of them. Embedding
+  them ran at 7 records/s on this Mac under load (about 14 h of CPU at ~600% and 4 GB RSS,
+  pushing load to 190), so the run was stopped at 4,000 (`raw_dense.py`, resumable, in
+  the evaluation directory). **Blocked on an owner choice:** spend ~14 h of shared CPU
+  (or run it on nova) to measure the lane, or treat synthesis coverage (60% and rising)
+  as the fix for the same 29 questions and close this. Original text: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
   corpus scale. Blocked by the same condition as the Measurement item below
@@ -276,6 +268,15 @@
   Per-prompt retrieval (`--lane dense --limit 4`) measured 0.8-1.0 s warm,
   well inside the mod's 10 s budget.
 
+- [ ] **The MCP `atrium_context` tool never uses the resident context service.** The CLI
+      asks `com.cristian.atrium-context` first (dense matrix and embedder resident, 2.2 s
+      warm); `atrium/adapters/atrium_context.py` calls `context_from_index` in-process with
+      no matrix, so its dense pass scans the index. Unscoped that took 115 s per call until
+      `75ac8da` drove the scan from vectors (now ~6 s warm, 17.7 s measured under load).
+      Smallest next step: have the adapter try `request_context_service` first, exactly as
+      `run_context_cli` does, and fall back in-process. Running MCP servers and sessions pick
+      up code changes only on restart.
+
 - [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
       of its window (15,696 files for 14 days). If a reader ever needs it
       polled, keep per-day totals for closed days in a derived file.
@@ -342,7 +343,13 @@
   `search_hybrid` (when to trust dense over a weak lexical match), (2) the notes-only
   FTS table below, (3) the dense-over-raw reserve lane. Known defect in `baseline.py`:
   the `note` kind and `note` age share a group key, so that row prints n=40; rates are
-  unaffected. Earlier text: The 365/389
+  unaffected (fixed in `baseline.py`).
+  **Routing, measured 2026-10-11 (`lanes.py`, `simulate.py`):** on the context surface,
+  history keeps the 0.7 lexical weight (0.5 and 0.3 lose MRR) and the curated pass now
+  fuses at 0.3 (`14aa1ab`): end to end 0.45/0.39 to 0.55/0.47 on the 20 note questions. A
+  rule gated on the narrow AND pass does not help: it matches for only 12 of 85 questions.
+  `search_hybrid` (the `atrium search` CLI) is unchanged: 0.5 gains R@10 (0.28 to 0.31) but
+  loses MRR (0.17 to 0.15). Earlier text: The 365/389
   question-answer pairs used so far are machine-extracted and not valid for
   production decisions ("better than memstore" needs a number). Smallest
   unblock: the user labels a stratified question set over the corpus, or

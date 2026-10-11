@@ -1,6 +1,7 @@
 """The Codex brain-use hook: what it counts, and what it says at the end of a turn."""
 
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -89,3 +90,15 @@ def test_bad_input_never_breaks_the_turn(tmp_path: Path) -> None:
     )
     assert done.returncode == 0
     assert done.stdout == ""
+
+
+def test_a_planted_link_is_never_written_through(tmp_path: Path) -> None:
+    """A shared temporary directory must not let another user redirect the tally."""
+    victim = tmp_path / "victim.txt"
+    victim.write_text("keep")
+    (tmp_path / f"atrium-brain-use-{os.getuid()}").symlink_to(tmp_path / "elsewhere")
+    (tmp_path / "elsewhere").mkdir()
+    (tmp_path / "elsewhere" / ".lock").symlink_to(victim)
+    _tool(tmp_path, "mcp__atrium__atrium_search", {"query": "x"})
+    assert victim.read_text() == "keep"
+    assert not (tmp_path / "elsewhere" / "s-1-t-1.json").exists()

@@ -184,7 +184,10 @@
       Provisional reading: gpt-oss:20b shows no faithfulness gain over
       qwen3.6, and OpenRouter looks like the quality lever. Its key already
       reaches the 850 cap most days, so a longer `local_after_s` only delays
-      the backlog. Next step to confirm: generate fresh OpenRouter qwen3.8-27b
+      the backlog. **Owner approved the confirmation run 2026-10-11**; `gen_or.py` in the
+      same evaluation directory is armed to start at 02:05 CEST on 2026-10-12 after the
+      key's daily reset (`run_or.sh`, watchdog `watch_or.sh`, log `run_or.log`), stopping
+      if the key's free headroom falls to 100. Next step to confirm: generate fresh OpenRouter qwen3.8-27b
       and nemotron outputs for the same 24 episodes (48 requests) after the
       daily quota resets, through the worker's agy runner as well, and judge
       them the same way. Summaries are the weak field in every lane (37-79%
@@ -316,7 +319,14 @@
 
 ## Measurement
 
-- [!] Hand-labeled acceptance set — blocks the measurement phase. The 365/389
+- [~] Hand-labeled acceptance set — blocks the measurement phase. **Protocol decided
+  2026-10-11 (owner):** GPT-6 labels, Claude audits a sample, rather than the owner
+  labeling by hand. In progress in the instance state
+  (`atrium/evaluations/acceptance-2026-10-11/`, private: `syntopica/atrium` is public):
+  90 sources sampled from the index (35 recent, 35 old conversations, 20 notes; half
+  `no-overlap`), GPT-6 writes one question per source, a candidate pool from the
+  words/dense/auto lanes goes to a GPT-6 judge for other answering sources, then the
+  audit. Earlier text: The 365/389
   question-answer pairs used so far are machine-extracted and not valid for
   production decisions ("better than memstore" needs a number). Smallest
   unblock: the user labels a stratified question set over the corpus, or

@@ -295,3 +295,40 @@ def test_doctor_does_not_count_excluded_automation_as_missing(tmp_path, monkeypa
     assert finding.severity == "ok"
     assert finding.detail["missing"] == 0
     assert finding.detail["excluded_automation"] == 1
+
+
+def test_a_conversation_erased_upstream_loses_its_rows_and_vectors(tmp_path, monkeypatch):
+    """A full ingest after a generation change is what propagates an erasure."""
+    _state_dir, index, archive = _state(tmp_path, monkeypatch)
+    _write_archive(archive, [_conversation("keep"), _conversation("erased")])
+    main(["--index", str(index), "ingest", str(archive)])
+    connection = open_store(index)
+    with connection:
+        for conversation_id in ("keep", "erased"):
+            for (record_id,) in connection.execute(
+                load_test_sql("revisions/select_record_ids"), (conversation_id,)
+            ).fetchall():
+                connection.execute(load_test_sql("insert_vector"), (record_id, b"\0" * 8))
+    connection.close()
+    assert _vectors(index) == 2
+    _write_archive(archive, [_conversation("keep")])
+    main(["--index", str(index), "ingest", str(archive)])
+    assert _count(index, "erased") == 0
+    assert _revision(index, "erased") is None
+    assert _vectors(index) == 1
+
+
+def test_the_synthesis_of_an_erased_conversation_is_still_served(tmp_path, monkeypatch):
+    """Known gap, pinned so its fix is visible (TODO, "Derived records of an erased
+    conversation"): the sweep removes the raw rows, but the registry still holds the
+    episode, and nothing tells the synthesis ingest that its source is gone."""
+    state, index, archive = _state(tmp_path, monkeypatch)
+    _write_archive(archive, [_conversation("erased")])
+    main(["--index", str(index), "ingest", str(archive)])
+    record = _synthesis("erased")
+    write_record(state / "synthesis", record["job_key"], record)
+    _write_archive(archive, [_conversation("keep")])
+    main(["--index", str(index), "ingest", str(archive)])
+    main(["ingest-synthesis"])
+    assert _count(index, "erased") == 0
+    assert _count(index, "synthesis/erased") == 1

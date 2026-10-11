@@ -1,9 +1,11 @@
 """Ingest a scribe pending slice and propagate a scribe erasure plan.
 
 The fixtures are verbatim copies of scribe's ``fixtures/archive-contract/v2/``
-(scribe ``31d70f8``): ``pending-slice.jsonl`` holds only the Claude Code
+(scribe ``293a740``): ``pending-slice.jsonl`` holds only the Claude Code
 conversation of ``export.jsonl``; ``erasure-plan.json`` is an applied plan that
-erases that same conversation. Replace them, never edit them.
+erases that same conversation; ``materialized-after-erasure.jsonl`` is the
+export scribe materializes once that plan is cut over, stamped with the plan's
+target generation. Replace them, never edit them.
 """
 
 import json
@@ -22,6 +24,7 @@ FIXTURES = Path(__file__).parent / "fixtures"
 EXPORT = FIXTURES / "scribe_archive_contract_v2.jsonl"
 SLICE = FIXTURES / "scribe_pending_slice_v2.jsonl"
 PLAN = FIXTURES / "scribe_erasure_plan_v2.json"
+MATERIALIZED = FIXTURES / "scribe_materialized_after_erasure_v2.jsonl"
 CLAUDE = "e322478280e4391e62a625d08b33bd2011e87e7323bc721290a389b7ecca9504"
 SUMMARY = "a durable decision, long enough to be kept as a record of its own"
 
@@ -177,7 +180,7 @@ def test_without_apply_erase_reports_and_changes_nothing(state, capsys):
 def test_erase_removes_every_derived_trace_and_keeps_the_rest(state, capsys, monkeypatch):
     index, registry, _backup, codex = _erasable(state)
     capsys.readouterr()
-    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
     assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["index_rows_removed"] == 4
@@ -211,6 +214,15 @@ def test_erase_removes_every_derived_trace_and_keeps_the_rest(state, capsys, mon
     assert _count(index, f"synthesis/{CLAUDE}") == 0
 
 
+def test_scribes_materialized_export_names_the_plans_target():
+    from atrium.erase.archive_generation import archive_generation
+
+    plan = json.loads(PLAN.read_text(encoding="utf-8"))
+    assert archive_generation(MATERIALIZED) == [TARGET, plan["fromGenerationId"]]
+    ids = [json.loads(line)["id"] for line in MATERIALIZED.read_text().splitlines()[1:]]
+    assert ids == [_codex_id()]
+
+
 def _archive_at(state, generation):
     """An export materialized from ``generation``: the manifest names it."""
     lines = EXPORT.read_text(encoding="utf-8").splitlines()
@@ -236,14 +248,14 @@ def test_an_index_outside_the_configured_instance_is_refused(state, monkeypatch)
     index, registry, _backup, _codex = _erasable(state)
     other = state / "copy.sqlite3"
     other.write_bytes(index.read_bytes())
-    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
     assert main(["--index", str(other), "erase", "--plan", str(PLAN), "--apply"]) == 2
     assert len(list((registry / "records").glob("*.json"))) == 2
 
 
 def test_a_run_that_failed_partway_is_finished_by_running_it_again(state, monkeypatch):
     index, registry, _backup, _codex = _erasable(state)
-    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
 
     def broken(*_args):
         raise OSError("disk full")
@@ -257,7 +269,7 @@ def test_a_run_that_failed_partway_is_finished_by_running_it_again(state, monkey
     assert _count(index, f"synthesis/{CLAUDE}") == 0
     monkeypatch.undo()
     monkeypatch.setenv("ATRIUM_STATE", str(state))
-    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
     assert main(erase) == 0
     assert (state / "curation" / "quarantine.jsonl").read_text() == ""
     assert len(list(registry.glob("records*/*.json"))) == 1
@@ -267,7 +279,7 @@ def test_apply_refuses_while_a_refresh_holds_the_instance(state, monkeypatch):
     import fcntl
 
     index, registry, _backup, _codex = _erasable(state)
-    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
     with (state / "refresh.lock").open("a") as held:
         fcntl.flock(held, fcntl.LOCK_EX)
         assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 3
@@ -311,7 +323,7 @@ def test_erase_leaves_no_erased_text_in_the_index_files(state, monkeypatch):
     """Deleted SQLite rows survive in freed pages, the WAL and FTS segments
     unless the delete overwrites them; the bytes on disk are the test."""
     index, _registry, _backup, _codex = _erasable(state)
-    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
     assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 0
     stored = b"".join(
         path.read_bytes() for path in index.parent.glob(index.name + "*") if path.is_file()

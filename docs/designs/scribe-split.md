@@ -1,8 +1,25 @@
 # Split conversation capture out of syntopica/agents into syntopica/scribe
 
-Status: revised 2026-10-11 after an adversarial review (Codex, read-only), every finding
-accepted. Owner decisions: the new repository is `syntopica/scribe` (public); BRP (rules,
-skills, plugins, hooks, workflow engine, library, machine) stays in `syntopica/agents`.
+Status: phases 1-4 done 2026-10-11; phase 5 (repointing) and 6 (removal from agents)
+in progress. Revised after an adversarial review (Codex, read-only), every finding
+accepted. Owner decisions: the new repository is `syntopica/scribe` (public); BRP
+(rules, skills, plugins, hooks, workflow engine, library, machine) stays in
+`syntopica/agents`; Atrium onboarding installs scribe alone (proposed default, taken).
+
+Done:
+
+- `syntopica/scribe` created from agents `832040c` with `git filter-repo`. On
+  agents' `main` these paths have one commit; the later history the review cited
+  lives only in `archive/pre-public-history`, the branch kept from before the
+  privacy scrub, which must not be published. So the public history is one
+  imported commit plus the scaffolding commit.
+- `scribe` CLI over the nine commands, `conversations:*` kept as aliases; CI
+  green; 107 tests (agents' 105 plus 2 for the CLI); gitleaks clean.
+- Parity from a frozen home (pi plus one day of codex sessions): export records
+  identical by id and content (17), header differing only in `createdAt`; import,
+  render, migrate-segments and verify-segments outputs identical; the resulting
+  archives and v2 trees byte-identical. Atrium ingests scribe's archive.
+- The peer has a scribe checkout with the same 107 tests passing.
 
 ## Why
 
@@ -52,10 +69,8 @@ independent sources agree), but non-import references exist: package gates, ESLi
 suppressions, AGENTS, README, runbook, ADR, TODO, and external callers. "No import" is not
 a deletion gate.
 
-History: `git log --all -- scripts/lib/conversations` shows real conversation commits after
-the squash (`416b93e1`, `ffac2add`, later fixes). Preserve it with `git filter-repo
---path ... ` into the new repository, so blame survives; the first new commit names the
-agents commit it was cut from.
+History: `git filter-repo` over agents' `main`, which holds one commit for these
+paths. The later commits are only on `archive/pre-public-history` and stay private.
 
 ## Compatibility during the move
 

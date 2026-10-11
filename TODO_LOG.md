@@ -6,6 +6,14 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **Scribe archives Claude Code tool output as role `tool`.** Scribe
+  `199f393`: a line holding only `tool_result` blocks becomes kind `message`, role `tool`;
+  mixed lines stay `user`; schemaVersion 2, event ids unchanged, archived events keep
+  their `user` variant, no backfill. Atrium vendored the regenerated contract fixture;
+  `tests/test_scribe_archive_contract.py` now pins that tool output is not admitted to
+  records and stays inside its turn in `turn_blocks`. The live refresh already rejected 125
+  role-`tool` events.
+
 - [x] 2026-10-11 — **The MCP `atrium_context` tool asks the resident context service first.**
   It sent every call in-process with no dense matrix, so its dense pass scanned the index (115 s
   unscoped before `75ac8da`, 17.7 s after). It now validates the request (raising `ToolError`),

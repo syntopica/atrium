@@ -39,14 +39,10 @@
 
 ## Ingest / Store
 
-- [ ] **Scribe will archive Claude Code tool output with its own role.** Session
-  syntopica-95 is changing scribe's "tool results archived as kind: message, role: user"
-  (2026-10-11). Asked for kind `message` + role `tool`: `to_records` then drops tool text
-  from search records, and `turn_blocks` keeps it inside its turn instead of opening a fake
-  human turn. Also asked: stable event ids, and new exports only, or notice before any
-  re-export, because `episode_identity` hashes per-episode event ids and a re-segmented
-  archive would re-synthesize ~63k episodes. When it lands, read the exact field in
-  scribe's TODO_LOG.md and confirm ingest and segmentation on one new conversation.
+- [ ] **Harness-only `<tag>` text (system-reminder etc.) is still archived as message/user.**
+  Scribe asked which role marks it (no new kind allowed). Proposed `system` (2026-10-11):
+  `to_records` drops it, `turn_blocks` no longer opens a fake human turn on it. Same rule
+  as the tool role: new events only, archived variants kept. Verify when scribe lands it.
 
 - [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured
       2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);

@@ -305,3 +305,16 @@ def test_half_a_matrix_pair_is_dropped(tmp_path):
     np.zeros((2, 384), dtype=np.float32).tofile(matrix)
     assert scrub_aligned_matrix(tmp_path / "ids.jsonl", matrix, {"zzz"}) == 2
     assert not matrix.exists()
+
+
+def test_erase_leaves_no_erased_text_in_the_index_files(state, monkeypatch):
+    """Deleted SQLite rows survive in freed pages, the WAL and FTS segments
+    unless the delete overwrites them; the bytes on disk are the test."""
+    index, _registry, _backup, _codex = _erasable(state)
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: _archive_at(state, TARGET))
+    assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 0
+    stored = b"".join(
+        path.read_bytes() for path in index.parent.glob(index.name + "*") if path.is_file()
+    )
+    assert b"exits with status 3" not in stored
+    assert b"deploy script" not in stored

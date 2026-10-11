@@ -5,9 +5,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from atrium.context.context_response import context_response
+from atrium.context.require_workspace import require_workspace
 from atrium.context.retrieve_context import retrieve_context
 from atrium.context.validate_request import validate_request
-from atrium.recall.project_workspace import project_workspace
 from atrium.store.open_store import open_store
 
 if TYPE_CHECKING:
@@ -29,9 +29,7 @@ def context_from_index(  # noqa: PLR0913 -- shared adapter contract
 ) -> dict[str, Any]:
     """Turn an unavailable store into explicit structured degradation."""
     validate_request(query, limit, max_chars, lane)
-    workspace = project_workspace(project) if project is not None else None
-    if project is not None and workspace is None:
-        raise ValueError(f"{project!r} is in no repository, so it names no project")
+    workspace = require_workspace(project)
     try:
         connection = open_store(index, read_only=True)
     except (OSError, sqlite3.Error, RuntimeError):

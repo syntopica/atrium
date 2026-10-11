@@ -1,5 +1,6 @@
 """The `atrium_context` MCP tool."""
 
+from pathlib import Path
 from typing import Any
 
 from mcp.server.mcpserver.exceptions import ToolError
@@ -9,10 +10,20 @@ from atrium.adapters.resident_embedder import resident_embedder
 from atrium.adapters.served_index import INDEX
 from atrium.context.context_from_index import context_from_index
 from atrium.context.lazy_embedder import LazyEmbedder
+from atrium.context.require_workspace import require_workspace
+from atrium.context.validate_request import validate_request
 from atrium.retrieve.lane import Lane
 from atrium.retrieve.search import LANES
+from atrium.serve.context_socket_path import context_socket_path
+from atrium.serve.request_context_service import request_context_service
+from atrium.serve.service_timeout_response import service_timeout_response
 from atrium.state.state_directory import state_directory
 from atrium.telemetry.append_lane_event import append_lane_event
+
+# No hook deadline binds a tool call, so the wait is longer than the CLI's 7 s;
+# a service that is listening but stalled is reported, never retried in-process,
+# because that would add the slow scan the service exists to avoid.
+_SERVICE_TIMEOUT_S = 20.0
 
 
 @MCP.tool(annotations=READ_ONLY)
@@ -35,7 +46,34 @@ def atrium_context(
     append_lane_event(state, "mcp.context", lane)
     # Its ValueErrors are the request's own faults (an empty query, a bound out
     # of range, a directory in no repository); the MCP SDK passes on only a
-    # ToolError's text, and the model can correct only what it can read.
+    # ToolError's text, and the model can correct only what it can read. They
+    # are checked first so that a stalled service cannot report them as a timeout.
+    try:
+        validate_request(query, limit, max_chars, lane)
+        require_workspace(project)
+    except ValueError as error:
+        raise ToolError(str(error)) from error
+    # The resident service holds the dense matrix and the embedder; without it
+    # the dense pass scans the index, which took 115 s unscoped before 75ac8da.
+    # A relative project resolves here, never in the service's directory.
+    project_path = Path(project).expanduser().resolve() if project is not None else None
+    request = {
+        "index": str(INDEX),
+        "query": query,
+        "project": str(project_path) if project_path is not None else None,
+        "limit": limit,
+        "max_chars": max_chars,
+        "lane": lane,
+        "state": str(state),
+    }
+    try:
+        served = request_context_service(context_socket_path(state), request, _SERVICE_TIMEOUT_S)
+    except TimeoutError:
+        return service_timeout_response(query, project_path, limit, max_chars, lane, state)
+    except (OSError, ValueError):
+        served = None
+    if served is not None and "error" not in served:
+        return served
     try:
         return context_from_index(
             INDEX,

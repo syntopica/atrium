@@ -336,14 +336,6 @@
   emits VS Code workspace metadata instead of dialogue. Both filed in
   `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
   (needs authorization to change that repo).
-- [ ] MCP tools hide the reason for a caller mistake: a `ValueError` from
-  `checked_limit`, `validate_request` (empty query, `limit`/`max_chars` out of
-  range) or `atrium_search`'s "names no project" reaches the model as a bare
-  `Error executing tool <name>`, since the MCP SDK (2.3.0) passes on only
-  `ToolError` and validation text. Seen 2026-10-11 for `lane="lexical"` in a
-  Codex trial, fixed for lanes by the `Lane` literal. Smallest next step: raise
-  `ToolError` (or declare the bounds in the parameter types) for those checks.
-
 ## Quality gate
 
 ## Self-improvement

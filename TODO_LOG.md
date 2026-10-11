@@ -6,6 +6,15 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **Curated note chunks no longer stand as a bare heading.** A
+  heading-only section is folded into the section after it (`fold_bare_headings`), a
+  trailing one is dropped unless it is the whole note, and `split_to_size` keeps a
+  heading with an oversized paragraph after it, which was the source of most of them
+  (a heading flushed alone before a large table). Measured read-only over the 391
+  indexed notes: chunks 6,330 -> 6,163, bare-heading chunks 174 -> 1 (the one left is a
+  hard-split slice of a table row that begins with `#`). The next `ingest-notes`
+  rewrites the affected notes. Gate green; three tests in `tests/test_note_ingest.py`.
+
 - [x] 2026-10-11 — **Unchanged conversations are skipped by revision, and the synthesis
   lane's own sessions are excluded.** `e224b74`: `conversation_revisions` keeps the sha256
   of each conversation's derived rows; a match skips the stored-text read-back. Codex

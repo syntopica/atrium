@@ -32,6 +32,25 @@ def test_sections_split_on_headings():
     assert not any("first body" in t and "second body" in t for t in texts)
 
 
+def test_a_bare_heading_is_folded_into_the_section_after_it():
+    """174 note chunks were a lone heading with a vector of their own, and two
+    of them outranked the real answer in a dense query (2026-10-11)."""
+    note = _note("# Title\n\n## Security\n\n### Keys\n\nrotate monthly\n\n## Tail")
+    texts = [r.text for r in to_note_records(note)]
+    assert texts == ["# Title\n\n## Security\n\n### Keys\n\nrotate monthly"]
+
+
+def test_a_heading_before_an_oversized_table_stays_with_it():
+    table = "\n".join(f"| row {i} | value |" for i in range(200))
+    texts = [r.text for r in to_note_records(_note(f"## Failure table\n\n{table}"))]
+    assert texts[0].startswith("## Failure table\n\n| row 0 |")
+    assert max(len(t) for t in texts) <= 2000
+
+
+def test_a_note_that_is_only_a_heading_keeps_one_record():
+    assert [r.text for r in to_note_records(_note("# Only"))] == ["# Only"]
+
+
 def test_editing_a_note_replaces_its_records(tmp_path):
     connection = open_store(tmp_path / "index.sqlite3")
     with connection:

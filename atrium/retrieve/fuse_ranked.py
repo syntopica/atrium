@@ -12,17 +12,24 @@ _K = 60
 _LEXICAL_WEIGHT = 0.7
 
 
-def fuse_ranked(lexical: list[Hit], dense: list[Hit], limit: int = 20) -> list[Hit]:
+def fuse_ranked(
+    lexical: list[Hit],
+    dense: list[Hit],
+    limit: int = 20,
+    lexical_weight: float = _LEXICAL_WEIGHT,
+) -> list[Hit]:
     """Merge two ranked lists by weighted RRF, higher fused score first.
 
     Callers must not treat this as the only output: on queries sharing no
     informative word with their answer, fusion demotes the dense signal that is
     the only one working (12% -> 8% R@10 measured). The adaptive routing that
     honours that lives in ``search_hybrid``; this function only fuses.
+    ``lexical_weight`` defaults to the conversation-measured 0.7; the curated
+    pass passes its own (see ``CURATED_LEXICAL_WEIGHT``).
     """
     scores: dict[str, float] = {}
     first_seen: dict[str, Hit] = {}
-    for weight, hits in ((_LEXICAL_WEIGHT, lexical), (1.0 - _LEXICAL_WEIGHT, dense)):
+    for weight, hits in ((lexical_weight, lexical), (1.0 - lexical_weight, dense)):
         for rank, hit in enumerate(hits, start=1):
             scores[hit.record_id] = scores.get(hit.record_id, 0.0) + weight / (_K + rank)
             first_seen.setdefault(hit.record_id, hit)

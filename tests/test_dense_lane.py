@@ -211,3 +211,11 @@ def test_hybrid_fuses_when_both_lanes_see_the_query(tmp_path):
     connection.close()
     assert {h.record_id for h in hits} == {"a", "b"}
     assert all(h.lane == "fused" for h in hits)
+
+
+def test_a_lexical_weight_below_half_lets_the_dense_top_hit_win():
+    """The curated pass fuses 30/70: with symmetric ranks, the dense top hit wins."""
+    fused = fuse_ranked(
+        [_hit("lex", 5.0, "words")], [_hit("den", 0.9, "dense")], lexical_weight=0.3
+    )
+    assert [h.record_id for h in fused] == ["den", "lex"]

@@ -6,6 +6,17 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **The MCP `atrium_context` tool asks the resident context service first.**
+  It sent every call in-process with no dense matrix, so its dense pass scanned the index (115 s
+  unscoped before `75ac8da`, 17.7 s after). It now validates the request (raising `ToolError`),
+  resolves `project` to an absolute path in its own directory, asks the service with a 20 s
+  timeout, answers a stalled service with `context_service_timeout`, and retrieves in-process
+  only when no service answers or the service reports an error. Unscoped MCP call 4.8 s, scoped
+  2.8 s. Codex review: three rounds, each finding fixed (`~` not expanded, timeout must not fall
+  back, caller errors must not read as a timeout); last round clean.
+  Tests: `tests/test_mcp_context_service.py`.
+  Running MCP servers pick it up on restart.
+
 - [x] 2026-10-11 — **The in-index dense scan no longer reads every record.** `dense_hits.sql`
   ordered by `r.record_id`, so SQLite walked all 1.86M records by primary key to test their
   role: 213 s per unscoped query, and 115 s end to end for an MCP `atrium_context` call

@@ -268,15 +268,6 @@
   Per-prompt retrieval (`--lane dense --limit 4`) measured 0.8-1.0 s warm,
   well inside the mod's 10 s budget.
 
-- [ ] **The MCP `atrium_context` tool never uses the resident context service.** The CLI
-      asks `com.cristian.atrium-context` first (dense matrix and embedder resident, 2.2 s
-      warm); `atrium/adapters/atrium_context.py` calls `context_from_index` in-process with
-      no matrix, so its dense pass scans the index. Unscoped that took 115 s per call until
-      `75ac8da` drove the scan from vectors (now ~6 s warm, 17.7 s measured under load).
-      Smallest next step: have the adapter try `request_context_service` first, exactly as
-      `run_context_cli` does, and fall back in-process. Running MCP servers and sessions pick
-      up code changes only on restart.
-
 - [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
       of its window (15,696 files for 14 days). If a reader ever needs it
       polled, keep per-day totals for closed days in a derived file.

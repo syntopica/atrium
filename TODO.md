@@ -1,7 +1,7 @@
 # TODO
 
 > Consolidated from the accessible Claude, Codex, Cursor, and Antigravity
-> project history. Last reviewed: 2026-10-10. History coverage: Partial —
+> project history. Last reviewed: 2026-10-11. History coverage: Partial —
 > Atrium was designed and built inside the `~/p/memstore` project history
 > (session `a88ac62e`, 2026-08-25 to 2026-08-27, plus one Codex review
 > rollout); that history is fully parsed here. The older memstore sessions
@@ -116,7 +116,7 @@
       codex gap is closed (streaming export since 2026-08-31; every refresh reports
       `skipped: 0` over 31,119 codex artifacts); the Windsurf and Trae exporters emit zero conversations; ChatGPT
       and Grok leave no local transcript, so nothing has ever been captured from
-      them. Each is filed separately below and in `~/p/agents/TODO.md`, but
+      them. Windsurf and Trae are filed under Integrations below, but
       together they are the answer to "is the archive complete", and today the
       answer is no.
 
@@ -333,31 +333,27 @@
 
 - [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
   emits 0 conversations from its 4 database artifacts, and the Trae exporter
-  emits VS Code workspace metadata instead of dialogue. Both filed in
-  `~/p/agents/TODO.md`; smallest unblock is fixing those exporters
-  (needs authorization to change that repo).
-## Quality gate
+  emits VS Code workspace metadata instead of dialogue. The exporters moved to
+  `~/p/scribe` with the capture code; as of 2026-10-11 neither `~/p/agents/TODO.md`
+  nor `~/p/scribe/TODO.md` carries the item, so it is tracked only here. Smallest
+  unblock is fixing those exporters in scribe.
 
 ## Self-improvement
 
 - [ ] Query log, gap detection, and brain proposals. The durable-state
-      contradiction this waits on is no longer abstract — it is the Durability item
-      above, and a query log would add a _second_ unreplicated store next to it.
-      Resolve the placement rule first (brain, or an explicitly backed-up sidecar
-      that the transport actually carries), then build; layer 2 must stay
-      disposable, and as designed today a rebuild would erase both.
+      contradiction this waited on was the Durability item, closed 2026-09-05
+      (`TODO_LOG.md`) by replicating the synthesis registry through
+      `sync-all-safe`; a query log would be a _second_ durable store that nothing
+      carries yet. Resolve the placement rule first (brain, or an explicitly
+      backed-up sidecar that the sync actually carries), then build; layer 2 must
+      stay disposable, and as designed today a rebuild would erase it.
 
 ## Cross-project
 
-- [ ] `rocket-agents`: canonical event IDs are conversation-local in practice —
+- [ ] Scribe (formerly `rocket-agents`): canonical event IDs are conversation-local in practice —
       `conversationEventFromRecord.ts:20` derives them from `event_index + text`
       with no conversation identity, and real cross-conversation collisions were
       measured (OpenCode, Cursor). Atrium works around it with
       `sha256(conversation_id, event_id)`; the canonical contract should carry the
-      identity itself. Also: the Windsurf exporter emits 0 conversations from 4
-      database artifacts. Filed in `~/p/agents/TODO.md`.
-
-## Routed from `~/p/TODO.md` (2026-10-03)
-
-Moved verbatim from `~/p/TODO.md` on 2026-10-03; the routing table in
-`~/p/TODO_LOG.md` (entry of that date) records each move.
+      identity itself. The writer is now `~/p/scribe`; as of 2026-10-11 its TODO
+      records how event ids derive but not this collision, so it is tracked only here.

@@ -1,6 +1,6 @@
 # Split conversation capture out of syntopica/agents into syntopica/scribe
 
-Status: phases 1-6 done 2026-10-11; phase 7 (later scribe releases) open. Revised after an adversarial review (Codex, read-only), every finding
+Status: phases 1-6 done 2026-10-11; phase 7 open except the contract fixtures. Revised after an adversarial review (Codex, read-only), every finding
 accepted. Owner decisions: the new repository is `syntopica/scribe` (public); BRP
 (rules, skills, plugins, hooks, workflow engine, library, machine) stays in
 `syntopica/agents`; Atrium onboarding installs scribe alone (proposed default, taken).
@@ -31,6 +31,12 @@ Done:
   (34,540) and its whole archive (54,028) add 0, no errors.
 - Phase 6: agents `64f33efa` removes the moved code; `pnpm run check:all` exits 0
   with a clean tree afterwards.
+- Phase 7, contract fixtures: scribe `2d9a1af` pins the wire format with
+  `fixtures/archive-contract/v2/` (a Claude Code and a Codex home, the export written
+  from them with clock and host pinned, a test that fails on drift); Atrium vendors the
+  export as `tests/fixtures/scribe_archive_contract_v2.jsonl` and ingests it. The
+  fixture records Claude Code tool results as user messages, so the v2 classification
+  fix shows up as a diff on both sides. v2 stage 3 and tool-result provenance remain.
 
 ## Why
 

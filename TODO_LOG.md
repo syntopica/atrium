@@ -6,6 +6,19 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **Cold `atrium context --lane auto` re-measured on the updated index.**
+  Five fresh-process CLI queries took 1.5-2.1 s, with one 5.6 s outlier on the first,
+  disk-cold run (was 1.7-7 s). cProfile of one fresh query (2.09 s): lexical hits 1.04 s
+  (`ranked_hits` 0.96), embedder load 0.57 s plus forward 0.18 s, linked hits 0.1 s; the
+  `count(*) FROM records` that cost 1.5 s cold no longer appears (`record_total`). What
+  remains is the curated broad pass, which is the notes-only FTS item, and the CLI's
+  embedder load, which the resident MCP server does not pay.
+
+- [x] 2026-10-11 — **Scribe archive contract vendored.** scribe `2d9a1af` pins the
+  export format with a provider-shaped fixture home and a drift test; Atrium ingests
+  the verbatim export in `tests/test_scribe_archive_contract.py` (3 tests), which also
+  pins the known Claude Code tool-result-as-user bug so its fix shows. Gate green.
+
 - [x] 2026-10-11 — **`bench-*` and `judge-*` traced and excluded.** All 15 codex
   conversations ran 2026-09-01 03:37-03:45 from a one-off synthesis model bench that
   Claude session `adfb9b599d27` wrote outside any repository (`tempfile.

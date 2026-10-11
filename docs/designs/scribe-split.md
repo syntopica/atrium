@@ -1,7 +1,6 @@
 # Split conversation capture out of syntopica/agents into syntopica/scribe
 
-Status: phases 1-4 done 2026-10-11; phase 5 (repointing) and 6 (removal from agents)
-in progress. Revised after an adversarial review (Codex, read-only), every finding
+Status: phases 1-6 done 2026-10-11; phase 7 (later scribe releases) open. Revised after an adversarial review (Codex, read-only), every finding
 accepted. Owner decisions: the new repository is `syntopica/scribe` (public); BRP
 (rules, skills, plugins, hooks, workflow engine, library, machine) stays in
 `syntopica/agents`; Atrium onboarding installs scribe alone (proposed default, taken).
@@ -20,6 +19,18 @@ Done:
   render, migrate-segments and verify-segments outputs identical; the resulting
   archives and v2 trees byte-identical. Atrium ingests scribe's archive.
 - The peer has a scribe checkout with the same 107 tests passing.
+- Phase 5: dotfiles `e729406` runs refresh, both sync halves and peer detection from
+  `~/p/scribe` (agents as fallback); the 05:32 refresh log shows `capture checkout
+  /Users/cristiandeluxe/p/scribe`; macmini runs the same dotfiles, scribe and agents
+  commits. syntopica `34fb202` installs scribe instead of agents for `atrium`, on the
+  schema's new `scribe` engine (brain `e5d1062`, mirrored in clips `b3c1c2d`; `agents`
+  stays accepted for existing instances). syntopica CI, whose onboarding job clones
+  scribe, exports and ingests, is green.
+- `sync-conversations macmini dry`, scribe on both ends, exit 0: the local export
+  (45,324 records) adds 2 to the archive with 45,318 duplicates; the macmini export
+  (34,540) and its whole archive (54,028) add 0, no errors.
+- Phase 6: agents `64f33efa` removes the moved code; `pnpm run check:all` exits 0
+  with a clean tree afterwards.
 
 ## Why
 
@@ -134,6 +145,6 @@ new one has run once.
    and rollback plan; tool-result block provenance; versioned archive-contract fixtures that
    Atrium's tests consume.
 
-## Open decision
+## Decided
 
-- Syntopica onboarding: Atrium pulls scribe alone (proposed) or scribe plus agents.
+- Syntopica onboarding: Atrium pulls scribe alone.

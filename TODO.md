@@ -331,12 +331,12 @@
 
 ## Integrations
 
-- [!] Windsurf and Trae remain unindexable at layer 1: the Windsurf exporter
-  emits 0 conversations from its 4 database artifacts, and the Trae exporter
-  emits VS Code workspace metadata instead of dialogue. The exporters moved to
-  `~/p/scribe` with the capture code; as of 2026-10-11 neither `~/p/agents/TODO.md`
-  nor `~/p/scribe/TODO.md` carries the item, so it is tracked only here. Smallest
-  unblock is fixing those exporters in scribe.
+- [!] Windsurf and Trae remain unindexable at layer 1, and not for an exporter
+  bug: agents' `TODO_LOG.md` (2026-08-31) found Trae's dialogue store encrypted at
+  rest and Windsurf's Cascade history server-side only; the bogus Trae records
+  (VS Code picker state) were fixed the same day. Tracked in `~/p/scribe/TODO.md`
+  (git-ignored there, so local to this Mac). **Blocked on:** decrypting Trae's
+  store, and a server-side export for Windsurf if one exists.
 
 ## Self-improvement
 
@@ -350,10 +350,10 @@
 
 ## Cross-project
 
-- [ ] Scribe (formerly `rocket-agents`): canonical event IDs are conversation-local in practice —
+- [ ] Scribe (formerly `rocket-agents`), tracked in `~/p/scribe/TODO.md`: canonical event IDs are conversation-local in practice —
       `conversationEventFromRecord.ts:20` derives them from `event_index + text`
       with no conversation identity, and real cross-conversation collisions were
       measured (OpenCode, Cursor). Atrium works around it with
       `sha256(conversation_id, event_id)`; the canonical contract should carry the
-      identity itself. The writer is now `~/p/scribe`; as of 2026-10-11 its TODO
-      records how event ids derive but not this collision, so it is tracked only here.
+      identity itself. It re-keys every archived event, so it lands with the v2
+      stage 3 cutover.

@@ -119,6 +119,9 @@ def test_each_automation_creator_is_matched_exactly():
     assert not is_excluded_automation("codex", f"{temp}/brain-ingest-a1")
     assert not is_excluded_automation("codex", f"{temp}/worker-task-q9")
     assert not is_excluded_automation("codex", f"{temp}/bench-0nslq2")
+    assert is_excluded_automation("codex", f"{temp}/bench-0nslq2o6")
+    assert is_excluded_automation("codex", f"{temp}/judge-udd9t_vv")
+    assert not is_excluded_automation("codex", f"{temp}/bench-0nslq2o6/nested")
 
 
 def test_an_unchanged_conversation_is_skipped_and_keeps_its_vectors(tmp_path, monkeypatch):

@@ -5,7 +5,9 @@ from pathlib import Path
 from atrium.synthesize.default_registry import default_registry
 
 
-def print_populations(registry: Path | None, indexed_episodes: set[str]) -> None:
+def print_populations(
+    registry: Path | None, indexed_episodes: set[str], excluded_conversations: set[str]
+) -> None:
     """Name every synthesis population and how much of it the index serves.
 
     The active-recipe manifest silently excluded an entire producer population
@@ -17,7 +19,9 @@ def print_populations(registry: Path | None, indexed_episodes: set[str]) -> None
     from atrium.synthesize.population_report import population_report
 
     rows = population_report(
-        registry if registry is not None else default_registry(), indexed_episodes
+        registry if registry is not None else default_registry(),
+        indexed_episodes,
+        excluded_conversations,
     )
     if not rows:
         return
@@ -27,8 +31,9 @@ def print_populations(registry: Path | None, indexed_episodes: set[str]) -> None
         missing = row["intended"] - row["indexed"]
         drift = f"  <- {missing:,} NOT IN INDEX" if missing else ""
         dropped = "  <- SERVES NOTHING" if row["intended"] == 0 else ""
+        automation = f"  ({row['excluded']:,} automation excluded)" if row["excluded"] else ""
         print(
             f"    {row['model']:<26} {row['records']:>7,} records "
             f"{row['episodes']:>7,} episodes {row['intended']:>7,} intended "
-            f"{row['indexed']:>7,} indexed{unlisted}{dropped}{drift}"
+            f"{row['indexed']:>7,} indexed{unlisted}{automation}{dropped}{drift}"
         )

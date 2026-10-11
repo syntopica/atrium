@@ -5,6 +5,7 @@ import sqlite3
 from atrium.doctor.archive_admissions import ArchiveAdmissions
 from atrium.doctor.finding import Finding
 from atrium.sql.load_sql import load_sql
+from atrium.store.read_excluded_conversations import read_excluded_conversations
 
 # The index is derived and disposable, so drift is repaired by ingesting, never
 # by editing it. What matters is that drift is visible: an index missing a
@@ -27,12 +28,18 @@ def index_coverage(connection: sqlite3.Connection, admissions: ArchiveAdmissions
     bare acknowledgement -- that is the admission rule working, and counting it
     as drift made this check warn on every single run. It is still reported,
     because a number that moves is worth seeing; it just is not a defect.
+
+    Automation the ingest refuses (``excluded_automation``) is left out of the
+    indexable set for the same reason: archived, admitting records, and absent
+    from the index on purpose.
     """
     indexed = {row[0] for row in connection.execute(load_sql("doctor/indexed_conversations"))}
-    missing = admissions.admitting_ids - indexed
+    excluded = read_excluded_conversations(connection) & admissions.admitting_ids
+    indexable = admissions.admitting_ids - excluded
+    missing = indexable - indexed
     extra = indexed - admissions.all_ids
     admits_nothing = len(admissions.all_ids) - len(admissions.admitting_ids)
-    ratio = len(missing) / len(admissions.admitting_ids) if admissions.admitting_ids else 0.0
+    ratio = len(missing) / len(indexable) if indexable else 0.0
     severity = (
         "broken" if ratio > DRIFT_BROKEN_RATIO else "warn" if ratio > DRIFT_WARN_RATIO else "ok"
     )
@@ -41,13 +48,15 @@ def index_coverage(connection: sqlite3.Connection, admissions: ArchiveAdmissions
         severity=severity,
         code=CODES[severity],
         summary=(
-            f"{len(indexed)} of {len(admissions.admitting_ids)} indexable conversations indexed, "
+            f"{len(indexed)} of {len(indexable)} indexable conversations indexed, "
             f"{len(missing)} missing, {len(extra)} indexed but not archived, "
-            f"{admits_nothing} archived conversations admit no record"
+            f"{admits_nothing} archived conversations admit no record, "
+            f"{len(excluded)} excluded as automation"
         ),
         detail={
             "archived": len(admissions.all_ids),
-            "indexable": len(admissions.admitting_ids),
+            "indexable": len(indexable),
+            "excluded_automation": len(excluded),
             "indexed": len(indexed),
             "missing": len(missing),
             "extra": len(extra),

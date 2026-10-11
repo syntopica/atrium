@@ -9,7 +9,9 @@ from atrium.synthesize.read_records import read_records
 
 
 def population_report(
-    registry: Path, indexed_episodes: set[str] | None = None
+    registry: Path,
+    indexed_episodes: set[str] | None = None,
+    excluded_conversations: frozenset[str] | set[str] = frozenset(),
 ) -> list[dict[str, Any]]:
     """Return one row per population: records, episodes, intended, indexed.
 
@@ -25,6 +27,10 @@ def population_report(
     ingest that never ran, or records whose output produced no index row.
     Reading the recipe here never creates the manifest -- a status must not
     write.
+
+    Episodes of ``excluded_conversations`` (automation the ingest refuses) are
+    not intended: the synthesis ingest drops them on purpose, and counting them
+    would print a deliberate exclusion as drift. ``excluded`` says how many.
     """
     if not (registry / "records").is_dir():
         return []
@@ -32,10 +38,14 @@ def population_report(
     projections = []
     records: dict[str, int] = {}
     episodes: dict[str, set[str]] = {}
+    excluded: dict[str, set[str]] = {}
     for record in read_records(registry):
         model = record.get("model_requested") or "unknown"
         records[model] = records.get(model, 0) + 1
         episodes.setdefault(model, set()).add(record["episode_id"])
+        if record.get("conversation_id") in excluded_conversations:
+            excluded.setdefault(model, set()).add(record["episode_id"])
+            continue
         projections.append(
             {"episode_id": record["episode_id"], "model_requested": record.get("model_requested")}
         )
@@ -49,6 +59,7 @@ def population_report(
             "records": records[model],
             "episodes": len(episodes[model]),
             "intended": len(intended.get(model, set())),
+            "excluded": len(excluded.get(model, set())),
             "indexed": (
                 None
                 if indexed_episodes is None

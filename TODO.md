@@ -60,10 +60,10 @@
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
       "word-level separate from substring" decision is about ranking, not about trigram
       over 1.9M raw records, but it must be re-read before changing the schema.
-- [ ] **A fifth of the corpus is the pipeline indexing itself.** 2026-10-10: 43,085
+- [ ] **Most archived conversations are the pipeline indexing itself.** 2026-10-10: 43,085
       conversations (of 54,026 in the archive) have workspace
       `/var/folders/.../T/atrium-codex-*`, the codex synthesis lane's temp dirs of
-      2026-08-28..2026-09-04: 92,715 records, and 18,850 synthesis episodes that
+      2026-08-28..2026-09-04: 92,715 records (4.8% of all records), and 18,850 synthesis episodes that
       re-summarise the episodes those prompts carried, misattributed to the temp
       workspace (23% of synthesis records, 22% of the 86,486 vectors in the dense
       matrix). Other temp automations add ~2.6k more (`T/brain`, `T/worker`, `T/clips`,

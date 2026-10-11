@@ -1,7 +1,7 @@
 {
   "name": "atrium-context",
-  "version": "0.2.1",
-  "description": "Retrieves atrium context for each prompt: a green line at the right of the footer when it works, a warning under the prompt when it does not",
+  "version": "0.3.0",
+  "description": "Retrieves atrium context for each prompt and each subagent task, and says how the turn used the brain: a green line at the right of the footer when it works, a warning under the prompt when it does not",
   "author": {
     "name": "Syntopica"
   },

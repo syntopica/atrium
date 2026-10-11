@@ -237,3 +237,119 @@ test('leaving a project after a healthy prompt takes the green line down', async
   expect(await footer($)).toBeUndefined()
   expect(seen.context ?? []).toEqual([])
 })
+
+// A healthy answer that also names the instance it served from.
+const SERVED = { ...ANSWER, configuration: { source: '/data/wiki/syntopica.config.json' } }
+
+function healthy(on, seen) {
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(SERVED), stderr: '' } }, seen)
+  on('turn.complete', ($, e) => ({ text: e.answer }))
+}
+
+test('says no note was cited once the answer names none', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  await $.prompt.submit({ text: PROMPT })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+  await $.turn.complete({ answer: 'Done, nothing from notes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: no note cited')
+})
+
+test('counts the notes an answer cites', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  await $.prompt.submit({ text: PROMPT })
+  await $.turn.complete({ answer: 'Per brain/topics/atrium.md and brain/topics/atrium.md, yes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 cited')
+})
+
+test('counts atrium lookups and the notes they returned', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  on('tool.call', () => ({ result: 'ok', text: '{"evidence": [{"note_path": "brain/people/ana.md"}, {"note_path": "brain/topics/x.md"}, {"note_path": "brain/../secret.md"}], "text": "see brain/topics/quoted.md"}' }))
+  await $.prompt.submit({ text: PROMPT })
+  await $.tool.call({ tool: 'mcp__atrium__atrium_context', query: 'who is ana' })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 2 read, 1 lookup')
+  await $.tool.call({ tool: 'mcp__plugin_my_tools_atrium__atrium_search', query: 'ana' })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 2 read, 2 lookups')
+})
+
+test('counts a note opened as a file of the instance, and nothing else', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  on('tool.call', () => ({ result: 'ok', text: 'contents' }))
+  await $.prompt.submit({ text: PROMPT })
+  await $.tool.call({ tool: 'Read', file_path: '/data/wiki/brain/topics/atrium.md' })
+  await $.tool.call({ tool: 'Read', file_path: '/work/repo/brain/README.md' })
+  await $.tool.call({ tool: 'Bash', command: 'ls brain' })
+  await $.tool.call({ tool: 'Glob', pattern: '*.md', path: '/data/wiki/brain/topics/*.md' })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 read')
+})
+
+test('counts an atrium command run from the shell as a lookup', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  on('tool.call', () => ({ result: 'ok', text: 'nothing' }))
+  await $.prompt.submit({ text: PROMPT })
+  await $.tool.call({ tool: 'Bash', command: 'atrium search "stop hook" --project .' })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 lookup')
+})
+
+test('a new prompt starts the brain count over', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  on('tool.call', () => ({ result: 'ok', text: 'brain/topics/x.md' }))
+  await $.prompt.submit({ text: PROMPT })
+  await $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'x' })
+  await $.prompt.submit({ text: PROMPT })
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+})
+
+test('hands a subagent the evidence for its own task', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  on('tool.call', ($, e) => {
+    seen.agentPrompt = e.prompt
+    return { result: 'ok', text: 'report' }
+  })
+  const task = 'find where the stop hook records an episode in this repository'
+  await $.tool.call({ tool: 'Agent', description: 'find hook', prompt: task, subagent_type: 'Explore' })
+  expect(seen.argv[2]).toBe(task)
+  expect(seen.agentPrompt.startsWith(task + '\n\n# atrium context (retrieved for this prompt)')).toBe(true)
+  expect(seen.agentPrompt).toContain('brain/topics/atrium.md')
+})
+
+test('leaves a fork and a failed retrieval to the subagent as given', async ($, on) => {
+  const seen: any = {}
+  stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, seen)
+  on('tool.call', ($, e) => {
+    seen.agentPrompt = e.prompt
+    return { result: 'ok', text: 'report' }
+  })
+  const task = 'find where the stop hook records an episode in this repository'
+  await $.tool.call({ tool: 'Agent', description: 'find hook', prompt: task, subagent_type: 'Explore' })
+  expect(seen.agentPrompt).toBe(task)
+  seen.argv = undefined
+  await $.tool.call({ tool: 'Agent', description: 'fork', prompt: task, subagent_type: 'fork' })
+  expect(seen.argv).toBeUndefined()
+  expect(seen.agentPrompt).toBe(task)
+})
+
+test('counts lookups that finish together, and drops one from a finished turn', async ($, on) => {
+  const seen: any = {}
+  healthy(on, seen)
+  let release
+  const gate = new Promise((resolve) => { release = resolve })
+  on('tool.call', async ($, e) => {
+    if (e.query === 'late') await gate
+    return { result: 'ok', text: '{"note_path": "brain/topics/' + e.query + '.md"}' }
+  })
+  await $.prompt.submit({ text: PROMPT })
+  await Promise.all(['a', 'b', 'c'].map((query) => $.tool.call({ tool: 'mcp__atrium__atrium_search', query })))
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 3 read, 3 lookups')
+  const late = $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'late' })
+  await $.prompt.submit({ text: PROMPT })
+  release()
+  await late
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+})

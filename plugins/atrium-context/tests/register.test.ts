@@ -259,7 +259,7 @@ test('counts the notes an answer cites', async ($, on) => {
   const seen: any = {}
   healthy(on, seen)
   await $.prompt.submit({ text: PROMPT })
-  await $.turn.complete({ answer: 'Per brain/topics/atrium.md and brain/topics/atrium.md, yes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  await $.turn.complete({ answer: 'Per brain/topics/atrium.md and brain/topics/atrium.md (cited as brain/...md), yes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
   expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 cited')
 })
 

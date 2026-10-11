@@ -51,7 +51,7 @@ def test_counts_lookups_reads_and_citations(tmp_path: Path) -> None:
     _tool(tmp_path, "Bash", {"command": f"printf {DATA}/brain/topics/printed.md"})
     _tool(tmp_path, "Bash", {"command": f"sed -n 1,40p {DATA}/brain/topics/x.md"})
     _tool(tmp_path, "Bash", {"command": "cat /work/repo/brain/README.md"})
-    notice = _stop(tmp_path, "Per brain/people/ana.md, yes.")
+    notice = _stop(tmp_path, "Per brain/people/ana.md, cited as brain/...md, yes.")
     assert notice == "atrium · brain: 1 cited, 2 read, 3 lookups"
 
 

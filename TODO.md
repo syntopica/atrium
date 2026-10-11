@@ -64,16 +64,22 @@
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
       "word-level separate from substring" decision is about ranking, not about trigram
       over 1.9M raw records, but it must be re-read before changing the schema.
-- [ ] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
+- [!] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
       (2026-10-10, ~7.2k user records) by bytes: atrium synthesis prompts 23%, other
       records over 5k chars 20%, human-sized prompts 17%, tool-output-shaped text (Read
       `N<tab>` listings, `[TOOL ...]`, search results) 16.5%, `<tag>` harness text
       11.6%, the security-review template 7.4%, app batch prompts (Vexa classifier,
       invoice extraction) 3.8%, skill bodies 1%. Average user record 2,967 chars against
       288 for assistant. These bloat both FTS lanes and crowd lexical ranking. Smallest
-      next step: find which archive event kinds these come from (claude-code tool results
-      with string content are admitted as `user`), then reject them in the adapter with a
-      test per shape.
+      next step was to find the archive event kinds; found 2026-10-11: scribe's
+      `conversationEventKindFromRecord` reads only `type`/`kind`/`payload.type`, and a
+      Claude Code line is `type: "user"` with `tool_result` blocks in `message.content`,
+      so the archive itself files it as `kind: message, role: user`. The fix is
+      scribe's, and it changes content hashes, which the split froze until the v2
+      cutover. **Blocked on:** scribe v2 stage 3; tracked in `~/p/scribe/TODO.md`
+      ("Event classification"). The machine-prompt shapes (synthesis prompts, the
+      security-review template, app batch prompts) are separate: most of the first are
+      already gone with the `atrium-codex-*` exclusion.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable
@@ -90,7 +96,7 @@
   archive rather than two. Original entry below.
   Update 2026-10-10: the schema 2 change has landed (the index reports "schema 2,
   pipeline 2"), so that collision is gone. The writer is rocket-agents, and the work is
-  filed there as `~/p/agents/TODO.md:351`; this entry tracks only Atrium's side, the
+  filed in agents at the time, now in `~/p/scribe/TODO.md`; this entry tracks only Atrium's side, the
   per-writer cursor for incremental ingest, which waits on that format.
   Correction 2026-10-11: "implementation is not started" above is stale. The segment
   archive's stage 2 landed in agents `8cc2849` (content-addressed segments, incremental

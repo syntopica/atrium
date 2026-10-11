@@ -7,6 +7,7 @@ from atrium.adapters.resident_embedder import resident_embedder
 from atrium.adapters.served_index import INDEX
 from atrium.context.context_from_index import context_from_index
 from atrium.context.lazy_embedder import LazyEmbedder
+from atrium.retrieve.lane import Lane
 from atrium.retrieve.search import LANES
 from atrium.state.state_directory import state_directory
 from atrium.telemetry.append_lane_event import append_lane_event
@@ -18,7 +19,7 @@ def atrium_context(
     project: str | None = None,
     limit: int = 8,
     max_chars: int = 16000,
-    lane: str = "auto",
+    lane: Lane = "auto",
 ) -> dict[str, Any]:
     """Retrieve scoped history, curated notes and one hop of indexed note links.
 

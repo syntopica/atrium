@@ -6,6 +6,11 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **MCP caller mistakes come back with their reason.** The MCP SDK
+  (2.3.0) hands the model only a `ToolError`'s text, so `checked_limit`, `atrium_search`'s
+  "names no project" and `atrium_context`'s request checks (empty query, `limit` /
+  `max_chars` bounds, project) now raise `ToolError`. `tests/test_mcp_caller_errors.py`
+  covers each case through `MCP.call_tool` (6 of them failed before the change).
 - [x] 2026-10-11 — **Hook coverage for Claude Code and Codex, and visible brain use.**
   Checked against the current [Codex hooks](https://learn.chatgpt.com/docs/hooks) and
   [Claude Code hooks](https://code.claude.com/docs/en/hooks) references; reviewed by

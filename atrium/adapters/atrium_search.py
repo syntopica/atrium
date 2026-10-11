@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from atrium.adapters.checked_limit import checked_limit
 from atrium.adapters.mcp_app import MCP, READ_ONLY
 from atrium.adapters.rendered_hits import rendered_hits
@@ -39,7 +41,7 @@ def atrium_search(
     if project is not None:
         workspace = project_workspace(project)
         if workspace is None:
-            raise ValueError(f"{project!r} is in no repository, so it names no project")
+            raise ToolError(f"{project!r} is in no repository, so it names no project")
     append_lane_event(state_directory(), "mcp.search", lane)
     connection = open_store(INDEX, read_only=True)
     try:

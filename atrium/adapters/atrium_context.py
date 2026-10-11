@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from mcp.server.mcpserver.exceptions import ToolError
+
 from atrium.adapters.mcp_app import MCP, READ_ONLY
 from atrium.adapters.resident_embedder import resident_embedder
 from atrium.adapters.served_index import INDEX
@@ -31,13 +33,19 @@ def atrium_context(
         raise ValueError(f"unknown lane {lane!r}; expected one of {', '.join(LANES)}")
     state = state_directory()
     append_lane_event(state, "mcp.context", lane)
-    return context_from_index(
-        INDEX,
-        query,
-        project=project,
-        limit=limit,
-        max_chars=max_chars,
-        lane=lane,
-        state=state,
-        embedder=LazyEmbedder(resident_embedder),
-    )
+    # Its ValueErrors are the request's own faults (an empty query, a bound out
+    # of range, a directory in no repository); the MCP SDK passes on only a
+    # ToolError's text, and the model can correct only what it can read.
+    try:
+        return context_from_index(
+            INDEX,
+            query,
+            project=project,
+            limit=limit,
+            max_chars=max_chars,
+            lane=lane,
+            state=state,
+            embedder=LazyEmbedder(resident_embedder),
+        )
+    except ValueError as error:
+        raise ToolError(str(error)) from error

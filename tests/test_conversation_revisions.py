@@ -109,6 +109,18 @@ def test_only_the_synthesis_lanes_scratch_directory_is_automation():
     assert not is_excluded_automation("codex", None)
 
 
+def test_each_automation_creator_is_matched_exactly():
+    temp = "/var/folders/ab/xy12z/T"
+    assert is_excluded_automation("codex", f"{temp}/brain-ingest-a1/01K2ZQ8F9V3M4N5P6R7S8T9W0X")
+    assert is_excluded_automation("codex", f"/private{temp}/worker-task-q9/workspace")
+    assert is_excluded_automation("codex", f"{temp}/clips-triage-z3Ab9Q")
+    assert not is_excluded_automation("codex", f"{temp}/clips-triage-agy-z3Ab9Q")
+    assert not is_excluded_automation("codex", f"{temp}/brain-ingest-a1/personal-notes")
+    assert not is_excluded_automation("codex", f"{temp}/brain-ingest-a1")
+    assert not is_excluded_automation("codex", f"{temp}/worker-task-q9")
+    assert not is_excluded_automation("codex", f"{temp}/bench-0nslq2")
+
+
 def test_an_unchanged_conversation_is_skipped_and_keeps_its_vectors(tmp_path, monkeypatch):
     _state_dir, index, archive = _state(tmp_path, monkeypatch)
     _write_archive(archive, [_conversation("keep"), _conversation("edit")])

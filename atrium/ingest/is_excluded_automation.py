@@ -2,7 +2,7 @@
 
 import re
 
-from atrium.ingest.atrium_codex_workspace import ATRIUM_CODEX_WORKSPACE
+from atrium.ingest.automation_workspaces import AUTOMATION_WORKSPACES
 
 
 def is_excluded_automation(provider: str | None, workspace: str | None) -> bool:
@@ -15,5 +15,5 @@ def is_excluded_automation(provider: str | None, workspace: str | None) -> bool:
     return (
         provider == "codex"
         and bool(workspace)
-        and bool(re.match(ATRIUM_CODEX_WORKSPACE, workspace or ""))
+        and any(re.match(pattern, workspace or "") for pattern in AUTOMATION_WORKSPACES)
     )

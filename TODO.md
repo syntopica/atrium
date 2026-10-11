@@ -14,16 +14,19 @@
 
 ## Retrieval
 
-- [!] Dense-over-raw stays an explicit reserve lane. **Measured 2026-10-11 on the acceptance
+- [~] Dense-over-raw stays an explicit reserve lane. **Measured 2026-10-11 on the acceptance
   set:** the dense layer holds only synthesis (63,527) and notes (6,170); 29 of the 65
   conversation answers have no synthesis record, and dense finds 0 of them (11 of 36 when
   synthesis exists). So the lane would only matter for unsynthesized conversations:
   358,294 human-sized (40-2000 chars) user/assistant records in 11,509 of them. Embedding
   them ran at 7 records/s on this Mac under load (about 14 h of CPU at ~600% and 4 GB RSS,
-  pushing load to 190), so the run was stopped at 4,000 (`raw_dense.py`, resumable, in
-  the evaluation directory). **Blocked on an owner choice:** spend ~14 h of shared CPU
-  (or run it on nova) to measure the lane, or treat synthesis coverage (60% and rising)
-  as the fix for the same 29 questions and close this. Original text: even with an oracle
+  pushing load to 190), so the run was stopped at 4,000. **Owner chose nova (2026-10-11).**
+  Running there since 17:55 UTC: `/root/atrium-embed/nova_embed.py run` (atrium's own
+  `Embedder` code and model; parity with the Mac min cosine 0.9999999 on 64 rows), at
+  nice 19 / ionice idle, shortest text first, into `sorted.f32` + `order.npy`;
+  `guard.sh` kills the process group if `sorted.f32` stops growing for 20 min. Next:
+  copy both files into the evaluation directory, run `raw_dense.py score`, record the
+  result here, and remove `/root/atrium-embed` (it holds the private texts). Original text: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
   corpus scale. Blocked by the same condition as the Measurement item below

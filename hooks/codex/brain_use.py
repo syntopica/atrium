@@ -40,15 +40,31 @@ _EMPTY = {"lookups": 0, "read": []}
 def _tally_path(payload: dict) -> Path:
     key = f"{payload.get('session_id') or ''}-{payload.get('turn_id') or ''}"
     safe = re.sub(r"[^A-Za-z0-9_-]", "_", key)
-    return Path(tempfile.gettempdir()) / "atrium-brain-use" / f"{safe}.json"
+    return Path(tempfile.gettempdir()) / f"atrium-brain-use-{os.getuid()}" / f"{safe}.json"
+
+
+def _private_directory(directory: Path) -> None:
+    """Create ``directory`` 0700, or refuse one that is a link or someone else's.
+
+    The temporary directory can be the shared /tmp, where another user could
+    plant the directory, or a link inside it, to make this hook write elsewhere.
+    """
+    with contextlib.suppress(FileExistsError):
+        directory.mkdir(mode=0o700)
+    status = directory.lstat()
+    if directory.is_symlink() or status.st_uid != os.getuid() or status.st_mode & 0o077:
+        raise PermissionError(f"refusing unsafe tally directory {directory}")
 
 
 @contextlib.contextmanager
 def _locked(path: Path):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    with (path.parent / ".lock").open("w") as lock:
-        fcntl.flock(lock, fcntl.LOCK_EX)
+    _private_directory(path.parent)
+    descriptor = os.open(path.parent / ".lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
+    try:
+        fcntl.flock(descriptor, fcntl.LOCK_EX)
         yield
+    finally:
+        os.close(descriptor)
 
 
 def _load(path: Path) -> dict:
@@ -59,9 +75,10 @@ def _load(path: Path) -> dict:
 
 
 def _save(path: Path, tally: dict) -> None:
-    staged = path.with_suffix(f".{os.getpid()}.tmp")
-    staged.write_text(json.dumps(tally))
-    staged.replace(path)
+    descriptor, staged = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
+    with os.fdopen(descriptor, "w") as handle:
+        handle.write(json.dumps(tally))
+    Path(staged).replace(path)
 
 
 def _safe(path: str) -> bool:

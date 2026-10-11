@@ -8,6 +8,7 @@ from atrium.doctor.entry_point_health import entry_point_health
 from atrium.doctor.finding import Finding
 from atrium.doctor.index_coverage import index_coverage
 from atrium.doctor.read_archive_admissions import read_archive_admissions
+from atrium.doctor.record_total_coherence import record_total_coherence
 from atrium.doctor.refresh_health import refresh_health
 from atrium.doctor.synthesis_coherence import synthesis_coherence
 from atrium.doctor.synthesis_event_membership import synthesis_event_membership
@@ -31,6 +32,7 @@ def run_doctor(index: Path, archive: Path, stamp: Path, registry: Path) -> list[
     connection = open_store(index, read_only=True)
     try:
         findings.append(index_coverage(connection, admissions))
+        findings.append(record_total_coherence(connection))
     finally:
         connection.close()
     findings.append(synthesis_coherence(registry, admissions.all_ids))

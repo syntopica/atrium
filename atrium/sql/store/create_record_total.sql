@@ -1,0 +1,4 @@
+CREATE TABLE IF NOT EXISTS record_total (
+    k INTEGER PRIMARY KEY CHECK (k = 1),
+    n INTEGER NOT NULL CHECK (n >= 0)
+)

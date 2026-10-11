@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from atrium.context.ensure_context_indexes import ensure_context_indexes
 from atrium.store.ensure_dense_generation import ensure_dense_generation
+from atrium.store.ensure_record_total import ensure_record_total
 from atrium.store.schema import SCHEMA
 from atrium.store.verify_build_stamp import verify_build_stamp
 
@@ -53,4 +54,5 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
         verify_build_stamp(connection, stamp_if_empty=True)
         ensure_context_indexes(connection)
         ensure_dense_generation(connection)
+        ensure_record_total(connection)
     return connection

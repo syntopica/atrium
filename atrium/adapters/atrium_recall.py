@@ -8,7 +8,9 @@ from atrium.adapters.rendered_hits import rendered_hits
 from atrium.adapters.served_index import INDEX
 from atrium.recall.project_workspace import project_workspace
 from atrium.recall.recent_episodes import recent_episodes
+from atrium.state.state_directory import state_directory
 from atrium.store.open_store import open_store
+from atrium.telemetry.append_lane_event import append_lane_event
 
 
 @MCP.tool(annotations=READ_ONLY)
@@ -24,6 +26,7 @@ def atrium_recall(cwd: str, limit: int = 12) -> list[dict[str, Any]]:
     than answering with nothing.
     """
     limit = checked_limit(limit)
+    append_lane_event(state_directory(), "mcp.recall", "recent")
     workspace = project_workspace(cwd)
     if workspace is None:
         return []

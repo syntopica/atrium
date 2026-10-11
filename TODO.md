@@ -34,8 +34,10 @@
       cold (0.04 s warm) because 6,324 notes share one `words` index with 1.94M records,
       so the doclists of the whole corpus are walked and then joined to the notes. This
       is the latency case for the notes-only FTS item above. Also: the broad pass runs
-      `SELECT count(*) FROM records` each time (1.5 s cold, cached afterwards); the total
-      can come from build metadata. The per-prompt hook (`--lane dense`) is unaffected.
+      `SELECT count(*) FROM records` each time (1.5 s cold, cached afterwards); a
+      trigger-maintained `record_total` now replaces that request-path count after the
+      next writable open. Measure cold context latency on the updated index. The
+      per-prompt hook (`--lane dense`) is unaffected.
 
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
@@ -55,7 +57,9 @@
       `records_ai`. Usage since 2026-09-01 across every Claude Code transcript: 0 calls
       with lane `substring` (152 `atrium_context`, 35 `atrium_search`, 2 of them dense,
       no CLI `--lane substring`). Smallest next step: `dbstat` per object on a quiet
-      machine to replace the block estimate, then an owner decision between dropping the
+      machine to replace the block estimate, and review `atrium status --lanes` after a
+      stated observation window (new daily telemetry has no historical coverage).
+      Then obtain an owner decision between dropping the
       raw-corpus trigram table (fragment search answered by `instr` over a `words`
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
       "word-level separate from substring" decision is about ranking, not about trigram
@@ -106,6 +110,12 @@
   pipeline 2"), so that collision is gone. The writer is rocket-agents, and the work is
   filed there as `~/p/agents/TODO.md:351`; this entry tracks only Atrium's side, the
   per-writer cursor for incremental ingest, which waits on that format.
+  Correction 2026-10-11: "implementation is not started" above is stale. The segment
+  archive's stage 2 landed in agents `8cc2849` (content-addressed segments, incremental
+  capture; measured on 25,000 synthetic artifacts a warm no-op takes 1.91 s against the v1
+  baseline of 226.91 s). Stage 3 remains: transport, erasure, the pending slice handed to
+  `atrium ingest --partial`, and cutover. It moves with the capture code to
+  `syntopica/scribe` (owner decision 2026-10-11).
 - [ ] One JSONL rewritten in full on
       every import: 2.6 GB -> 3.36 GB in a day, and the 2026-08-31 recovery import
       took roughly 45 minutes to add 3,008 conversations. With an hourly refresh

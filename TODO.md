@@ -71,14 +71,11 @@
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
       "word-level separate from substring" decision is about ranking, not about trigram
       over 1.9M raw records, but it must be re-read before changing the schema.
-- [~] **Other temp automations are still indexed.** The codex synthesis lane's own
-      sessions (`/var/folders/.../T/atrium-codex-*`) are excluded since `e224b74`: the live
-      refresh of 2026-10-11 03:11 excluded 24,628 conversations, removed their raw rows and
-      18,457 synthesis rows (vectors 87,642 -> 69,262). Still indexed: ~2.6k from other
-      temp workspaces (`T/brain`, `T/worker`, `T/clips`, `T/bench`, `T/judge`). Smallest
-      next step: find what creates each prefix, then add it to `atrium_codex_workspace`'s
-      sibling predicate with a test; confirm the worker and agy lanes leave no captured
-      sessions. Capture-side exclusion belongs to scribe.
+- [ ] **Two temp prefixes of unknown origin stay indexed.** `bench-*` (12 codex
+      conversations) and `judge-*` (3), plus one `codex-access-*`, as of 2026-10-11; no
+      creator found in brain, worker, clips, atrium, agents or dotfiles. Smallest next
+      step: find the script that makes them, then add its exact pattern to
+      `automation_workspaces.py` with a test. Capture-side exclusion belongs to scribe.
 - [ ] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
       (2026-10-10, ~7.2k user records) by bytes: atrium synthesis prompts 23%, other
       records over 5k chars 20%, human-sized prompts 17%, tool-output-shaped text (Read

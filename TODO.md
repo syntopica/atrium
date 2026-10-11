@@ -14,7 +14,7 @@
 
 ## Retrieval
 
-- [!] **A notes-only FTS table is worth building; enabling it waits on the acceptance set.**
+- [ ] **A notes-only FTS table is worth building; the acceptance set now exists (2026-10-11, Measurement below), so it can be compared.**
       Re-measured 2026-10-10 (Codex, re-run and spot-checked here; artifacts in the instance
       state, `atrium/evaluations/notes-only-fts-2026-10-10/`): an external-content FTS5
       table over the 6,310 curated notes, same tokenizer as `words`, builds in 0.42 s at
@@ -31,7 +31,7 @@
       measured 1.5-2.1 s on 2026-10-11, of which lexical ranking is ~1.0 s (the curated
       broad pass walking the shared `words` doclists) and the CLI's embedder load 0.6 s.
 
-- [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
+- [ ] Dense-over-raw stays an explicit reserve lane (unblocked 2026-10-11 by the acceptance set; baseline dense R@10 0.14 on its 44 no-overlap questions): even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
   corpus scale. Blocked by the same condition as the Measurement item below

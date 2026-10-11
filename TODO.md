@@ -39,6 +39,13 @@
       next writable open. Measure cold context latency on the updated index. The
       per-prompt hook (`--lane dense`) is unaffected.
 
+- [ ] **174 curated note chunks are a bare heading.** 2026-10-11: of 6,324 `note` records,
+      174 are a single `#...` line with no body (138 under 40 chars), e.g. `## Security`
+      from `brain/projects/vertica-launch-map.md`. They carry a vector, and a dense query
+      returned two of them in its top four (scores 0.73 and 0.70, above the real answer).
+      Smallest next step: in `to_note_records`, fold a heading-only chunk into the chunk
+      that follows it, with a test; the next `ingest-notes` replaces them.
+
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full

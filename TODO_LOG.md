@@ -6,6 +6,25 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **Hook coverage for Claude Code and Codex, and visible brain use.**
+  Checked against the current [Codex hooks](https://learn.chatgpt.com/docs/hooks) and
+  [Claude Code hooks](https://code.claude.com/docs/en/hooks) references; reviewed by
+  Codex in two rounds (7 findings, then 4 residual ones, all addressed). Codex now gets the
+  session recall (`hooks/session-start-recall.sh`, moved from `~/.claude/hooks`, both
+  harnesses point at it), per-prompt context (the same `user-prompt-context.sh`, same
+  wire format), a `SubagentStart` pointer (its input has no task text) and
+  `hooks/codex/brain-use.sh` (PostToolUse + Stop, locked per-turn tally). The mod
+  (0.3.0) retrieves for each Agent task, counts lookups / notes read (evidence
+  `note_path` only) / notes cited, and shows `brain: 1 cited, 2 read, 1 lookup` or
+  `brain: no note cited`. Trial sessions: `claude -p` debug log showed recall,
+  prompt context, an observed MCP lookup and 3 cited notes; a subagent quoted the
+  evidence header from its own prompt; the Claude TUI footer read `Atrium · 2 past
+  sessions, 2 notes · brain: 1 cited, 2 read, 1 lookup`; the Codex TUI showed
+  `atrium: 12 episodes recalled` and `atrium · brain: 1 cited, 3 read, 1 lookup`.
+  Found on the way: Codex's `[mcp_servers.atrium]` had no `SYNTOPICA_DATA`, so every
+  Codex MCP call answered `index_unavailable_or_incompatible`; pinned in
+  `~/.codex/config.toml`. New Codex hooks still need `/hooks` review once.
+
 - [x] 2026-10-11 — **Cold `atrium context --lane auto` re-measured on the updated index.**
   Five fresh-process CLI queries took 1.5-2.1 s, with one 5.6 s outlier on the first,
   disk-cold run (was 1.7-7 s). cProfile of one fresh query (2.09 s): lexical hits 1.04 s

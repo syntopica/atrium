@@ -8,7 +8,7 @@
     {
       "name": "atrium-context",
       "source": "./plugins/atrium-context",
-      "description": "Retrieves atrium context for each prompt and shows what was retrieved under the prompt"
+      "description": "Retrieves atrium context for each prompt and subagent task, and shows how each turn used the brain"
     }
   ]
 }

@@ -119,6 +119,61 @@ shell hook, never both, or every prompt retrieves twice:
 /plugin install atrium-context --marketplace syntopica/atrium
 ```
 
+### Seeing whether the brain was used
+
+"2 notes" says what was handed to the model, not whether the model used it.
+The evidence block therefore asks the model to name the path of each note its
+answer relies on (`brain/...md`), and the hooks count what they can observe:
+
+- **cited**: note paths named in the turn's final answer;
+- **read**: notes an atrium lookup returned as evidence (`note_path`), or opened as files of the instance;
+- **lookups**: calls to the atrium MCP tools, `atrium context|search|recall` or `brain query`.
+
+In Claude Code the mod adds this to the green line, for example `Atrium · 1 past
+session, 2 notes · brain: 1 cited, 3 read, 1 lookup`, or `brain: no note cited`
+once a turn has answered without reading or citing any injected note. That is
+an observation, not proof the notes went unused: an answer can rely on a note
+without naming it. The cited paths
+go to the debug log. A subagent gets the same evidence: the mod retrieves on the
+Agent tool's task and appends it to the subagent's prompt, because a
+`SubagentStart` hook never sees the task (forks inherit the conversation and are
+skipped).
+
+### Codex
+
+Codex reads the same hook protocol as Claude Code (`hookSpecificOutput.additionalContext`,
+`systemMessage`, `cwd` on stdin; see the [Codex hooks reference](https://learn.chatgpt.com/docs/hooks)),
+so the recall and per-prompt hooks are the same scripts. Codex has no footer,
+so the brain account is one line at the end of a turn, from
+`hooks/codex/brain-use.sh`, and only when the turn used the brain; Codex draws
+every `systemMessage` as a warning, so "no note cited" is not said there. In
+`~/.codex/hooks.json`:
+
+```json
+{"hooks": {
+  "SessionStart": [{"hooks": [{"type": "command", "timeout": 25,
+    "command": "bash /path/to/atrium/hooks/session-start-recall.sh"}]}],
+  "UserPromptSubmit": [{"hooks": [{"type": "command", "timeout": 15,
+    "command": "SYNTOPICA_DATA=/path/to/instance sh /path/to/atrium/hooks/claude-code/user-prompt-context.sh"}]}],
+  "SubagentStart": [{"hooks": [{"type": "command", "timeout": 10,
+    "command": "sh /path/to/atrium/hooks/codex/subagent-start.sh"}]}],
+  "PostToolUse": [{"hooks": [{"type": "command", "timeout": 10,
+    "command": "SYNTOPICA_DATA=/path/to/instance sh /path/to/atrium/hooks/codex/brain-use.sh"}]}],
+  "Stop": [{"hooks": [{"type": "command", "timeout": 10,
+    "command": "SYNTOPICA_DATA=/path/to/instance sh /path/to/atrium/hooks/codex/brain-use.sh"}]}]
+}}
+```
+
+Codex's `SubagentStart` input carries no task text, only the agent's id and
+type, so a Codex subagent cannot be given evidence for its own task the way the
+Claude Code mod does it; `hooks/codex/subagent-start.sh` tells it that the
+index exists and how to query it instead.
+
+Codex runs a new or changed hook only after it is trusted: Codex records the
+hash of each reviewed hook definition, so review new and edited ones with
+`/hooks`. Codex's episodes need no Stop hook: the conversation export already
+archives Codex sessions.
+
 ## One context call for agents
 
 Use `atrium_context` through MCP for questions that depend on project history

@@ -27,17 +27,9 @@
       blocked by the same condition as Measurement below: the hand-labeled acceptance set.
       Build plan once it exists: the table plus its triggers in the schema, refreshed by
       `ingest-notes`, behind the curated lane's broad pass only, compared on that set.
-
-- [ ] **`atrium context --lane auto` (MCP and CLI) takes 1.7-7 s cold.** Profiled
-      2026-10-10 in-process with the resident matrix: 87% of the time is FTS execution in
-      `ranked_hits`; dense ranking is ~0.1 s. The curated broad pass alone costs 1.1-2.2 s
-      cold (0.04 s warm) because 6,324 notes share one `words` index with 1.94M records,
-      so the doclists of the whole corpus are walked and then joined to the notes. This
-      is the latency case for the notes-only FTS item above. Also: the broad pass runs
-      `SELECT count(*) FROM records` each time (1.5 s cold, cached afterwards); a
-      trigger-maintained `record_total` now replaces that request-path count after the
-      next writable open. Measure cold context latency on the updated index. The
-      per-prompt hook (`--lane dense`) is unaffected.
+      It is also the remaining latency case: a fresh-process `atrium context --lane auto`
+      measured 1.5-2.1 s on 2026-10-11, of which lexical ranking is ~1.0 s (the curated
+      broad pass walking the shared `words` doclists) and the CLI's embedder load 0.6 s.
 
 - [!] Dense-over-raw stays an explicit reserve lane: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis

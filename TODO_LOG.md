@@ -6,6 +6,21 @@
 
 ### 2026-10
 
+- [x] 2026-10-11 — **Unchanged conversations are skipped by revision, and the synthesis
+  lane's own sessions are excluded.** `e224b74`: `conversation_revisions` keeps the sha256
+  of each conversation's derived rows; a match skips the stored-text read-back. Codex
+  sessions in `/var/folders/*/T/atrium-codex-*` index as nothing with an
+  `excluded_automation` verdict, and their synthesis is dropped. Live, 2026-10-11 03:11:
+  24,628 conversations excluded, 18,457 synthesis rows removed, vectors 87,642 -> 69,262.
+  No-op timings on the live index: `ingest` 115 s cold, 84 s warm (118 s before; the
+  6 GB archive parse dominates, so the read-back was not most of it after all);
+  `ingest-synthesis` 23 s against 87 s. Codex review: 6 findings, all accepted.
+- [x] 2026-10-11 — **Only pushed code reaches the live index.** dotfiles `35d5c0c`:
+  `atrium-release` keeps `~/.local/share/atrium/release` at this repository's
+  `origin/main` (fetched locally, no SSH needed under launchd); `atrium-refresh` and the
+  `atrium` wrapper, hence `serve-context`, run from it. The refresh logs the release
+  commit at `stage ingest`. Previously the editable working tree ran, and put
+  uncommitted phase-C code on the live index at 03:11.
 - [x] 2026-10-10 — **A healthy retrieval no longer shows a warning on every prompt.**
   `$.ui.status` is drawn as a pinned warning (yellow, with the warning glyph; Claude Code
   2.1.296 hard-codes `color ?? "warning"` for pinned notices), and a hook's `systemMessage`

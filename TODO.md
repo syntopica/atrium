@@ -57,14 +57,6 @@
 
 ## Ingest / Store
 
-- [ ] **The hourly refresh runs the working tree, committed or not.** `atrium-refresh`
-      calls `uv run atrium` from `~/p/atrium`, whose venv installs the checkout editable,
-      so every hourly run imports whatever is on disk. On 2026-10-11 03:11 it ran the
-      uncommitted, unreviewed phase-C `run_ingest.py` against the live index (the run
-      at 02:35 was still HEAD code). Smallest next step: have the refresh run a pinned
-      install (a `uv tool install` from a tag, or a worktree at `origin/main`) so that
-      only pushed code reaches the live index.
-
 - [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured
       2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);
       `substrings_data` 3,800,043 blocks against `words_data` 387,204, roughly 15 GB
@@ -97,13 +89,6 @@
       next step: find which archive event kinds these come from (claude-code tool results
       with string content are admitted as `user`), then reject them in the adapter with a
       test per shape.
-- [ ] **Ingest re-reads every stored conversation to find six changes.** `write_conversation`
-      fetches each conversation's stored rows, text included, and compares them, for all
-      54,026 conversations every refresh: the 19:41 run took 3.6 min to write 2,462
-      records for 6 changed conversations. A per-conversation fingerprint table
-      (conversation id, revision sha, pipeline version) would skip unchanged ones before
-      building records or reading text. `ingest-synthesis` has the same shape (2.5 min,
-      48 records of 32,384 conversations). Independent of the archive v2 cursor below.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable

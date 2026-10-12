@@ -348,7 +348,8 @@
   `search_hybrid` fuses and buries the dense hit (dense alone finds 6 of 44, auto 1).
   Same on notes. Next steps, each measured on this set: (1) the routing rule in
   `search_hybrid` (when to trust dense over a weak lexical match), (2) the notes-only
-  FTS table below, (3) the dense-over-raw reserve lane. Known defect in `baseline.py`:
+  FTS table below, (3) the dense-over-raw reserve lane (measured and kept unshipped
+  2026-10-12, see `TODO_LOG.md`). Known defect in `baseline.py`:
   the `note` kind and `note` age share a group key, so that row prints n=40; rates are
   unaffected (fixed in `baseline.py`).
   **Routing, measured 2026-10-11 (`lanes.py`, `simulate.py`):** on the context surface,

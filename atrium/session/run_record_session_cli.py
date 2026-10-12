@@ -4,14 +4,22 @@ import os
 import sys
 from pathlib import Path
 
+from atrium.erase.read_erased import read_erased
 from atrium.session.record_session import record_session
 
 
-def run_record_session_cli(checkpoint_id: str, registry: Path, *, nothing_durable: bool) -> int:
+def run_record_session_cli(
+    checkpoint_id: str, registry: Path, state: Path, *, nothing_durable: bool
+) -> int:
     """Read the payload from stdin unless ``--nothing-durable``; report one line."""
     payload_text = "" if nothing_durable else sys.stdin.read()
     outcome = record_session(
-        checkpoint_id, payload_text, registry, os.environ, nothing_durable=nothing_durable
+        checkpoint_id,
+        payload_text,
+        registry,
+        os.environ,
+        nothing_durable=nothing_durable,
+        erased=read_erased(state),
     )
     if outcome.stdout:
         print(outcome.stdout)

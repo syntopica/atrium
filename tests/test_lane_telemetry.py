@@ -11,6 +11,7 @@ from atrium import cli
 from atrium.adapters import atrium_context as context_module
 from atrium.adapters import atrium_recall as recall_module
 from atrium.adapters import atrium_search as search_module
+from atrium.commands import run_command
 from atrium.store.open_store import open_store
 from atrium.telemetry.aggregate_lane_usage import aggregate_lane_usage
 from atrium.telemetry.append_lane_event import append_lane_event
@@ -47,9 +48,9 @@ def test_write_failure_warns_and_does_not_raise(tmp_path, capsys):
 @pytest.mark.parametrize(
     ("argv", "handler", "module", "lane"),
     [
-        (["search", "private query", "--substring"], "run_search", cli, "substring"),
+        (["search", "private query", "--substring"], "run_search", run_command, "substring"),
         (["context", "private query", "--lane", "words"], "run_context_cli", None, "words"),
-        (["recall"], "run_recall", cli, "recent"),
+        (["recall"], "run_recall", run_command, "recent"),
     ],
 )
 def test_cli_entrypoints_append_once(tmp_path, monkeypatch, argv, handler, module, lane):

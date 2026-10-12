@@ -4,16 +4,20 @@ from collections.abc import Mapping
 from datetime import UTC, datetime
 from typing import Any
 
+from atrium.erase.read_erased import read_erased
 from atrium.recall.project_workspace import project_workspace
 from atrium.session.boundary_in_transcript import boundary_in_transcript
+from atrium.session.build_session_record import SOURCE
 from atrium.session.frozen_checkpoint import frozen_checkpoint
 from atrium.session.normalize_timestamp import normalize_timestamp
 from atrium.session.over_stop_limits import over_stop_limits
 from atrium.session.read_stop_context import read_stop_context
 from atrium.session.refusal_reason import refusal_reason
 from atrium.session.reissue_refusal import reissue_refusal
+from atrium.session.session_conversation_id import session_conversation_id
 from atrium.session.stop_refusal import stop_refusal
 from atrium.session.write_session_state import write_session_state
+from atrium.state.state_directory import state_directory
 
 
 def session_stop_decision(
@@ -21,12 +25,14 @@ def session_stop_decision(
 ) -> dict[str, object] | None:
     """Return the Stop feedback JSON to print, or None.
 
-    Silent (None) is the common answer: excluded sessions, nothing new, or a
-    checkpoint already consumed. A refusal freezes the checkpoint first, so
+    Silent (None) is the common answer: excluded sessions, nothing new, a
+    checkpoint already consumed, or a session whose conversation was erased. A refusal freezes the checkpoint first, so
     the recording turn's own records fall outside the episode.
     """
     context = read_stop_context(payload, environ)
-    if context is None:
+    if context is None or session_conversation_id(SOURCE, context.session_id) in read_erased(
+        state_directory(environ)
+    ):
         return None
     active = bool(payload.get("stop_hook_active"))
     pending = context.state.get("pending")

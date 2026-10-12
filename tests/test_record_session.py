@@ -131,3 +131,42 @@ def test_disabled_environment_and_unknown_ids_are_refused(tmp_path):
     assert off.status == 3
     assert record_session("../../etc", json.dumps(GOOD), registry, environ).status == 3
     assert record_session("0" * 16, json.dumps(GOOD), registry, environ).status == 3
+
+
+def test_a_session_whose_conversation_was_erased_records_nothing(tmp_path):
+    from atrium.session.session_conversation_id import session_conversation_id
+
+    _, environ, checkpoint, registry = _frozen(tmp_path)
+    erased = {session_conversation_id("claude-code", "s1")}
+    outcome = record_session(checkpoint, json.dumps(GOOD), registry, environ, erased=erased)
+    assert outcome.status == 0 and "erased" in outcome.stdout
+    assert list(read_records(registry)) == []
+    assert json.loads(session_state_path("s1", environ).read_text())["pending"] is None
+
+
+def test_an_erased_session_is_consumed_before_its_payload_is_judged(tmp_path):
+    from atrium.session.session_conversation_id import session_conversation_id
+
+    _, environ, checkpoint, registry = _frozen(tmp_path)
+    erased = {session_conversation_id("claude-code", "s1")}
+    outcome = record_session(checkpoint, "not json", registry, environ, erased=erased)
+    assert outcome.status == 0 and "erased" in outcome.stdout
+    assert json.loads(session_state_path("s1", environ).read_text())["pending"] is None
+
+
+def test_an_erased_session_is_never_asked_for_a_record(tmp_path):
+    from atrium.erase.remember_erased import remember_erased
+    from atrium.session.session_conversation_id import session_conversation_id
+
+    cwd = tmp_path / "home" / "p" / "proj"
+    cwd.mkdir(parents=True)
+    (cwd / ".git").mkdir()
+    transcript = T(tmp_path / "s1.jsonl").append(
+        T.prompt("u1", "do it", "2026-09-16T11:00:00Z"),
+        T.answer("a1", "done " * 8_000, "2026-09-16T11:05:00Z"),
+    )
+    environ = {"ATRIUM_STATE": str(tmp_path / "state")}
+    (tmp_path / "state").mkdir()
+    remember_erased(tmp_path / "state", [session_conversation_id("claude-code", "s1")])
+    payload = {"session_id": "s1", "transcript_path": str(transcript.path), "cwd": str(cwd)}
+    assert session_stop_decision(payload, environ, NOW) is None

@@ -41,6 +41,24 @@
     `record-session` run by hand take no lock, so one active during an erase can write
     erased material back. Have them take the same locks (smallest step: `hold_locks`
     around `run_ingest_synthesis` and each `curate-*` writer).
+    Update 2026-10-12 (Codex review, claims checked against the source): that smallest
+    step breaks the refresh. `atrium-refresh` runs under `atrium-lock refresh.lock` and
+    starts `uv run atrium ingest-synthesis` as a child; a fresh `open()` + `flock` in the
+    child conflicts with the parent's descriptor. Gating at the `bin/atrium` wrapper
+    misses direct `uv run atrium` calls, and `atrium-lock --wait` exits 0 on timeout.
+    The writer set is wider than listed: `ingest`, `ingest-notes`, `embed`,
+    `prepare-context`, `synthesize`, `rekey-synthesis --apply` (its `records.bak-*` are
+    scanned by erase) and all six `curate-*`. `record-session` cannot be left out:
+    `session_conversation_id` uses the exporter's formula, so a live session can be in
+    an erasure plan and its record written back after erase. `serve-context`'s
+    background `_build` (`dense_matrix_holder.py:71`) can save a matrix from a
+    pre-erase snapshot after erase unlinked it. Proposed design: a new engine-owned
+    `erase.lock`, shared and non-blocking for writers, exclusive for `erase --apply`
+    before its inventory, then the existing `refresh`/`synthesis` locks; a persistent
+    erased-conversation-id set written before the first delete and checked by
+    `record-session` before `write_record` (refuse; retryable non-zero while erase holds
+    the lock, checkpoint kept); recheck the index generation before saving the dense
+    matrix. Awaiting the owner's go-ahead.
   - [ ] Freshness after cutover: `archive_path()` stays the full materialized export,
     regenerated on every generation change, so `doctor` coverage and `recall` keep reading
     one file. Record the ingested generation id in the index; report stale when

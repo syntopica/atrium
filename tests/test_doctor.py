@@ -55,7 +55,8 @@ def test_a_dead_refresh_is_broken_not_merely_stale(tmp_path):
     stamp = tmp_path / "last-refresh"
     stamp.write_text("1000")
     assert refresh_health(stamp, now=1000 + 60).severity == "ok"
-    assert refresh_health(stamp, now=1000 + 7200).severity == "warn"
+    assert refresh_health(stamp, now=1000 + 5100).severity == "ok"
+    assert refresh_health(stamp, now=1000 + 10800).severity == "warn"
     # Eleven days is what actually happened to the sync orchestrator, and every
     # run still printed "done".
     assert refresh_health(stamp, now=1000 + 11 * 86400).severity == "broken"

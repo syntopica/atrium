@@ -46,7 +46,8 @@ def test_refresh_codes_follow_the_severity(tmp_path):
     assert refresh_health(stamp).code == "refresh_never_recorded"
     stamp.write_text("1000")
     assert refresh_health(stamp, now=1060).code == "refresh_fresh"
-    assert refresh_health(stamp, now=1000 + 7200).code == "refresh_stale"
+    assert refresh_health(stamp, now=1000 + 5100).code == "refresh_fresh"
+    assert refresh_health(stamp, now=1000 + 10800).code == "refresh_stale"
     assert refresh_health(stamp, now=1000 + 86400).code == "refresh_dead"
 
 

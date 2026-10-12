@@ -5,12 +5,15 @@ from pathlib import Path
 
 from atrium.doctor.finding import Finding
 
-# The refresh runs on a 15-minute floor and a LaunchAgent, so an hour without
-# one is already unusual and six hours means nothing is feeding the index. The
+# The LaunchAgent starts a refresh every hour and the stamp is written when it
+# finishes, 15-25 minutes later, so between two healthy runs the stamp already
+# ages past an hour: a one-hour threshold put a degraded warning on every prompt
+# for about twenty minutes of each hour (2026-10-12). Two hours means a whole run
+# was missed or ran far long; six means nothing is feeding the index. The
 # sync orchestrator went eleven days dead on a stale lock and every run still
 # printed "done"; the whole point of this check is that silence stops counting
 # as health.
-STALE_AFTER_SECONDS = 3600
+STALE_AFTER_SECONDS = 7200
 BROKEN_AFTER_SECONDS = 21600
 CODES = {"ok": "refresh_fresh", "warn": "refresh_stale", "broken": "refresh_dead"}
 

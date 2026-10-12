@@ -12,41 +12,6 @@
 > verified complete · `[-]` obsolete or superseded. Closed work moves to
 > `TODO_LOG.md`.
 
-## Retrieval
-
-- [~] Dense-over-raw stays an explicit reserve lane. **Measured 2026-10-11 on the acceptance
-  set:** the dense layer holds only synthesis (63,527) and notes (6,170); 29 of the 65
-  conversation answers have no synthesis record, and dense finds 0 of them (11 of 36 when
-  synthesis exists). So the lane would only matter for unsynthesized conversations:
-  358,294 human-sized (40-2000 chars) user/assistant records in 11,509 of them. Embedding
-  them ran at 7 records/s on this Mac under load (about 14 h of CPU at ~600% and 4 GB RSS,
-  pushing load to 190), so the run was stopped at 4,000. **Owner chose nova (2026-10-11).**
-  **Measured 2026-10-12 at full corpus scale** (nova, 12 shards x 2 ONNX threads, all
-  358,294 records, 18:02 to 06:39 UTC; the 20-min guard killed the long-text tail once
-  at 348,000 and it resumed with 50-text chunks and a 60-min guard; `/root/atrium-embed`
-  removed). `raw_dense.py score`, raw vectors appended to the shipped matrix in one
-  ranking, R@10 / MRR:
-  all 85: shipped 0.20 / 0.10, with raw 0.19 / 0.12;
-  conversations with synthesis (36): 0.31 / 0.13 against 0.17 / 0.08;
-  conversations without synthesis (29): 0.00 / 0.00 against 0.17 / 0.12;
-  notes (20): 0.30 / 0.21 against 0.25 / 0.21.
-  Raw vectors find what synthesis lacks but crowd out synthesis and notes when they share
-  one ranking, so a single merged matrix is not a win. Raw as its own lane fused with the
-  shipped one (RRF, k=60) is no better: all 0.18 / 0.11, with synthesis 0.19 / 0.10,
-  without 0.14 / 0.06, notes 0.20 / 0.20. Conclusion: neither form beats the shipped
-  dense lane overall; the gain is confined to unsynthesized conversations, which more
-  synthesis coverage addresses without 358k extra vectors. Recommend keeping
-  dense-over-raw unshipped; owner to confirm before this closes. The vectors are kept in
-  `~/p/wiki/atrium/evaluations/acceptance-2026-10-11/` (`shard_*.f32`, `order.npy`).
-  Original text: even with an oracle
-  embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
-  alone. "No ANN" is not approved until the reserve lane is measured at full
-  corpus scale. Blocked by the same condition as the Measurement item below
-  (2026-09-01): the only question set is machine-extracted, and this item
-  exists precisely to justify a production decision ("no ANN"), which that set
-  cannot do. Smallest unblock: the hand-labeled set, then the measurement is
-  hours of embed CPU plus the existing eval harness.
-
 ## Ingest / Store
 
 - [~] **Segment archive v2 stage 3, workstream 2 (scribe plan

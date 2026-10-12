@@ -8,6 +8,16 @@
 
 ### 2026-10
 
+- [x] 2026-10-12 — **Dense-over-raw stays unshipped (owner confirmed).** All 358,294
+  human-sized raw records embedded on nova (12 shards x 2 ONNX threads, 2026-10-11 18:02 to
+  2026-10-12 06:39 UTC; `/root/atrium-embed` removed). `raw_dense.py score` on the 85-question
+  acceptance set, dense lane only, R@10 / MRR: shipped 0.20 / 0.10; raw in the same ranking
+  0.19 / 0.12; raw as its own lane fused by RRF (k=60) 0.18 / 0.11. Raw finds unsynthesized
+  conversations (0.00 to 0.17) but crowds out synthesis (0.31 to 0.17) and notes (0.30 to
+  0.25). That gap is for synthesis coverage, not 358k extra vectors. Not measured: fusion
+  with the lexical lanes. Vectors kept in
+  `~/p/wiki/atrium/evaluations/acceptance-2026-10-11/`.
+
 - [x] 2026-10-11 — **Scribe archives harness-only `<tag>` text as role `system`.** Scribe
   `72c0e7d`: an event whose whole text is harness tags (system-reminder, command-*,
   local-command-*, task-notification, user-prompt-submit-hook) becomes kind `message`, role

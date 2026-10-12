@@ -416,3 +416,12 @@
       `sha256(conversation_id, event_id)`; the canonical contract should carry the
       identity itself. It re-keys every archived event, so it lands with the v2
       stage 3 cutover.
+
+- [ ] **Bulk jobs on nova must be memory-capped.** Filed from the hosting
+      ops repo (2026-10-12): the nova embedding run of 2026-10-11
+      (`run_shards.sh`, 12 `nova_embed.py` shards at 5-8 GB RSS each) had a
+      guard that watched output growth, not memory, and the kernel OOM-killed
+      the host's MariaDB at 2026-10-12 04:10 UTC. nova serves production.
+      Next step: any future run there goes in a capped transient unit
+      (`systemd-run --scope -p MemoryMax=<n>G`) with a memory guard, or runs
+      somewhere else.

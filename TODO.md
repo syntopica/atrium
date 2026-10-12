@@ -416,3 +416,14 @@
       20 s). Next step: find why the synthesis driver holds 14 GB (the model
       lives in Ollama, not in it), and decide whether `serve-context` should
       pin its working set (matrix and ONNX session) so it survives pressure.
+
+- [ ] **The local synthesis lane finishes nothing and holds ~38 GB doing it.**
+      `synthesis.log` on 2026-10-12: every local pass from 11:36 to 18:23
+      ended `exit 124` (the 3300 s time box) or 143, with no `synthesized`
+      line, and the 18:38 pass had printed only "13 conversations were left
+      half done; walking them next" after 20 min. Each pass keeps qwen3.6:35b
+      loaded in Ollama (24 GB) and a 14 GB driver process, then the next tick
+      starts 15 min later. Next step: find why the half-done walk never
+      completes a conversation (worker transport, `ATRIUM_LOCAL_TRANSPORT=worker`
+      queue, or the model), and stop scheduling the lane while it produces
+      nothing.

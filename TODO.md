@@ -21,14 +21,24 @@
   358,294 human-sized (40-2000 chars) user/assistant records in 11,509 of them. Embedding
   them ran at 7 records/s on this Mac under load (about 14 h of CPU at ~600% and 4 GB RSS,
   pushing load to 190), so the run was stopped at 4,000. **Owner chose nova (2026-10-11).**
-  Running there since 18:02 UTC: `/root/atrium-embed/run_shards.sh` starts 12
-  `nova_embed.py <k> 12` workers (atrium's own `Embedder` code and model, 2 ONNX threads
-  each; parity with the Mac min cosine 0.9999999 on 64 rows), at nice 19 / ionice idle,
-  shortest text first, into `shard_<k>.f32` + `order.npy`. 12x2 threads ran 30/s against
-  20.8/s for one 26-thread process on median texts. `guard.sh` kills the process group
-  if the shards stop growing for 20 min; `done.flag` marks the end. Next: copy the shards
-  and `order.npy` into the evaluation directory, run `raw_dense.py score`, record the
-  result here, and remove `/root/atrium-embed` (it holds the private texts). Original text: even with an oracle
+  **Measured 2026-10-12 at full corpus scale** (nova, 12 shards x 2 ONNX threads, all
+  358,294 records, 18:02 to 06:39 UTC; the 20-min guard killed the long-text tail once
+  at 348,000 and it resumed with 50-text chunks and a 60-min guard; `/root/atrium-embed`
+  removed). `raw_dense.py score`, raw vectors appended to the shipped matrix in one
+  ranking, R@10 / MRR:
+  all 85: shipped 0.20 / 0.10, with raw 0.19 / 0.12;
+  conversations with synthesis (36): 0.31 / 0.13 against 0.17 / 0.08;
+  conversations without synthesis (29): 0.00 / 0.00 against 0.17 / 0.12;
+  notes (20): 0.30 / 0.21 against 0.25 / 0.21.
+  Raw vectors find what synthesis lacks but crowd out synthesis and notes when they share
+  one ranking, so a single merged matrix is not a win. Raw as its own lane fused with the
+  shipped one (RRF, k=60) is no better: all 0.18 / 0.11, with synthesis 0.19 / 0.10,
+  without 0.14 / 0.06, notes 0.20 / 0.20. Conclusion: neither form beats the shipped
+  dense lane overall; the gain is confined to unsynthesized conversations, which more
+  synthesis coverage addresses without 358k extra vectors. Recommend keeping
+  dense-over-raw unshipped; owner to confirm before this closes. The vectors are kept in
+  `~/p/wiki/atrium/evaluations/acceptance-2026-10-11/` (`shard_*.f32`, `order.npy`).
+  Original text: even with an oracle
   embedder the zero-lexical-overlap class recovers only 3 of 25 from synthesis
   alone. "No ANN" is not approved until the reserve lane is measured at full
   corpus scale. Blocked by the same condition as the Measurement item below

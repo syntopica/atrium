@@ -425,5 +425,7 @@
       loaded in Ollama (24 GB) and a 14 GB driver process, then the next tick
       starts 15 min later. Next step: find why the half-done walk never
       completes a conversation (worker transport, `ATRIUM_LOCAL_TRANSPORT=worker`
-      queue, or the model), and stop scheduling the lane while it produces
-      nothing.
+      queue, or the model). The job was booted out on 2026-10-12 19:00
+      (`launchctl bootout gui/$(id -u)/com.cristian.atrium-synthesis`); bring
+      it back with `launchctl bootstrap gui/$(id -u)
+      ~/Library/LaunchAgents/com.cristian.atrium-synthesis.plist` once fixed.

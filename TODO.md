@@ -403,3 +403,16 @@
       Next step: any future run there goes in a capped transient unit
       (`systemd-run --scope -p MemoryMax=<n>G`) with a memory guard, or runs
       somewhere else.
+
+- [ ] **The context service is swapped out under memory pressure, so the
+      prompt hook times out.** Observed 2026-10-12 ~18:55 local: the hook
+      reported `context_service_timeout`; swap was 44.6 of 45 GB used, and
+      `serve-context` (pid 1046) had 44 MB resident and 1.3 GB swapped or
+      compressed. Direct socket requests took 0.2-0.6 s, but the first
+      `atrium context --lane dense` after idle took 23 s (later ones 1.2-1.5 s),
+      past the hook's 10 s kill. Holders at the time: Ollama `llama-server`
+      24 GB (qwen3.6:35b, reloaded mid-pass), Backblaze `bztransmit` 17 GB,
+      the `atrium synthesize --workers 4` Python process 14 GB (flat over
+      20 s). Next step: find why the synthesis driver holds 14 GB (the model
+      lives in Ollama, not in it), and decide whether `serve-context` should
+      pin its working set (matrix and ONNX session) so it survives pressure.

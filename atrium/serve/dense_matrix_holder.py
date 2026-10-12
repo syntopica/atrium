@@ -43,6 +43,9 @@ class DenseMatrixHolder:
         finally:
             connection.close()
         save_dense_matrix(self.matrix, self.cache)
+        # Served anyway, flagged stale by `current`; only the file is taken back.
+        if self._live_generation() != self.matrix.generation:
+            self.cache.unlink(missing_ok=True)
 
     def current(self, live: int | None) -> tuple[DenseMatrix | None, list[str]]:
         """Return the matrix to rank and the warnings a reader must see with it."""
@@ -75,9 +78,24 @@ class DenseMatrixHolder:
                 matrix = build_dense_matrix(connection)
             finally:
                 connection.close()
+            # An erase may have deleted vectors while this snapshot was copied,
+            # and unlinked the saved file: neither save nor serve a matrix the
+            # index has already moved past, and take back a save that raced it.
+            if self._live_generation() != matrix.generation:
+                return
             save_dense_matrix(matrix, self.cache)
+            if self._live_generation() != matrix.generation:
+                self.cache.unlink(missing_ok=True)
+                return
         except Exception as error:
             print(f"atrium serve-context: rebuild failed: {error}", file=sys.stderr, flush=True)
             return
         with self._lock:
             self.matrix = matrix
+
+    def _live_generation(self) -> int | None:
+        connection = open_store(self.index, read_only=True)
+        try:
+            return read_dense_generation(connection)
+        finally:
+            connection.close()

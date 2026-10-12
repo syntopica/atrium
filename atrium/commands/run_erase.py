@@ -6,12 +6,14 @@ from pathlib import Path
 from atrium.erase.archive_generation import archive_generation
 from atrium.erase.clear_partials import clear_partials
 from atrium.erase.delete_erased_rows import delete_erased_rows
+from atrium.erase.erase_lock_file import erase_lock_file
 from atrium.erase.erased_curation_candidates import erased_curation_candidates
 from atrium.erase.erased_record_files import erased_record_files
 from atrium.erase.erased_record_identifiers import erased_record_identifiers
 from atrium.erase.hold_locks import hold_locks
 from atrium.erase.journaled_identifiers import journaled_identifiers
 from atrium.erase.read_erasure_plan import read_erasure_plan
+from atrium.erase.remember_erased import remember_erased
 from atrium.erase.scrub_curation import scrub_curation
 from atrium.serve.dense_matrix_file import dense_matrix_file
 from atrium.sql.load_sql import load_sql
@@ -33,12 +35,11 @@ def run_erase(index: Path, plan_path: Path, archive: Path, *, apply: bool) -> in
     writes only with ``apply``, and only when the configured archive -- the one
     the next ingest reads -- names the plan's target generation as its own or
     an ancestor: an archive still holding the conversation would bring it back,
-    and get it re-synthesized. Writes under the refresh and synthesis locks, and
+    and get it re-synthesized. Writes holding the erase lock exclusively, which
+    every writing command takes shared, then the refresh and synthesis locks;
     every identifier is journaled before the first delete, so a run that fails
-    partway is finished by running it again. Not coordinated: writers run by
-    hand outside those locks -- `ingest-synthesis`, the `curate-*` commands --
-    and `record-session`, which writes a live session's record from a hook. Run
-    erase with none of them active (TODO, "Writers outside the instance lock").
+    partway is finished by running it again. The erased conversation ids are
+    also kept for good, so a live session's hook cannot record one back later.
     """
     plan = read_erasure_plan(plan_path)
     conversation_ids = set(plan.conversation_ids)
@@ -68,9 +69,14 @@ def run_erase(index: Path, plan_path: Path, archive: Path, *, apply: bool) -> in
         print(json.dumps(report, sort_keys=True))
         return 0
     try:
-        with hold_locks([instance / "refresh.lock", registry / "synthesis.lock"]):
-            # Found again under the locks: a pass may have written one since.
+        with hold_locks(
+            [erase_lock_file(instance), instance / "refresh.lock", registry / "synthesis.lock"]
+        ):
+            # Found again under the locks: a writer may have added one since.
             files = erased_record_files(registry, conversation_ids)
+            candidates = erased_curation_candidates(curation, conversation_ids)
+            report["curation_candidates"] = len(candidates)
+            remember_erased(instance, conversation_ids)
             journal = instance / f"erase-{plan.to_generation_id}.journal.json"
             needles = journaled_identifiers(
                 journal, conversation_ids | erased_record_identifiers(files) | set(candidates)
@@ -102,7 +108,9 @@ def run_erase(index: Path, plan_path: Path, archive: Path, *, apply: bool) -> in
             dense_matrix_file(instance).unlink(missing_ok=True)
             journal.unlink()
     except BlockingIOError:
-        print("refused: a refresh or a synthesis pass holds the instance; run again after it")
+        print(
+            "refused: a writer, a refresh or a synthesis pass holds the instance; run again after it"
+        )
         return 3
     report["applied"] = True
     print(json.dumps(report, sort_keys=True))

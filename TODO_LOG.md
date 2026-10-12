@@ -8,6 +8,30 @@
 
 ### 2026-10
 
+- [x] 2026-10-12 — **Erase coordinated with every writer.** Writers run by hand took no lock,
+  so one active during `atrium erase --apply` could write erased material back. Taking the
+  refresh lock in the engine would have broken the refresh: `atrium-refresh` holds it through
+  `atrium-lock` and runs `uv run atrium ingest-synthesis` as a child, whose fresh `flock`
+  conflicts with its parent's. Design adjudicated with Codex.
+  - Result: a new `<state>/erase.lock`. `main` takes it shared and non-blocking for the 14
+    writing commands (`atrium/erase/writer_commands.py`; `synthesize` unless `--dry-run`,
+    `rekey-synthesis` only with `--apply`) and refuses with exit 3 while an erase holds it.
+    `erase --apply` takes it exclusively before the refresh and synthesis locks, and
+    re-inventories registry files and curation candidates under them. Erased conversation
+    ids go to `<state>/erased-conversations.txt` (fsynced, directory too) before the first
+    delete and stay after: `session-stop` never asks an erased session for a record, and
+    `record-session` consumes its checkpoint without writing. `serve-context` neither saves
+    nor serves a rebuilt dense matrix the index has moved past, and takes back a save that
+    raced an erase. Dispatch moved from `atrium/cli.py` to `atrium/commands/run_command.py`.
+    Not done: the gate is per instance, so a writer pointed with `--index` at another index
+    is still refused during an erase (conservative, by choice).
+  - Evidence: `uv run pytest` 582 passed, 2 skipped; `uv run codeality-py gate`, ruff and
+    mypy clean. New tests fail without the change (4 of them checked by reverting it): writer
+    refused under erase, erase refused under a writer, writer runs under a held refresh lock,
+    erased ids kept after completion, erased session consumed and never asked, matrix rebuild
+    overtaken by a delete. Codex reviewed the diff; its two defects (later checkpoints, no
+    directory fsync) are fixed.
+
 - [x] 2026-10-12 — **Dense-over-raw stays unshipped (owner confirmed).** All 358,294
   human-sized raw records embedded on nova (12 shards x 2 ONNX threads, 2026-10-11 18:02 to
   2026-10-12 06:39 UTC; `/root/atrium-embed` removed). `raw_dense.py score` on the 85-question

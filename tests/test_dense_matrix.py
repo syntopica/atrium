@@ -124,3 +124,26 @@ def test_an_index_without_the_counter_reads_as_unversioned(tmp_path):
         connection.execute(load_test_sql("drop_dense_generation"))
     assert read_dense_generation(connection) is None
     connection.close()
+
+
+def test_a_rebuild_overtaken_by_a_delete_is_neither_saved_nor_served(store, tmp_path, monkeypatch):
+    from atrium.serve.dense_matrix_holder import DenseMatrixHolder
+
+    cache = tmp_path / "dense-matrix.npz"
+    holder = DenseMatrixHolder(tmp_path / "index.sqlite3", cache)
+
+    def build_then_erase(connection):
+        matrix = build_dense_matrix(connection)
+        with store:
+            write_conversation(store, "syn-far", [])
+        return matrix
+
+    monkeypatch.setattr("atrium.serve.dense_matrix_holder.build_dense_matrix", build_then_erase)
+    holder._build()
+    assert holder.matrix is None
+    assert not cache.exists()
+    monkeypatch.undo()
+    holder._build()
+    assert holder.matrix is not None
+    assert holder.matrix.generation == read_dense_generation(store)
+    assert cache.exists()

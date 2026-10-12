@@ -330,3 +330,47 @@ def test_erase_leaves_no_erased_text_in_the_index_files(state, monkeypatch):
     )
     assert b"exits with status 3" not in stored
     assert b"deploy script" not in stored
+
+
+def test_erase_remembers_the_erased_conversations_after_it_completes(state, monkeypatch):
+    from atrium.erase.read_erased import read_erased
+
+    index, _registry, _backup, codex = _erasable(state)
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
+    assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 0
+    assert read_erased(state) == {CLAUDE}
+    assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 0
+    assert (state / "erased-conversations.txt").read_text() == f"{CLAUDE}\n"
+    assert codex not in read_erased(state)
+
+
+def test_a_writer_is_refused_while_an_erase_holds_the_instance(state, capsys):
+    import fcntl
+
+    index, _registry, _backup, _codex = _erasable(state)
+    with (state / "erase.lock").open("a") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        capsys.readouterr()
+        assert main(["--index", str(index), "ingest-synthesis"]) == 3
+        assert "an erase holds the instance" in capsys.readouterr().err
+        assert main(["--index", str(index), "status"]) == 0
+
+
+def test_erase_is_refused_while_a_writer_holds_the_instance(state, monkeypatch):
+    from atrium.erase.hold_writer_gate import hold_writer_gate
+
+    index, registry, _backup, _codex = _erasable(state)
+    monkeypatch.setattr("atrium.cli.archive_path", lambda: MATERIALIZED)
+    with hold_writer_gate(state):
+        assert main(["--index", str(index), "erase", "--plan", str(PLAN), "--apply"]) == 3
+    assert _count(index, CLAUDE) == 3
+    assert len(list((registry / "records").glob("*.json"))) == 2
+
+
+def test_a_writer_runs_under_a_refresh_that_holds_its_own_lock(state):
+    import fcntl
+
+    index, _registry, _backup, _codex = _erasable(state)
+    with (state / "refresh.lock").open("a") as held:
+        fcntl.flock(held, fcntl.LOCK_EX)
+        assert main(["--index", str(index), "ingest-synthesis"]) == 0

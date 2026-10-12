@@ -143,7 +143,7 @@ test('says why nothing was retrieved when retrieval was degraded', async ($, on)
 
 test('keeps routine warnings and a rebuilding matrix out of sight', async ($, on) => {
   const seen: any = {}
-  const routine = { ...ANSWER, degraded: true, warnings: ['unresolved_indexed_link', 'unsafe_link_ignored', 'retrieval_candidate_limit_reached', 'dense_matrix_stale_rebuilding'] }
+  const routine = { ...ANSWER, degraded: true, warnings: ['unresolved_indexed_link', 'unsafe_link_ignored', 'invalid_note_path', 'linked_parent_deduplicated', 'retrieval_candidate_limit_reached', 'dense_matrix_stale_rebuilding'] }
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(routine), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
   expect(seen.status).toBeUndefined()

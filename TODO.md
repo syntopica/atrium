@@ -337,6 +337,22 @@
 
 ## Measurement
 
+- [ ] **Two retrieval wins measured, neither shipped.** 2026-10-14/15 over the
+      85-question acceptance set (`~/p/wiki/atrium/evaluations/ideas-2026-10-14/`,
+      R@10/MRR, context surface, word+dense RRF w=0.5). Production today
+      (similarity prompt on both sides): 0.35/0.19. EmbeddingGemma's retrieval
+      prompts (`task: search result | query:` for queries, document prompt for
+      records): 0.44/0.24; the query prompt alone against today's vectors: 0.40/0.23
+      (`prompts_eval.py 6`, over the 68,955 semantic records still indexed). A
+      cross-encoder rerank of the depth-30 candidates (BAAI/bge-reranker-v2-m3):
+      0.35/0.20 -> 0.46/0.33, conversations 0.26 -> 0.42 (`rerank_eval.py`).
+      Caveats: 85 questions, and `lanes.json` was captured before the 2026-10-14
+      admission and forget passes. Smallest next step: recapture `lanes.json` on
+      the clean index, confirm both, then ship the query prompt first (no
+      re-embed), and measure the reranker's per-query latency on the Mac before
+      putting it in `context`; re-embedding all documents with the document prompt
+      is the larger, later step.
+
 - [~] Acceptance set — built; the measurement phase is unblocked. **Protocol decided
   2026-10-11 (owner):** GPT-6 labels, Claude audits a sample, rather than the owner
   labeling by hand. In progress in the instance state

@@ -10,6 +10,6 @@ export function detailItem(item) {
     date: (item.authored_at ?? '').slice(0, 10),
     source: evidenceSource(item),
     score: typeof item.score === 'number' ? Math.round(item.score * 100) / 100 : null,
-    title: detailTitle(item.text),
+    title: detailTitle(item.text, (item.excerpt_start ?? 0) > 0),
   }
 }

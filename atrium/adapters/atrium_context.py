@@ -1,5 +1,6 @@
 """The `atrium_context` MCP tool."""
 
+import time
 from pathlib import Path
 from typing import Any
 
@@ -11,6 +12,7 @@ from atrium.adapters.served_index import INDEX
 from atrium.context.context_from_index import context_from_index
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.require_workspace import require_workspace
+from atrium.context.stamp_serving import stamp_serving
 from atrium.context.validate_request import validate_request
 from atrium.retrieve.lane import Lane
 from atrium.retrieve.search import LANES
@@ -40,6 +42,7 @@ def atrium_context(
     records. Provenance and warnings are additional JSON metadata. History
     requires live verification before asserting present-day operational results.
     """
+    started = time.perf_counter()
     if lane not in LANES:
         raise ValueError(f"unknown lane {lane!r}; expected one of {', '.join(LANES)}")
     state = state_directory()
@@ -69,13 +72,14 @@ def atrium_context(
     try:
         served = request_context_service(context_socket_path(state), request, _SERVICE_TIMEOUT_S)
     except TimeoutError:
-        return service_timeout_response(query, project_path, limit, max_chars, lane, state)
+        timed_out = service_timeout_response(query, project_path, limit, max_chars, lane, state)
+        return stamp_serving(timed_out, "service_timeout", started)
     except (OSError, ValueError):
         served = None
     if served is not None and "error" not in served:
-        return served
+        return stamp_serving(served, "service", started)
     try:
-        return context_from_index(
+        local = context_from_index(
             INDEX,
             query,
             project=project,
@@ -87,3 +91,4 @@ def atrium_context(
         )
     except ValueError as error:
         raise ToolError(str(error)) from error
+    return stamp_serving(local, "in_process", started)

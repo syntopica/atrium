@@ -60,6 +60,11 @@ def test_context_cli_and_fresh_mcp_agree(tmp_path):
     assert "DELIVERED_WITHOUT_EVIDENCE" not in text
     assert result["requires_live_verification"] is True
     assert result["text_chars"] <= 4000
+    assert result["served_by"] == "in_process"
+    assert isinstance(result["elapsed_ms"], int)
+    assert result["elapsed_ms"] >= 0
+    assert all(isinstance(step["ms"], int) for step in result["steps"])
+    assert mcp.structured_content["served_by"] == "in_process"
     assert all(item["record_id"] and item["source_sha256"] for item in result["evidence"])
     assert exchange["tool"].annotations.read_only_hint is True
     assert exchange["invalid"].is_error

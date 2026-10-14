@@ -64,6 +64,14 @@
       prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
       "word-level separate from substring" decision is about ranking, not about trigram
       over 1.9M raw records, but it must be re-read before changing the schema.
+      2026-10-14: the admission cut took the index from 1,923,985 to 483,624 records,
+      yet the file stays 23,331 MiB (5,972,727 pages, freelist only 213,437): FTS5
+      keeps deleted rows in its segments until they are merged. Reclaiming the space
+      needs an FTS `optimize` on both lanes and then `VACUUM`, and Atrium has no
+      supported command for either; direct mutation is off limits. With 100 GiB free
+      it is not urgent. Smallest step: an `atrium compact` command run under
+      `refresh.lock`, sized after the trigram decision, since dropping that lane
+      reclaims most of the same space.
 - [!] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
       (2026-10-10, ~7.2k user records) by bytes: atrium synthesis prompts 23%, other
       records over 5k chars 20%, human-sized prompts 17%, tool-output-shaped text (Read
@@ -80,6 +88,12 @@
       ("Event classification"). The machine-prompt shapes (synthesis prompts, the
       security-review template, app batch prompts) are separate: most of the first are
       already gone with the `atrium-codex-*` exclusion.
+      2026-10-14: the tool-output share no longer waits on scribe. Atrium `750ae09`
+      and `5552415` reject a rendered `tool: <Name>` call and the unmarked results
+      that answer it; the 18:30 refresh rejected 760,326 calls and 683,384 results and
+      left 111,298 user and 300,790 assistant records (index 1,923,985 to 483,624). What
+      remains here is the machine-prompt shapes; re-sample the user role before
+      deciding whether this entry is still blocked.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable

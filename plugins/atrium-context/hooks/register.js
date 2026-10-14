@@ -1,4 +1,5 @@
 import { addedStats } from './added-stats.js'
+import { bandHeight } from './band-height.js'
 import { brainAccess } from './brain-access.js'
 import { degradation } from './degradation.js'
 import { detailSections } from './detail-sections.js'
@@ -88,7 +89,10 @@ export function register(on) {
   // The details, as a band above the prompt in the same terminal: a `Pane`
   // opened its own window in Orca, whose close asked to stop an agent. A
   // rounded frame titled Atrium with Hide at the right, then the sections
-  // `detailSections` lays out, a blank row between each; yields to a survey.
+  // `detailSections` lays out, a blank row between each, and a blank row
+  // beneath the frame so the prompt does not touch it. Where that is taller than
+  // the rows the band may take, which would scroll it, each item takes one row
+  // and the blank rows between sections go. Yields to a survey.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const { value: isShown } = await $.state.get(IS_SHOWN)
     if (!isShown || e.props.hasSurvey) return next(e)
@@ -97,8 +101,14 @@ export function register(on) {
     const { value: totals } = await $.state.get(STATS)
     const { value: used } = await $.state.get(USAGE)
     const sections = detailSections(details, totals, used, await $.clock.now())
+    const isCompact = bandHeight(sections, false) > e.props.maxRows
     const line = (one) => h(Text, { color: one.color, dimColor: one.isDim, italic: one.isItalic, wrap: one.isTruncated ? 'truncate-end' : 'wrap' }, one.text)
-    const item = (one) => h(
+    const item = (one) => isCompact ? h(
+      Box,
+      { flexDirection: 'row' },
+      h(Box, { width: 4 }, h(Text, { dimColor: true }, String(one.index).padStart(2) + '.')),
+      h(Text, { wrap: 'truncate-end' }, one.text, h(Text, { dimColor: true }, ' · ' + one.detail)),
+    ) : h(
       Box,
       { flexDirection: 'row' },
       h(Box, { width: 4 }, h(Text, { dimColor: true }, String(one.index).padStart(2) + '.')),
@@ -106,7 +116,7 @@ export function register(on) {
     )
     return h(
       Box,
-      { flexDirection: 'column', borderStyle: 'round', borderColor: 'success', borderDimColor: true, paddingX: 1 },
+      { flexDirection: 'column', borderStyle: 'round', borderColor: 'success', borderDimColor: true, paddingX: 1, marginBottom: 1 },
       h(
         Box,
         { flexDirection: 'row', justifyContent: 'space-between' },
@@ -115,7 +125,7 @@ export function register(on) {
       ),
       ...sections.map((section) => h(
         Box,
-        { flexDirection: 'column', marginTop: 1 },
+        { flexDirection: 'column', marginTop: isCompact ? 0 : 1 },
         h(Text, { bold: true }, section.title),
         h(Box, { flexDirection: 'column', paddingLeft: 2 }, ...section.lines.map((one) => (one.index ? item(one) : line(one)))),
       )),

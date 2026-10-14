@@ -118,7 +118,7 @@ with moving dots, and `Atrium · retrying` on a second run. Pressing the line, o
 retrieval ran on, its status, time, attempts and lane, which path answered and
 how its time split between start-up and each pass, the approximate tokens
 handed to the model, each item with its score, the turn's lookups and the notes
-read and cited, and the session's totals. A failed run is retried once after a short pause, since a saturated
+read and cited, and the session's totals; on a short terminal each item takes one row so the band fits without scrolling. A failed run is retried once after a short pause, since a saturated
 machine often answers the second; if that fails too, the model is told retrieval
 was unavailable rather than empty. Use the mod or the
 shell hook, never both, or every prompt retrieves twice:

@@ -466,8 +466,8 @@ test('lights the brain part for a moment after a lookup', async ($, on) => {
 })
 
 // Every Text the details band draws, in order; [] when the band is hidden.
-async function pane($) {
-  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 40, bodyColumns: 120 } })
+async function pane($, maxRows = 40) {
+  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows, bodyColumns: 120 } })
   const rows = (await ui.findAll({ type: 'Text' })).map((text) => text.text)
   await ui.unmount()
   return rows
@@ -493,8 +493,30 @@ test('the details band says in plain words what was asked, how it went and what 
   expect(rows).toContain('Past session · 16 Sep 2026 · 70% match')
   expect(rows).toContain('…ingest done for agents')
   expect(rows).toContain('Note · topics/atrium · 60% match')
+  expect(rows).toContain('Notes on the')
   expect(rows).toContain('Claude has not looked anything up yet.')
   expect(rows).toContain('1 search · none failed · none retried · 0 ms on average')
+})
+
+test('the details band puts each item on one row when it would not fit', async ($, on) => {
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } }, {})
+  await $.prompt.submit({ text: PROMPT })
+  await $.command.run({ command: 'atrium', args: '' })
+  const spread = await pane($)
+  const compact = await pane($, 12)
+  expect(spread).toContain('Past session · 16 Sep 2026')
+  expect(spread).toContain('The hook pipes stdin JSON to Python.')
+  expect(compact).toContain('Past session · 16 Sep 2026 · The hook pipes stdin JSON to Python.')
+  expect(compact).not.toContain('Past session · 16 Sep 2026')
+})
+
+test('the details band says Claude looked nothing up once the turn is over', async ($, on) => {
+  healthy(on, {})
+  await $.prompt.submit({ text: PROMPT })
+  await $.command.run({ command: 'atrium', args: '' })
+  expect(await pane($)).toContain('Claude has not looked anything up yet.')
+  await $.turn.complete({ answer: 'Done.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
+  expect(await pane($)).toContain('Claude did not look anything up.')
 })
 
 test('the details band says a failed search and its retry', async ($, on) => {

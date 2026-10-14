@@ -27,9 +27,9 @@ class LazyEmbedder:
             if self.factory is not None:
                 self.instance = self.factory()
             else:
-                from atrium.embed.embedder import Embedder
+                from atrium.embed.query_embedder import query_embedder
 
-                self.instance = Embedder()
+                self.instance = query_embedder()
         key = tuple(texts)
         if self.last is not None and self.last[0] == key:
             return self.last[1]

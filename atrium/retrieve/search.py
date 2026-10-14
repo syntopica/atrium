@@ -49,9 +49,9 @@ def search(  # noqa: PLR0913 -- the one shared retrieval surface; every knob is 
         return search_words(connection, query, limit, workspace, exhausted)
 
     if embedder is None:
-        from atrium.embed.embedder import Embedder
+        from atrium.embed.query_embedder import query_embedder
 
-        embedder = Embedder()
+        embedder = query_embedder()
 
     if lane == "dense":
         from atrium.retrieve.search_dense import search_dense

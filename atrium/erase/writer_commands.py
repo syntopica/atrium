@@ -10,6 +10,7 @@ WRITER_COMMANDS = (
     "prepare-context",
     "synthesize",
     "ingest-synthesis",
+    "repair-index",
     "record-session",
     "rekey-synthesis",
     "curate-screen",

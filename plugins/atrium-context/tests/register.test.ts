@@ -56,6 +56,7 @@ function stubs(on, run, seen, isClockStubbed = true) {
     })
     on('clock.every', () => ({ deny: 'no timers in this test' }))
     on('clock.after', () => ({ deny: 'no timers in this test' }))
+    on('clock.now', () => ({ value: 0 }))
   }
   on('session.cwd', () => ({ value: '/work/repo' }))
   on('process.run', ($, e) => {
@@ -213,6 +214,7 @@ test('a failure after a healthy prompt takes the green line down', async ($, on)
   on('process.run', () => runs.shift() ?? { value: { exitCode: 1, stdout: '', stderr: 'boom' } })
   on('clock.sleep', () => ({ value: undefined }))
   on('clock.every', () => ({ deny: 'no timers in this test' }))
+  on('clock.now', () => ({ value: 0 }))
   on('ui.status', () => ({ value: undefined }))
   on('ui.log', () => ({ value: undefined }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
@@ -281,6 +283,7 @@ test('leaving a project after a healthy prompt takes the green line down', async
   on('session.cwd', () => ({ value: '/work/repo' }))
   on('process.run', () => runs.shift())
   on('clock.every', () => ({ deny: 'no timers in this test' }))
+  on('clock.now', () => ({ value: 0 }))
   on('ui.status', () => ({ value: undefined }))
   on('ui.log', () => ({ value: undefined }))
   on('prompt.submit', ($, e) => {
@@ -308,7 +311,7 @@ test('says no note was cited once the answer names none', async ($, on) => {
   await $.prompt.submit({ text: PROMPT })
   expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note')
   await $.turn.complete({ answer: 'Done, nothing from notes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ no note cited')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ no note cited')
 })
 
 test('counts the notes an answer cites', async ($, on) => {
@@ -316,7 +319,7 @@ test('counts the notes an answer cites', async ($, on) => {
   healthy(on, seen)
   await $.prompt.submit({ text: PROMPT })
   await $.turn.complete({ answer: 'Per brain/topics/atrium.md and brain/topics/atrium.md (cited as brain/...md), yes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 1 cited')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 1 cited')
 })
 
 test('counts atrium lookups and the notes they returned', async ($, on) => {
@@ -325,9 +328,9 @@ test('counts atrium lookups and the notes they returned', async ($, on) => {
   on('tool.call', () => ({ result: 'ok', text: '{"evidence": [{"note_path": "brain/people/ana.md"}, {"note_path": "brain/topics/x.md"}, {"note_path": "brain/../secret.md"}], "text": "see brain/topics/quoted.md"}' }))
   await $.prompt.submit({ text: PROMPT })
   await $.tool.call({ tool: 'mcp__atrium__atrium_context', query: 'who is ana' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 2 read · 1 lookup')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 2 read · 1 lookup')
   await $.tool.call({ tool: 'mcp__plugin_my_tools_atrium__atrium_search', query: 'ana' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 2 read · 2 lookups')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 2 read · 2 lookups')
 })
 
 test('counts a note opened as a file of the instance, and nothing else', async ($, on) => {
@@ -339,7 +342,7 @@ test('counts a note opened as a file of the instance, and nothing else', async (
   await $.tool.call({ tool: 'Read', file_path: '/work/repo/brain/README.md' })
   await $.tool.call({ tool: 'Bash', command: 'ls brain' })
   await $.tool.call({ tool: 'Glob', pattern: '*.md', path: '/data/wiki/brain/topics/*.md' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 1 read')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 1 read')
 })
 
 test('counts an atrium command run from the shell as a lookup', async ($, on) => {
@@ -348,7 +351,7 @@ test('counts an atrium command run from the shell as a lookup', async ($, on) =>
   on('tool.call', () => ({ result: 'ok', text: 'nothing' }))
   await $.prompt.submit({ text: PROMPT })
   await $.tool.call({ tool: 'Bash', command: 'atrium search "stop hook" --project .' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 1 lookup')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 1 lookup')
 })
 
 test('a new prompt starts the brain count over', async ($, on) => {
@@ -402,7 +405,7 @@ test('counts lookups that finish together, and drops one from a finished turn', 
   })
   await $.prompt.submit({ text: PROMPT })
   await Promise.all(['a', 'b', 'c'].map((query) => $.tool.call({ tool: 'mcp__atrium__atrium_search', query })))
-  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 3 read · 3 lookups')
+  expect(await footer($)).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 3 read · 3 lookups')
   const late = $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'late' })
   await $.prompt.submit({ text: PROMPT })
   release()
@@ -453,11 +456,64 @@ test('lights the brain for a moment after a lookup', async ($, on) => {
   await $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'x' })
   await clock.settle()
   const lit = await row($)
-  expect(lit.text).toBe('⣰⣺⣗⣆ 1 session · 1 note  ⢮⠿⡵ 1 lookup')
+  expect(lit.text).toBe('⣰⣺⣗⣆ 1 session · 1 note  ◉ 1 lookup')
   expect(lit.colors.at(-1)).toBe('claude')
   expect(lit.bold.at(-1)).toBe(true)
   await clock.advance(1200)
   const dark = await row($)
   expect(dark.colors.at(-1)).toBe('success')
   expect(dark.bold.at(-1)).toBe(false)
+})
+
+// The details pane's text, row by row.
+async function pane($) {
+  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'Pane', requestId: 'atrium', props: {} })
+  const rows = (await ui.findAll({ type: 'Text' })).map((text) => text.text)
+  await ui.unmount()
+  return rows
+}
+
+test('the details pane says what was asked, how it went and what came back', async ($, on) => {
+  const seen: any = {}
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ ...ANSWER, evidence: ANSWER.evidence.map((item, index) => ({ ...item, score: 0.7 - index / 10 })), route: { requested_lane: 'dense' }, freshness: { last_refresh: '2026-10-14T11:05:37+00:00' } }), stderr: '' } }, seen)
+  await $.prompt.submit({ text: PROMPT })
+  const rows = await pane($)
+  expect(rows[0]).toBe('Last prompt')
+  expect(rows[1]).toBe('  ' + PROMPT)
+  expect(rows[2]).toBe('  healthy · 0 ms · dense lane')
+  expect(rows[3]).toMatch(/^  ~\d+ tokens handed to the model \(\d+ chars\)$/)
+  expect(rows[4]).toBe('  index refreshed 2026-10-14 11:05')
+  expect(rows[5]).toBe('  session · 2026-09-16 · synthesis/7a2529ff723a · score 0.7')
+  expect(rows[6]).toBe('    The hook pipes stdin JSON to Python.')
+  expect(rows[7]).toBe('  note · 2026-10-01 · brain/topics/atrium.md · score 0.6')
+  expect(rows).toContain('Session')
+  expect(rows.at(-2)).toMatch(/^  1 retrievals · 0 failed · 0 retried · 0 ms average$/)
+})
+
+test('the details pane counts a failure that needed a retry', async ($, on) => {
+  stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, {})
+  await $.prompt.submit({ text: PROMPT })
+  const rows = await pane($)
+  expect(rows[2]).toBe('  failed (atrium context exited 1) · 0 ms · 2 attempts')
+  expect(rows.at(-2)).toBe('  1 retrievals · 1 failed · 1 retried · 0 ms average')
+})
+
+test('the details pane says when nothing was retrieved yet', async ($, on) => {
+  stubs(on, { value: { exitCode: 0, stdout: '{}', stderr: '' } }, {})
+  expect(await pane($)).toEqual(['No retrieval yet in this session.'])
+})
+
+test('pressing the footer row and /atrium open the details pane', async ($, on) => {
+  const seen: any = {}
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } }, seen)
+  on('ui.open', ($, e) => {
+    seen.opened = [...(seen.opened ?? []), e.id]
+    return { value: { isPlaced: true } }
+  })
+  await $.prompt.submit({ text: PROMPT })
+  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+  await ui.press({ key: 'atrium' })
+  await ui.unmount()
+  await $.command.run({ command: 'atrium', args: '' })
+  expect(seen.opened).toEqual(['atrium', 'atrium'])
 })

@@ -8,6 +8,19 @@
 
 ### 2026-10
 
+- [x] 2026-10-14 — **Ingest filed rendered tool calls and their results as conversation.** Older
+  Claude Code exports render each tool_use as an assistant message `tool: <Name>` and its
+  tool_result as the next unmarked user message; 759,708 calls and 692,868 results, 78% of
+  raw records and 56% of their text, were indexed as prose. `ToolRound` now pairs each
+  rendered call with the results owed to it (parallel calls counted, assistant prose closes
+  the round) and both are rejected under their own tally rules.
+  - Result: on a 3,000-conversation sample, 43,834 calls and 40,717 results rejected; 25
+    rejected results read by hand were all tool output. On the 85-question set, dropping them
+    loses no answer and search R@10 moves 0.27 to 0.28. Synthesis jobs key on the archive's
+    `contentSha256`, so no conversation is re-synthesized.
+  - Evidence: `uv run pytest` 589 passed, 2 skipped; ruff and mypy clean; five new cases in
+    `tests/test_ingest.py`.
+
 - [x] 2026-10-14 — **`atrium context --project .` never reached the resident service.** The
   CLI sent the relative path as given; the service resolved it against its own directory,
   found no repository and failed, so the CLI fell back to a cold in-process scan on every

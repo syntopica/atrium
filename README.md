@@ -111,10 +111,10 @@ On Claude Code 2.1.287 or later, the `atrium-context` mod in
 `plugins/atrium-context` does the same retrieval from a `prompt.submit` hook
 and shows the result where the person keeps seeing it once the transcript scrolls:
 a healthy retrieval is a green line at the right of the prompt footer, after a
-temple drawn in braille dots (`⣰⣺⣗⣆ 2 sessions · 2 notes`, or `⣰⣺⣗⣆ nothing
-relevant`), and a failed or degraded one takes its place in the warning color
+temple drawn in braille dots (`⣰⣺⣗⣆ Atrium · 2 sessions · 2 notes`, or `⣰⣺⣗⣆ Atrium ·
+nothing relevant`), and a failed or degraded one takes its place in the warning color
 and names the cause; nothing is drawn at the left. While retrieval runs the
-temple is raised a course at a time, with `retrying` beside it on a second run. Pressing that row, or typing `/atrium`, opens a details pane: the prompt the
+temple is raised a course at a time, with `retrying` beside it on a second run. The row always starts with `⣰⣺⣗⣆ Atrium`. Pressing it, or typing `/atrium`, shows a details band above the prompt (pressed again, or `Hide`, hides it): the prompt the
 retrieval ran on, its status, time, attempts and lane, which path answered and
 how its time split between start-up and each pass, the approximate tokens
 handed to the model, each item with its score, the turn's lookups and the notes
@@ -138,7 +138,7 @@ answer relies on (`brain/...md`), and the hooks count what they can observe:
 - **lookups**: calls to the atrium MCP tools, `atrium context|search|recall` or `brain query`.
 
 In Claude Code the mod adds this to the green line after a brain mark, for
-example `⣰⣺⣗⣆ 1 session · 2 notes  ◉ 1 cited · 3 read · 1 lookup`, or `◉ no
+example `⣰⣺⣗⣆ Atrium · 1 session · 2 notes  ◉ 1 cited · 3 read · 1 lookup`, or `◉ no
 note cited` once a turn has answered without reading or citing any injected
 note; the brain lights up for a moment each time the model takes from it. That is
 an observation, not proof the notes went unused: an answer can rely on a note

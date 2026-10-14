@@ -21,6 +21,7 @@ declare module 'claude-code' {
         freshness: string | null
         items: { kind: string; date: string; source: string; score: number | null; title: string }[]
       } | null
+      isShown: boolean | null
       stats: { retrievals: number; failures: number; retries: number; totalMs: number; chars: number } | null
     }
   }

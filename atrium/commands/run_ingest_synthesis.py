@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from atrium.forget.forget_ledger_file import forget_ledger_file
+from atrium.forget.forgotten_ids import forgotten_ids
 from atrium.record import Record
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.delete_absent_revisions import delete_absent_revisions
@@ -46,6 +48,9 @@ def run_ingest_synthesis(index: Path) -> int:
     unchanged = 0
     excluded = 0
     seen: set[str] = set()
+    # The ledger's forgotten episodes never reach the index; the count is
+    # reported by `atrium forget`, which wrote them.
+    forgotten = forgotten_ids(forget_ledger_file())
     try:
         # Read before writing anything: both maps come from the raw ingest,
         # which this pass never touches.
@@ -82,6 +87,8 @@ def run_ingest_synthesis(index: Path) -> int:
                 else canonical_workspace(record.get("workspace"))
             )
             for row in to_synthesis_records(record, workspace):
+                if row.record_id in forgotten:
+                    continue
                 by_conversation.setdefault(row.conversation_id, []).append(row)
                 workspace_of[row.conversation_id] = workspace
         with connection:

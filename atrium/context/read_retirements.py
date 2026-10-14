@@ -8,14 +8,16 @@ from atrium.sql.load_sql import load_sql
 
 
 def read_retirements(connection: sqlite3.Connection) -> list[Retirement]:
-    """Return one retirement per declaring note, read from the indexed chunks.
+    """Return every retirement declared in the indexed note chunks.
 
-    The declaration lives on the note, so the page that explains a retirement
-    and the rule that applies it cannot drift apart, and the next
-    ``ingest-notes`` picks up a new one with no other step.
+    A note may declare several, one per section: ``brain/retired.md`` lists
+    them all, so the page about a retired tool can be deleted without losing
+    the declaration. The next ``ingest-notes`` picks up a new one with no
+    other step.
     """
-    found: dict[str, Retirement] = {}
+    found: dict[tuple[str, tuple[str, ...]], Retirement] = {}
     for note, text in connection.execute(load_sql("context/retirement_chunks")):
-        if note not in found and (retirement := parse_retirement(text, note)):
-            found[note] = retirement
+        retirement = parse_retirement(text, note)
+        if retirement is not None:
+            found.setdefault((note, retirement.terms), retirement)
     return list(found.values())

@@ -14,6 +14,8 @@ def writes_instance(args: Namespace) -> bool:
         return False
     if args.command == "synthesize":
         return not args.dry_run
+    if args.command == "repair-index":
+        return bool(args.apply)
     if args.command == "rekey-synthesis":
         return bool(args.apply)
     return True

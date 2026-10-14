@@ -18,6 +18,7 @@ from atrium.cli_parser.add_prepare_context_parser import add_prepare_context_par
 from atrium.cli_parser.add_recall_parser import add_recall_parser
 from atrium.cli_parser.add_record_session_parser import add_record_session_parser
 from atrium.cli_parser.add_rekey_synthesis_parser import add_rekey_synthesis_parser
+from atrium.cli_parser.add_repair_index_parser import add_repair_index_parser
 from atrium.cli_parser.add_search_parser import add_search_parser
 from atrium.cli_parser.add_serve_context_parser import add_serve_context_parser
 from atrium.cli_parser.add_status_parser import add_status_parser
@@ -55,6 +56,7 @@ def build_parser(
     add_rekey_synthesis_parser(subcommands, archive)
     add_erase_parser(subcommands)
     add_forget_parser(subcommands)
+    add_repair_index_parser(subcommands)
     add_search_parser(subcommands)
     add_prepare_context_parser(subcommands)
     add_context_parser(subcommands)

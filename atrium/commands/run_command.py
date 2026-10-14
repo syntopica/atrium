@@ -12,6 +12,7 @@ from atrium.commands.run_ingest_notes import run_ingest_notes
 from atrium.commands.run_ingest_synthesis import run_ingest_synthesis
 from atrium.commands.run_recall import run_recall
 from atrium.commands.run_rekey_synthesis import run_rekey_synthesis
+from atrium.commands.run_repair_index import run_repair_index
 from atrium.commands.run_search import run_search
 from atrium.commands.run_status import run_status
 from atrium.commands.run_synthesize import run_synthesize
@@ -113,6 +114,8 @@ def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand
         )
     if args.command == "erase":
         return run_erase(args.index, args.plan, archive, apply=args.apply)
+    if args.command == "repair-index":
+        return run_repair_index(args.index, state, apply=args.apply)
     if args.command == "forget":
         return run_forget(args.index, state, restore=args.restore, apply=args.apply)
     if args.command == "rekey-synthesis":

@@ -1,5 +1,6 @@
 import { approxTokens } from './approx-tokens.js'
 
+const SERVED_BY = { service: 'resident service', service_timeout: 'service timed out', in_process: 'cold, in process' }
 const STATUS_COLOR = { healthy: 'success', nothing: 'success', degraded: 'warning', failed: 'error' }
 
 // The details pane as rows of text, each with an optional theme color and
@@ -11,8 +12,14 @@ export function detailRows(details, stats, usage) {
   rows.push({ text: '  ' + details.query, isDim: true })
   const how = [details.status + (details.reason ? ' (' + details.reason + ')' : ''), details.ms + ' ms']
   if (details.attempts > 1) how.push(details.attempts + ' attempts')
+  if (details.servedBy) how.push(SERVED_BY[details.servedBy] ?? details.servedBy)
   if (details.lane) how.push(details.lane + ' lane')
   rows.push({ text: '  ' + how.join(' · '), color: STATUS_COLOR[details.status] })
+  if (typeof details.atriumMs === 'number') {
+    const timing = ['atrium ' + details.atriumMs + ' ms', 'start-up ' + Math.max(0, details.ms - details.atriumMs) + ' ms']
+    for (const pass of details.passes ?? []) timing.push(pass.name + ' ' + pass.ms + ' ms')
+    rows.push({ text: '  ' + timing.join(' · '), isDim: true })
+  }
   rows.push({ text: '  ~' + approxTokens(details.chars) + ' tokens handed to the model (' + details.chars + ' chars)', isDim: true })
   if (details.freshness) rows.push({ text: '  index refreshed ' + details.freshness.replace('T', ' ').slice(0, 16), isDim: true })
   for (const item of details.items) {

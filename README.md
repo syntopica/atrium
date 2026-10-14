@@ -115,7 +115,8 @@ temple drawn in braille dots (`⣰⣺⣗⣆ 2 sessions · 2 notes`, or `⣰⣺�
 relevant`), and a failed or degraded one takes its place in the warning color
 and names the cause; nothing is drawn at the left. While retrieval runs the
 temple is raised a course at a time, with `retrying` beside it on a second run. Pressing that row, or typing `/atrium`, opens a details pane: the prompt the
-retrieval ran on, its status, time, attempts and lane, the approximate tokens
+retrieval ran on, its status, time, attempts and lane, which path answered and
+how its time split between start-up and each pass, the approximate tokens
 handed to the model, each item with its score, the turn's lookups and the notes
 read and cited, and the session's totals. A failed run is retried once after a short pause, since a saturated
 machine often answers the second; if that fails too, the model is told retrieval
@@ -221,8 +222,10 @@ Unindexed or unresolved knowledge requires an explicit, bounded source lookup.
 Each evidence item preserves its record ID, source revision hash, origin role,
 trust classification, date and any excerpt truncation. Curated note paths identify
 indexed revisions; they are not a promise that the current file still has those
-bytes. The response includes the retrieval steps, scope, freshness, degradation
-warnings and `requires_live_verification`. A recent refresh does not prove coverage
+bytes. The response includes the retrieval steps, each with its wall time in
+`ms`, scope, freshness, degradation warnings and `requires_live_verification`,
+plus `served_by` (`service`, `service_timeout` or `in_process`) and `elapsed_ms`,
+which say whether a slow answer was a stalled service or a cold scan. A recent refresh does not prove coverage
 of an event that happened today, and an old operational note cannot establish a
 current delivery, deployment or payment outcome.
 

@@ -112,7 +112,10 @@ On Claude Code 2.1.287 or later, the `atrium-context` mod in
 and shows the result where the person keeps seeing it once the transcript scrolls:
 a healthy retrieval is a green line at the right of the prompt footer (`Atrium · 2
 notes, 2 past sessions`, or `Atrium · nothing relevant`), and a failed or degraded
-one is a warning pinned under the prompt that names the cause. Use the mod or the
+one takes its place in the warning color and names the cause; nothing is drawn
+at the left. A failed run is retried once after a short pause, since a saturated
+machine often answers the second; if that fails too, the model is told retrieval
+was unavailable rather than empty. Use the mod or the
 shell hook, never both, or every prompt retrieves twice:
 
 ```

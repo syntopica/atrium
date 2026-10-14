@@ -10,13 +10,17 @@ import { renderEvidence } from './render-evidence.js'
 import { retrievalNotice } from './retrieval-notice.js'
 import { readAnswer } from './read-answer.js'
 import { retrievalArgv } from './retrieval-argv.js'
+import { RETRIEVAL_ATTEMPTS } from './retrieval-attempts.js'
 import { RETRIEVAL_TIMEOUT_MS } from './retrieval-timeout.js'
+import { RETRY_DELAY_MS } from './retry-delay.js'
 import { shouldSkip } from './should-skip.js'
 import { subagentSkip } from './subagent-skip.js'
 
 // Retrieves atrium context before each turn: the evidence goes to Claude after
-// the prompt. A healthy retrieval is a green line at the right of the prompt
-// footer; a failed or degraded one is a warning pinned under the prompt.
+// the prompt. Everything it shows sits at the right of the prompt footer: a
+// green line when retrieval is healthy, a warning-colored one when it failed or
+// was degraded. Nothing is pinned at the left: `$.ui.status` is only cleared,
+// in case an older version of this mod left a line there.
 // Replaces the UserPromptSubmit shell hook where this mod loads; register one or
 // the other, never both, or every prompt retrieves twice.
 //
@@ -25,10 +29,11 @@ import { subagentSkip } from './subagent-skip.js'
 // the notes its answer cited (`brain: 1 cited, 2 read`), or `brain: no note
 // cited` once an answer named none of the notes it was given.
 //
-// Where the healthy line drawn at the right of the prompt footer is kept, the
-// brain use of the current turn, and the instance the last retrieval served
-// from; a `$.state` reference must be a literal of this file.
+// Where the healthy line and the warning drawn at the right of the prompt
+// footer are kept, the brain use of the current turn, and the instance the last
+// retrieval served from; a `$.state` reference must be a literal of this file.
 const SUMMARY = { plugin: 'atrium-context', key: 'summary' }
+const WARNING = { plugin: 'atrium-context', key: 'warning' }
 const USAGE = { plugin: 'atrium-context', key: 'usage' }
 const INSTANCE = { plugin: 'atrium-context', key: 'instance' }
 
@@ -50,8 +55,8 @@ export function register(on) {
     turn += 1
     await recordUse($, turn, () => EMPTY_USAGE)
     // A skipped prompt got no context, so the green line, which says what this
-    // prompt was given, goes; a pinned warning stays, since the failure it
-    // names is still the state of retrieval. Hiding the line on a short aside
+    // prompt was given, goes; a warning stays, since the failure it names is
+    // still the state of retrieval. Hiding the line on a short aside
     // costs one footer label; keeping it would claim context that was not sent.
     if (shouldSkip(e.text)) {
       await $.state.set(SUMMARY, null).catch(() => {})
@@ -68,6 +73,7 @@ export function register(on) {
     if (answer === null) {
       $.ui.status(undefined)
       await $.state.set(SUMMARY, null).catch(() => {})
+      await $.state.set(WARNING, null).catch(() => {})
       return next(e)
     }
     const evidence = answer.evidence ?? []
@@ -136,14 +142,15 @@ export function register(on) {
   })
 
   // Whatever draws the footer's mode labels beneath this mod (the engine, or
-  // another mod), then the healthy line in the theme's success color; passes
-  // when there is no healthy line. `next(e)` resolves to the tree drawn beneath
+  // another mod), then the warning in the theme's warning color, else the
+  // healthy line in its success color; passes when there is neither. `next(e)` resolves to the tree drawn beneath
   // (a RenderElement, never null, even with no labels), so the separator
   // follows the labels rather than the tree.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
     const { value: summary } = await $.state.get(SUMMARY)
+    const { value: warning } = await $.state.get(WARNING)
     const { value: usage } = await $.state.get(USAGE)
-    const line = footerLine(summary, usage)
+    const line = warning ? '⚠ ' + warning : footerLine(summary, usage)
     if (!line) return next(e)
     const beneath = await next(e)
     const { Box, Text } = $.ui.resolve(e)
@@ -152,17 +159,29 @@ export function register(on) {
       { flexDirection: 'row' },
       beneath,
       h(Text, { dimColor: true }, e.props.modes.length ? ' · ' : ' '),
-      h(Text, { color: 'success' }, line),
+      h(Text, { color: warning ? 'warning' : 'success' }, line),
     )
   })
 }
 
-// One `atrium context` run for a text, in the session's directory. Keeps the
-// instance it served from, which is how a file read is recognised as a note.
+// `atrium context` for a text, in the session's directory, run again after a
+// short pause when it fails, since a saturated machine often answers the second
+// run; throws the last failure. Keeps the instance it served from, which is how
+// a file read is recognised as a note.
 async function retrieve($, text) {
   const cwd = await $.session.cwd()
-  const run = await $.process.run(retrievalArgv(text, cwd), { cwd, timeoutMs: RETRIEVAL_TIMEOUT_MS })
-  const answer = readAnswer(run)
+  let answer
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      const run = await $.process.run(retrievalArgv(text, cwd), { cwd, timeoutMs: RETRIEVAL_TIMEOUT_MS })
+      answer = readAnswer(run)
+      break
+    } catch (error) {
+      if (attempt >= RETRIEVAL_ATTEMPTS) throw error
+      $.ui.log('atrium-context: retrying after ' + (error?.message ?? 'a failure'), { to: 'debug' })
+      await $.clock.sleep(RETRY_DELAY_MS)
+    }
+  }
   const instance = instanceDirectory(answer)
   if (instance) await $.state.set(INSTANCE, instance).catch(() => {})
   return answer
@@ -178,17 +197,20 @@ function recordUse($, of, change) {
   return written
 }
 
-// Retrieval worked: no pinned warning, the line goes green at the right of the
+// Retrieval worked: the warning goes, the line goes green at the right of the
 // prompt footer, and the debug log keeps a record of each prompt's line.
 async function showHealthy($, line) {
   $.ui.status(undefined)
   $.ui.log(line, { to: 'debug' })
+  await $.state.set(WARNING, null).catch(() => {})
   await $.state.set(SUMMARY, line).catch(() => {})
 }
 
-// Retrieval failed or was degraded: `$.ui.status` pins the line under the
-// prompt, which the terminal draws as a warning, and the green line goes.
+// Retrieval failed or was degraded: the green line goes and the warning takes
+// its place at the right of the footer, in the theme's warning color.
 async function showDegraded($, line) {
-  $.ui.status(line)
+  $.ui.status(undefined)
+  $.ui.log('atrium-context: ' + line, { to: 'debug' })
   await $.state.set(SUMMARY, null).catch(() => {})
+  await $.state.set(WARNING, line).catch(() => {})
 }

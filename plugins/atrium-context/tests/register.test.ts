@@ -89,9 +89,9 @@ test('adds retrieved evidence and says what was retrieved', async ($, on) => {
   expect(seen.init.timeoutMs).toBe(10000)
   expect(seen.status).toBeUndefined()
   expect(seen.runs).toBe(1)
-  expect(seen.log).toBe('atrium-context: 1 session · 1 note')
+  expect(seen.log).toBe('atrium-context: 1 past session, 1 note')
   expect(seen.logTo).toBe('debug')
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   expect(seen.context.length).toBe(1)
   expect(seen.context[0]).toContain('# atrium context (retrieved for this prompt)')
   expect(seen.context[0]).toContain('- [episode] 2026-09-16 synthesis/7a2529ff723a\n  The hook pipes stdin JSON to Python.')
@@ -104,7 +104,7 @@ test('adds nothing when nothing matched', async ($, on) => {
   await $.prompt.submit({ text: PROMPT })
   expect(seen.context ?? []).toEqual([])
   expect(seen.status).toBeUndefined()
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · nothing relevant')
+  expect(await footer($)).toBe('Atrium · nothing relevant')
 })
 
 test('stays silent outside a project', async ($, on) => {
@@ -122,7 +122,7 @@ test('says the retrieval failed instead of staying silent', async ($, on) => {
   expect(seen.status).toBeUndefined()
   expect(seen.runs).toBe(2)
   expect(seen.sleeps.length).toBe(1)
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · context unavailable (atrium context exited 1)')
+  expect(await warning($)).toBe('Atrium · context unavailable (atrium context exited 1)')
   expect(await footer($)).toBeUndefined()
   expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
 })
@@ -137,7 +137,7 @@ test('runs retrieval again when the first run fails', async ($, on) => {
   await $.prompt.submit({ text: PROMPT })
   expect(runs.length).toBe(0)
   expect(await warning($)).toBeUndefined()
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   expect(seen.context[0]).toContain('# atrium context (retrieved for this prompt)')
 })
 
@@ -145,7 +145,7 @@ test('treats an unreadable index as a failure', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ index_status: 'missing', evidence: [] }), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · context unavailable (index not readable (missing))')
+  expect(await warning($)).toBe('Atrium · context unavailable (index not readable (missing))')
   expect(seen.context[0]).toContain('unavailable')
 })
 
@@ -153,7 +153,7 @@ test('says a timed-out retrieval failed', async ($, on) => {
   const seen: any = {}
   stubs(on, { deny: 'timed out' }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(await warning($)).toMatch(/^⣰⣺⣗⣆ Atrium · context unavailable/)
+  expect(await warning($)).toMatch(/^Atrium · context unavailable/)
   expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
 })
 
@@ -170,7 +170,7 @@ test('names the service timeout instead of an exit code', async ($, on) => {
   const timedOut = { index_status: 'unavailable', evidence: [], warnings: ['context_service_timeout'] }
   stubs(on, { value: { exitCode: 1, stdout: JSON.stringify(timedOut), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · context unavailable (context_service_timeout)')
+  expect(await warning($)).toBe('Atrium · context unavailable (context_service_timeout)')
   expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
 })
 
@@ -179,7 +179,7 @@ test('says why nothing was retrieved when retrieval was degraded', async ($, on)
   const missing = { index_status: 'ready', evidence: [], warnings: ['no_matches', 'dense_matrix_unavailable'] }
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(missing), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · nothing retrieved for the last prompt (dense_matrix_unavailable)')
+  expect(await warning($)).toBe('Atrium · nothing retrieved for the last prompt (dense_matrix_unavailable)')
   expect(await footer($)).toBeUndefined()
 })
 
@@ -189,7 +189,7 @@ test('keeps routine warnings and a rebuilding matrix out of sight', async ($, on
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(routine), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
   expect(seen.status).toBeUndefined()
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
 test('warns when evidence came back from a degraded retrieval', async ($, on) => {
@@ -198,7 +198,7 @@ test('warns when evidence came back from a degraded retrieval', async ($, on) =>
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(fallback), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
   expect(seen.status).toBeUndefined()
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note, degraded (semantic_unavailable_lexical_fallback)')
+  expect(await warning($)).toBe('Atrium · 1 past session, 1 note, degraded (semantic_unavailable_lexical_fallback)')
   expect(seen.context.length).toBe(1)
   expect(await footer($)).toBeUndefined()
 })
@@ -219,9 +219,9 @@ test('a failure after a healthy prompt takes the green line down', async ($, on)
   on('ui.log', () => ({ value: undefined }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
   await $.prompt.submit({ text: PROMPT })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   await $.prompt.submit({ text: PROMPT })
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · context unavailable (atrium context exited 1)')
+  expect(await warning($)).toBe('Atrium · context unavailable (atrium context exited 1)')
   expect(await footer($)).toBeUndefined()
 })
 
@@ -233,10 +233,10 @@ test('a healthy prompt after a failure takes the warning down', async ($, on) =>
   ]
   stubs(on, () => runs.shift(), {})
   await $.prompt.submit({ text: PROMPT })
-  expect(await warning($)).toBe('⣰⣺⣗⣆ Atrium · context unavailable (atrium context exited 1)')
+  expect(await warning($)).toBe('Atrium · context unavailable (atrium context exited 1)')
   await $.prompt.submit({ text: PROMPT })
   expect(await warning($)).toBeUndefined()
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
 test('keeps what is drawn beneath and adds the green line after it', async ($, on) => {
@@ -248,7 +248,7 @@ test('keeps what is drawn beneath and adds the green line after it', async ($, o
   expect(beneath?.text).toBe('mode: focus & memory paused')
   expect(await ui.find({ type: 'Text', text: 'mode:' })).toBeDefined()
   const green = (await ui.findAll({ type: 'Text' })).filter((found) => found.props.color === 'success')
-  expect(green.map((found) => found.text)).toEqual(['⣰⣺⣗⣆ Atrium · 1 session · 1 note'])
+  expect(green.map((found) => found.text)).toEqual(['Atrium · 1 past session, 1 note'])
   await ui.unmount()
 })
 
@@ -265,7 +265,7 @@ test('a skipped prompt after a healthy one takes the green line down', async ($,
   const seen: any = {}
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   await $.prompt.submit({ text: '/compact' })
   expect(await footer($)).toBeUndefined()
   await $.prompt.submit({ text: PROMPT })
@@ -291,7 +291,7 @@ test('leaving a project after a healthy prompt takes the green line down', async
     return { text: e.text }
   })
   await $.prompt.submit({ text: PROMPT })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   await $.prompt.submit({ text: PROMPT })
   expect(await footer($)).toBeUndefined()
   expect(seen.context ?? []).toEqual([])
@@ -309,9 +309,9 @@ test('says no note was cited once the answer names none', async ($, on) => {
   const seen: any = {}
   healthy(on, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   await $.turn.complete({ answer: 'Done, nothing from notes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ no note cited')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: no note cited')
 })
 
 test('counts the notes an answer cites', async ($, on) => {
@@ -319,7 +319,7 @@ test('counts the notes an answer cites', async ($, on) => {
   healthy(on, seen)
   await $.prompt.submit({ text: PROMPT })
   await $.turn.complete({ answer: 'Per brain/topics/atrium.md and brain/topics/atrium.md (cited as brain/...md), yes.', durationMs: 1, isAborted: false, turnId: 't1', reason: 'answer' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 1 cited')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 cited')
 })
 
 test('counts atrium lookups and the notes they returned', async ($, on) => {
@@ -328,9 +328,9 @@ test('counts atrium lookups and the notes they returned', async ($, on) => {
   on('tool.call', () => ({ result: 'ok', text: '{"evidence": [{"note_path": "brain/people/ana.md"}, {"note_path": "brain/topics/x.md"}, {"note_path": "brain/../secret.md"}], "text": "see brain/topics/quoted.md"}' }))
   await $.prompt.submit({ text: PROMPT })
   await $.tool.call({ tool: 'mcp__atrium__atrium_context', query: 'who is ana' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 2 read · 1 lookup')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 2 read, 1 lookup')
   await $.tool.call({ tool: 'mcp__plugin_my_tools_atrium__atrium_search', query: 'ana' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 2 read · 2 lookups')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 2 read, 2 lookups')
 })
 
 test('counts a note opened as a file of the instance, and nothing else', async ($, on) => {
@@ -342,7 +342,7 @@ test('counts a note opened as a file of the instance, and nothing else', async (
   await $.tool.call({ tool: 'Read', file_path: '/work/repo/brain/README.md' })
   await $.tool.call({ tool: 'Bash', command: 'ls brain' })
   await $.tool.call({ tool: 'Glob', pattern: '*.md', path: '/data/wiki/brain/topics/*.md' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 1 read')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 read')
 })
 
 test('counts an atrium command run from the shell as a lookup', async ($, on) => {
@@ -351,7 +351,7 @@ test('counts an atrium command run from the shell as a lookup', async ($, on) =>
   on('tool.call', () => ({ result: 'ok', text: 'nothing' }))
   await $.prompt.submit({ text: PROMPT })
   await $.tool.call({ tool: 'Bash', command: 'atrium search "stop hook" --project .' })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 1 lookup')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 1 lookup')
 })
 
 test('a new prompt starts the brain count over', async ($, on) => {
@@ -361,7 +361,7 @@ test('a new prompt starts the brain count over', async ($, on) => {
   await $.prompt.submit({ text: PROMPT })
   await $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'x' })
   await $.prompt.submit({ text: PROMPT })
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
 test('hands a subagent the evidence for its own task', async ($, on) => {
@@ -405,15 +405,15 @@ test('counts lookups that finish together, and drops one from a finished turn', 
   })
   await $.prompt.submit({ text: PROMPT })
   await Promise.all(['a', 'b', 'c'].map((query) => $.tool.call({ tool: 'mcp__atrium__atrium_search', query })))
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 3 read · 3 lookups')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note · brain: 3 read, 3 lookups')
   const late = $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'late' })
   await $.prompt.submit({ text: PROMPT })
   release()
   await late
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
-test('raises the temple while retrieval runs, and says when it retries', async ($, on) => {
+test('says searching while retrieval runs, and retrying on a second run', async ($, on) => {
   const seen: any = {}
   const clock = mock.clock(on)
   let fail, answer
@@ -432,22 +432,20 @@ test('raises the temple while retrieval runs, and says when it retries', async (
   stubs(on, () => runs.shift()(), seen, false)
   const pending = $.prompt.submit({ text: PROMPT })
   await clock.settle()
-  expect(await row($)).toEqual({ text: '⣀⣀⣀⣀ Atrium', colors: ['success'], bold: [false] })
-  await clock.advance(150)
-  expect((await row($)).text).toBe('⣠⣠⣄⣄ Atrium')
+  expect(await row($)).toEqual({ text: 'Atrium · searching', colors: ['success'], bold: [false] })
   fail()
   await clock.settle()
   const retrying = await row($)
-  expect(retrying.text).toBe('⣠⣠⣄⣄ Atrium · retrying')
+  expect(retrying.text).toBe('Atrium · retrying')
   expect(retrying.colors[0]).toBe('warning')
   await clock.advance(1500)
   answer()
   await clock.settle()
   await pending
-  expect(await footer($)).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note')
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
-test('lights the brain for a moment after a lookup', async ($, on) => {
+test('lights the brain part for a moment after a lookup', async ($, on) => {
   const seen: any = {}
   const clock = mock.clock(on)
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(SERVED), stderr: '' } }, seen, false)
@@ -456,7 +454,7 @@ test('lights the brain for a moment after a lookup', async ($, on) => {
   await $.tool.call({ tool: 'mcp__atrium__atrium_search', query: 'x' })
   await clock.settle()
   const lit = await row($)
-  expect(lit.text).toBe('⣰⣺⣗⣆ Atrium · 1 session · 1 note  ◉ 1 lookup')
+  expect(lit.text).toBe('Atrium · 1 past session, 1 note · brain: 1 lookup')
   expect(lit.colors.at(-1)).toBe('claude')
   expect(lit.bold.at(-1)).toBe(true)
   await clock.advance(1200)
@@ -486,7 +484,7 @@ test('the details pane says what was asked, how it went and what came back', asy
   expect(rows.splice(3, 1)).toEqual(['  atrium 0 ms · start-up 0 ms · history 0 ms · curated 0 ms'])
   expect(rows[3]).toMatch(/^  ~\d+ tokens handed to the model \(\d+ chars\)$/)
   expect(rows[4]).toBe('  index refreshed 2026-10-14 11:05')
-  expect(rows[5]).toBe('  session · 2026-09-16 · synthesis/7a2529ff723a · score 0.7')
+  expect(rows[5]).toBe('  past session · 2026-09-16 · synthesis/7a2529ff723a · score 0.7')
   expect(rows[6]).toBe('    The hook pipes stdin JSON to Python.')
   expect(rows[7]).toBe('  note · 2026-10-01 · brain/topics/atrium.md · score 0.6')
   expect(rows).toContain('Session')

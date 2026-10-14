@@ -1,4 +1,3 @@
-import { BRAIN_ICON } from './brain-icon.js'
 import { addedStats } from './added-stats.js'
 import { brainAccess } from './brain-access.js'
 import { degradation } from './degradation.js'
@@ -6,7 +5,6 @@ import { detailRows } from './detail-rows.js'
 import { EMPTY_STATS } from './empty-stats.js'
 import { EMPTY_USAGE } from './empty-usage.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
-import { FRAME_MS } from './frame-ms.js'
 import { instanceDirectory } from './instance-directory.js'
 import { NOTHING_RELEVANT } from './nothing-relevant.js'
 import { notePaths } from './note-paths.js'
@@ -21,30 +19,28 @@ import { RETRIEVAL_TIMEOUT_MS } from './retrieval-timeout.js'
 import { RETRY_DELAY_MS } from './retry-delay.js'
 import { shouldSkip } from './should-skip.js'
 import { subagentSkip } from './subagent-skip.js'
-import { TEMPLE_FRAMES } from './temple-frames.js'
-import { TEMPLE_ICON } from './temple-icon.js'
 import { usageNotice } from './usage-notice.js'
 
 // Retrieves atrium context before each turn: the evidence goes to Claude after
-// the prompt. Everything it shows sits at the right of the prompt footer, after
-// a temple drawn in braille dots: green when retrieval is healthy, the warning
-// color when it failed or was degraded. While a retrieval runs the temple is
-// raised a course at a time, with `retrying` beside it on a second run. Nothing
+// the prompt. Everything it shows sits at the right of the prompt footer, as a
+// line led by `Atrium`: green when retrieval is healthy, the warning color when
+// it failed or was degraded, `searching` while a retrieval runs and `retrying`
+// on a second run. Nothing
 // is pinned at the left: `$.ui.status` is only cleared, in case an older
 // version of this mod left a line there.
 // Replaces the UserPromptSubmit shell hook where this mod loads; register one or
 // the other, never both, or every prompt retrieves twice.
 //
-// After a braille brain, the line also says how the turn used the brain, since
-// "2 notes" only says what was handed over: the lookups the model made, the
-// notes it read, and the notes its answer cited (`1 cited · 2 read`), or `no
-// note cited` once an answer named none of the notes it was given. The brain
-// lights up for a moment each time the model takes something from it.
+// The line also says how the turn used the brain, since "2 notes" only says
+// what was handed over: the lookups the model made, the notes it read, and the
+// notes its answer cited (`brain: 1 cited, 2 read`), or `brain: no note cited`
+// once an answer named none of the notes it was given. That part lights up for
+// a moment each time the model takes something from the brain.
 //
 // Where the healthy line and the warning drawn at the right of the prompt
 // footer are kept, the brain use of the current turn, and the instance the last
-// retrieval served from, the retrieval animation and whether the brain is lit;
-// a `$.state` reference must be a literal of this file.
+// retrieval served from, whether a retrieval is running and whether the brain
+// part is lit; a `$.state` reference must be a literal of this file.
 const SUMMARY = { plugin: 'atrium-context', key: 'summary' }
 const WARNING = { plugin: 'atrium-context', key: 'warning' }
 const USAGE = { plugin: 'atrium-context', key: 'usage' }
@@ -102,7 +98,7 @@ export function register(on) {
     return h(
       Box,
       { flexDirection: 'column' },
-      h(Box, { flexDirection: 'row' }, h(Text, { color: 'success', bold: true }, TEMPLE_ICON + ' Atrium  '), h(Button, { key: 'hide', label: 'Hide', onPress: () => toggleDetails($) })),
+      h(Box, { flexDirection: 'row' }, h(Text, { color: 'success', bold: true }, 'Atrium  '), h(Button, { key: 'hide', label: 'Hide', onPress: () => toggleDetails($) })),
       ...rows.map((row) => h(Text, { color: row.color, dimColor: row.isDim, bold: row.isBold }, row.text)),
     )
   })
@@ -214,9 +210,9 @@ export function register(on) {
   })
 
   // Whatever draws the footer's mode labels beneath this mod (the engine, or
-  // another mod), then this mod's row: the temple and what was retrieved (or
-  // the animation while a retrieval runs), then the brain and how the turn used
-  // it. Passes when there is nothing to say. `next(e)` resolves to the tree
+  // another mod), then this mod's row: `Atrium` and what was retrieved (or
+  // `searching` while a retrieval runs), then how the turn used the brain.
+  // Passes when there is nothing to say. `next(e)` resolves to the tree
   // drawn beneath (a RenderElement, never null, even with no labels), so the
   // separator follows the labels rather than the tree.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
@@ -230,20 +226,19 @@ export function register(on) {
     const beneath = await next(e)
     const { Box, Button, Text } = $.ui.resolve(e)
     const parts = []
-    // The row always leads with the mark and the name, so it reads as Atrium's
-    // whatever follows it.
+    // The row always leads with the name, so it reads as Atrium's whatever
+    // follows it.
     if (running) {
       const color = running.kind === 'retrying' ? 'warning' : 'success'
-      parts.push(h(Text, { color }, TEMPLE_FRAMES[running.frame % TEMPLE_FRAMES.length] + ' Atrium'))
-      if (running.kind === 'retrying') parts.push(h(Text, { color, dimColor: true }, ' · retrying'))
+      parts.push(h(Text, { color }, 'Atrium · ' + running.kind))
     } else {
       const color = warning ? 'warning' : 'success'
       const said = warning ?? summary
-      parts.push(h(Text, { color }, TEMPLE_ICON + ' Atrium' + (said ? ' · ' + said : '')))
+      parts.push(h(Text, { color }, 'Atrium' + (said ? ' · ' + said : '')))
     }
     if (used && !running) {
-      parts.push(h(Text, null, '  '))
-      parts.push(h(Text, { color: isLit ? 'claude' : 'success', bold: Boolean(isLit) }, BRAIN_ICON + ' ' + used))
+      parts.push(h(Text, { color: 'success' }, ' · '))
+      parts.push(h(Text, { color: isLit ? 'claude' : 'success', bold: Boolean(isLit) }, used))
     }
     return h(
       Box,
@@ -289,18 +284,12 @@ function recordUse($, of, change) {
   return written
 }
 
-// Raises the temple a course per frame while a prompt's retrieval runs; the
-// function it returns stops it and takes the animation down.
+// Says `searching` in the footer while a prompt's retrieval runs; the function
+// it returns takes that down.
 function animate($) {
-  activity = { kind: 'searching', frame: 0 }
-  const draw = () => $.state.set(ACTIVITY, { ...activity }).catch(() => {})
-  draw()
-  const timer = $.clock.every(FRAME_MS, () => {
-    activity.frame += 1
-    draw()
-  })
+  activity = { kind: 'searching' }
+  $.state.set(ACTIVITY, { ...activity }).catch(() => {})
   return async () => {
-    timer.cancel()
     activity = null
     await $.state.set(ACTIVITY, null).catch(() => {})
   }
@@ -323,7 +312,7 @@ async function recordRetrieval($, run) {
   await $.state.set(STATS, stats).catch(() => {})
 }
 
-// Lights the brain for a moment after the model took something from it.
+// Lights the brain part for a moment after the model took something from it.
 function pulse($) {
   const id = (pulses += 1)
   $.state.set(PULSE, true).catch(() => {})

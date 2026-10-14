@@ -475,12 +475,13 @@ async function pane($) {
 
 test('the details pane says what was asked, how it went and what came back', async ($, on) => {
   const seen: any = {}
-  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ ...ANSWER, evidence: ANSWER.evidence.map((item, index) => ({ ...item, score: 0.7 - index / 10 })), route: { requested_lane: 'dense' }, freshness: { last_refresh: '2026-10-14T11:05:37+00:00' } }), stderr: '' } }, seen)
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ ...ANSWER, evidence: ANSWER.evidence.map((item, index) => ({ ...item, score: 0.7 - index / 10 })), route: { requested_lane: 'dense' }, served_by: 'service', elapsed_ms: 0, steps: [{ pass: 'history', ms: 0, candidates: 3 }, { pass: 'curated', ms: 0, candidates: 1 }], freshness: { last_refresh: '2026-10-14T11:05:37+00:00' } }), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
   const rows = await pane($)
   expect(rows[0]).toBe('Last prompt')
   expect(rows[1]).toBe('  ' + PROMPT)
-  expect(rows[2]).toBe('  healthy · 0 ms · dense lane')
+  expect(rows[2]).toBe('  healthy · 0 ms · resident service · dense lane')
+  expect(rows.splice(3, 1)).toEqual(['  atrium 0 ms · start-up 0 ms · history 0 ms · curated 0 ms'])
   expect(rows[3]).toMatch(/^  ~\d+ tokens handed to the model \(\d+ chars\)$/)
   expect(rows[4]).toBe('  index refreshed 2026-10-14 11:05')
   expect(rows[5]).toBe('  session · 2026-09-16 · synthesis/7a2529ff723a · score 0.7')

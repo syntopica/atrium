@@ -15,6 +15,9 @@ declare module 'claude-code' {
         ms: number
         chars: number
         lane: string | null
+        servedBy: string | null
+        atriumMs: number | null
+        passes: { name: string; ms: number; candidates: number }[]
         freshness: string | null
         items: { kind: string; date: string; source: string; score: number | null; title: string }[]
       } | null

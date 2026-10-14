@@ -1,6 +1,6 @@
 {
   "name": "atrium-context",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Retrieves atrium context for each prompt and each subagent task, and says how the turn used the brain: a braille temple and a brain mark at the right of the footer, pressable for a details pane,, animated while retrieval runs and when the brain is used, a warning in the same place when it does not, after one retry",
   "author": {
     "name": "Syntopica"

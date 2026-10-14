@@ -113,8 +113,8 @@ and shows the result where the person keeps seeing it once the transcript scroll
 a healthy retrieval is a green line at the right of the prompt footer (`Atrium ·
 2 past sessions, 2 notes`, or `Atrium · nothing relevant`), and a failed or
 degraded one takes its place in the warning color and names the cause; nothing
-is drawn at the left. While retrieval runs the line says `Atrium · searching`,
-and `Atrium · retrying` on a second run. Pressing the line, or typing `/atrium`, shows a details band above the prompt (pressed again, or `Hide`, hides it): the prompt the
+is drawn at the left. While retrieval runs the line says `Atrium · searching`
+with moving dots, and `Atrium · retrying` on a second run. Pressing the line, or typing `/atrium`, shows a details band above the prompt (pressed again, or `Hide`, hides it): the prompt the
 retrieval ran on, its status, time, attempts and lane, which path answered and
 how its time split between start-up and each pass, the approximate tokens
 handed to the model, each item with its score, the turn's lookups and the notes

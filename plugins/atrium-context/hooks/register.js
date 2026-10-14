@@ -5,9 +5,11 @@ import { detailRows } from './detail-rows.js'
 import { EMPTY_STATS } from './empty-stats.js'
 import { EMPTY_USAGE } from './empty-usage.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
+import { FRAME_MS } from './frame-ms.js'
 import { instanceDirectory } from './instance-directory.js'
 import { NOTHING_RELEVANT } from './nothing-relevant.js'
 import { notePaths } from './note-paths.js'
+import { PROGRESS_DOTS } from './progress-dots.js'
 import { PULSE_MS } from './pulse-ms.js'
 import { renderEvidence } from './render-evidence.js'
 import { retrievalNotice } from './retrieval-notice.js'
@@ -24,8 +26,8 @@ import { usageNotice } from './usage-notice.js'
 // Retrieves atrium context before each turn: the evidence goes to Claude after
 // the prompt. Everything it shows sits at the right of the prompt footer, as a
 // line led by `Atrium`: green when retrieval is healthy, the warning color when
-// it failed or was degraded, `searching` while a retrieval runs and `retrying`
-// on a second run. Nothing
+// it failed or was degraded, `searching` with moving dots while a retrieval
+// runs and `retrying` on a second run. Nothing
 // is pinned at the left: `$.ui.status` is only cleared, in case an older
 // version of this mod left a line there.
 // Replaces the UserPromptSubmit shell hook where this mod loads; register one or
@@ -230,7 +232,7 @@ export function register(on) {
     // follows it.
     if (running) {
       const color = running.kind === 'retrying' ? 'warning' : 'success'
-      parts.push(h(Text, { color }, 'Atrium · ' + running.kind))
+      parts.push(h(Text, { color }, 'Atrium · ' + running.kind + PROGRESS_DOTS[running.frame % PROGRESS_DOTS.length]))
     } else {
       const color = warning ? 'warning' : 'success'
       const said = warning ?? summary
@@ -284,12 +286,19 @@ function recordUse($, of, change) {
   return written
 }
 
-// Says `searching` in the footer while a prompt's retrieval runs; the function
-// it returns takes that down.
+// Says `searching` in the footer while a prompt's retrieval runs, its dots
+// moving a frame at a time; the function it returns stops them and takes the
+// line down.
 function animate($) {
-  activity = { kind: 'searching' }
-  $.state.set(ACTIVITY, { ...activity }).catch(() => {})
+  activity = { kind: 'searching', frame: 0 }
+  const draw = () => $.state.set(ACTIVITY, { ...activity }).catch(() => {})
+  draw()
+  const timer = $.clock.every(FRAME_MS, () => {
+    activity.frame += 1
+    draw()
+  })
   return async () => {
+    timer.cancel()
     activity = null
     await $.state.set(ACTIVITY, null).catch(() => {})
   }

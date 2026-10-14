@@ -5,7 +5,7 @@ declare module 'claude-code' {
       warning: string | null
       usage: { injected: number; lookups: number; read: string[]; cited: string[]; isComplete: boolean } | null
       instance: string | null
-      activity: { kind: 'searching' | 'retrying' } | null
+      activity: { kind: 'searching' | 'retrying'; frame: number } | null
       pulse: boolean | null
       details: {
         query: string

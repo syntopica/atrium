@@ -23,7 +23,9 @@ def test_a_served_answer_is_returned_with_an_absolute_project(monkeypatch, sent,
         return {"served": True}
 
     monkeypatch.setattr(adapter, "request_context_service", service)
-    assert adapter.atrium_context("x", project=project) == {"served": True}
+    answer = adapter.atrium_context("x", project=project)
+    assert answer["served"] is True
+    assert answer["served_by"] == "service"
     assert sent[0]["project"].startswith("/")
     assert "~" not in sent[0]["project"]
 

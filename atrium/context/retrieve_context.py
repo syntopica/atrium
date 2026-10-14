@@ -12,6 +12,7 @@ from atrium.context.finalize_context import finalize_context
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.linked_hits import linked_hits
 from atrium.context.select_evidence import select_evidence
+from atrium.context.timed import timed
 from atrium.context.validate_request import validate_request
 from atrium.context.vector_presence import vector_presence
 from atrium.recall.project_workspace import project_workspace
@@ -73,48 +74,57 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         # of time"; unreported, it is indistinguishable from "this is not in the
         # index", which is the one thing a memory must never say by accident.
         exhausted: set[str] = set()
+        # Each pass's wall time, so a slow prompt names the pass that was slow.
         try:
-            notes = context_hits(
-                connection,
-                query,
-                depth,
-                response["route"]["curated_lane"],
-                active_embedder,
-                curated=True,
-                exhausted=exhausted,
-                dense_matrix=dense_matrix,
+            notes, curated_ms = timed(
+                lambda: context_hits(
+                    connection,
+                    query,
+                    depth,
+                    response["route"]["curated_lane"],
+                    active_embedder,
+                    curated=True,
+                    exhausted=exhausted,
+                    dense_matrix=dense_matrix,
+                )
             )
-            history = context_hits(
-                connection,
-                query,
-                depth,
-                response["route"]["history_lane"],
-                active_embedder,
-                curated=False,
-                workspace=workspace,
-                exhausted=exhausted,
-                dense_matrix=dense_matrix,
+            history, history_ms = timed(
+                lambda: context_hits(
+                    connection,
+                    query,
+                    depth,
+                    response["route"]["history_lane"],
+                    active_embedder,
+                    curated=False,
+                    workspace=workspace,
+                    exhausted=exhausted,
+                    dense_matrix=dense_matrix,
+                )
             )
         except (OSError, RuntimeError, ValueError):
             if lane not in ("auto", "dense"):
                 raise
-            notes = context_hits(
-                connection, query, depth, "words", None, curated=True, exhausted=exhausted
+            notes, curated_ms = timed(
+                lambda: context_hits(
+                    connection, query, depth, "words", None, curated=True, exhausted=exhausted
+                )
             )
-            history = context_hits(
-                connection,
-                query,
-                depth,
-                "words",
-                None,
-                curated=False,
-                workspace=workspace,
-                exhausted=exhausted,
+            history, history_ms = timed(
+                lambda: context_hits(
+                    connection,
+                    query,
+                    depth,
+                    "words",
+                    None,
+                    curated=False,
+                    workspace=workspace,
+                    exhausted=exhausted,
+                )
             )
             response["route"]["curated_lane"] = "words"
             response["route"]["history_lane"] = "words"
             response["warnings"].append("semantic_unavailable_lexical_fallback")
-        links, warnings = linked_hits(connection, notes[:limit], depth)
+        (links, warnings), links_ms = timed(lambda: linked_hits(connection, notes[:limit], depth))
         response["warnings"].extend(sorted(exhausted) + warnings)
         response["steps"] = [
             {
@@ -123,6 +133,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 "lane": response["route"]["history_lane"],
                 "candidates": len(history),
                 "candidate_limit": depth,
+                "ms": history_ms,
             },
             {
                 "pass": "curated",
@@ -130,6 +141,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 "lane": response["route"]["curated_lane"],
                 "candidates": len(notes),
                 "candidate_limit": depth,
+                "ms": curated_ms,
             },
             {
                 "pass": "links",
@@ -139,6 +151,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                 "candidate_limit": depth,
                 "root_limit": limit,
                 "targets_per_root_limit": 50,
+                "ms": links_ms,
             },
         ]
         candidates: list[tuple[Hit, str, str | None]] = []

@@ -77,6 +77,8 @@ def test_service_answers_like_in_process_retrieval(served):
         item["record_id"] for item in local["evidence"]
     ]
     assert any(item["note_path"] == "projects/server-a/access.md" for item in reply["evidence"])
+    assert [step["pass"] for step in reply["steps"]] == ["history", "curated", "links"]
+    assert all(isinstance(step["ms"], int) and step["ms"] >= 0 for step in reply["steps"])
 
 
 def test_service_refuses_another_index(served, tmp_path):

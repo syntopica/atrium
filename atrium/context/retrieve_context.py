@@ -20,6 +20,8 @@ from atrium.context.select_evidence import select_evidence
 from atrium.context.timed import timed
 from atrium.context.validate_request import validate_request
 from atrium.context.vector_presence import vector_presence
+from atrium.forget.forget_ledger_file import forget_ledger_file
+from atrium.forget.forgotten_by_term import forgotten_by_term
 from atrium.recall.project_workspace import project_workspace
 from atrium.retrieve.hit import Hit
 from atrium.sql.load_sql import load_sql
@@ -153,7 +155,9 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         retirements = read_retirements(connection)
         mentions = retired_mentions(candidates, retirements)
         select_evidence(demote_retired(candidates, mentions, query), response)
-        annotate_retired(response, mentions, retirements)
+        annotate_retired(
+            response, mentions, retirements, lambda: forgotten_by_term(forget_ledger_file())
+        )
     except (sqlite3.Error, RuntimeError, OSError):
         response["index_status"] = "unavailable"
         response["warnings"].append("index_unavailable_or_incompatible")

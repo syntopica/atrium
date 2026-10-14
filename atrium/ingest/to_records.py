@@ -36,6 +36,7 @@ def to_records(
     conversation: dict[str, Any],
     tally: AdmissionTally | None = None,
     aliases: Mapping[str, str | WorkspaceAlias] | None = None,
+    forgotten: frozenset[str] = frozenset(),
 ) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
@@ -43,7 +44,8 @@ def to_records(
     with the results that answer them, and bare acknowledgements. Nothing is
     deleted by skipping: the archive keeps every event, and this only decides
     what earns a row in a derived index that can be rebuilt with a different
-    rule tomorrow. Pass a ``tally`` to learn what each rule turned away -- the
+    rule tomorrow. ``forgotten`` holds the record ids the forget ledger keeps
+    out. Pass a ``tally`` to learn what each rule turned away -- the
     admitted total alone looked healthy while 162,225 tool-call and thinking
     records were being filed as conversation.
     """
@@ -82,9 +84,13 @@ def to_records(
         if not event_id:
             counts.reject("missing event id")
             continue
+        record_id = record_identity(conversation_id, event_id)
+        if record_id in forgotten:
+            counts.reject("forgotten")
+            continue
         counts.admit(event["role"])
         yield Record(
-            record_id=record_identity(conversation_id, event_id),
+            record_id=record_id,
             event_id=event_id,
             conversation_id=conversation_id,
             source_sha256=source_sha256,

@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from atrium.forget.forget_ledger_file import forget_ledger_file
+from atrium.forget.forgotten_ids import forgotten_ids
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.is_excluded_automation import is_excluded_automation
@@ -50,6 +52,7 @@ def run_ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     # Read once per pass, not once per conversation: it is a file on disk and
     # this loop runs 30,000 times.
     aliases = workspace_aliases()
+    forgotten = forgotten_ids(forget_ledger_file())
     seen_by_provider: dict[str, set[str]] = {}
     revisions_by_provider: dict[str, dict[str, Revision]] = {}
     try:
@@ -62,7 +65,9 @@ def run_ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
                 if provider not in revisions_by_provider:
                     revisions_by_provider[provider] = read_revisions(connection, provider)
                 automation = is_excluded_automation(provider, conversation.get("workspace"))
-                records = [] if automation else list(to_records(conversation, tally, aliases))
+                records = (
+                    [] if automation else list(to_records(conversation, tally, aliases, forgotten))
+                )
                 excluded += automation
                 revision = Revision(
                     rows_sha256=rows_sha256(records),

@@ -6,6 +6,7 @@ from pathlib import Path
 from atrium.commands.run_doctor import run_doctor
 from atrium.commands.run_embed import run_embed
 from atrium.commands.run_erase import run_erase
+from atrium.commands.run_forget import run_forget
 from atrium.commands.run_ingest import run_ingest
 from atrium.commands.run_ingest_notes import run_ingest_notes
 from atrium.commands.run_ingest_synthesis import run_ingest_synthesis
@@ -112,6 +113,8 @@ def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand
         )
     if args.command == "erase":
         return run_erase(args.index, args.plan, archive, apply=args.apply)
+    if args.command == "forget":
+        return run_forget(args.index, state, restore=args.restore, apply=args.apply)
     if args.command == "rekey-synthesis":
         return run_rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":

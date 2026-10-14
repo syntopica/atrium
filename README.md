@@ -110,11 +110,11 @@ carries none, so the warning keeps meaning something.
 On Claude Code 2.1.287 or later, the `atrium-context` mod in
 `plugins/atrium-context` does the same retrieval from a `prompt.submit` hook
 and shows the result where the person keeps seeing it once the transcript scrolls:
-a healthy retrieval is a green line at the right of the prompt footer, after a
-temple drawn in braille dots (`⣰⣺⣗⣆ Atrium · 2 sessions · 2 notes`, or `⣰⣺⣗⣆ Atrium ·
-nothing relevant`), and a failed or degraded one takes its place in the warning color
-and names the cause; nothing is drawn at the left. While retrieval runs the
-temple is raised a course at a time, with `retrying` beside it on a second run. The row always starts with `⣰⣺⣗⣆ Atrium`. Pressing it, or typing `/atrium`, shows a details band above the prompt (pressed again, or `Hide`, hides it): the prompt the
+a healthy retrieval is a green line at the right of the prompt footer (`Atrium ·
+2 past sessions, 2 notes`, or `Atrium · nothing relevant`), and a failed or
+degraded one takes its place in the warning color and names the cause; nothing
+is drawn at the left. While retrieval runs the line says `Atrium · searching`,
+and `Atrium · retrying` on a second run. Pressing the line, or typing `/atrium`, shows a details band above the prompt (pressed again, or `Hide`, hides it): the prompt the
 retrieval ran on, its status, time, attempts and lane, which path answered and
 how its time split between start-up and each pass, the approximate tokens
 handed to the model, each item with its score, the turn's lookups and the notes
@@ -137,10 +137,10 @@ answer relies on (`brain/...md`), and the hooks count what they can observe:
 - **read**: notes an atrium lookup returned as evidence (`note_path`), or opened as files of the instance;
 - **lookups**: calls to the atrium MCP tools, `atrium context|search|recall` or `brain query`.
 
-In Claude Code the mod adds this to the green line after a brain mark, for
-example `⣰⣺⣗⣆ Atrium · 1 session · 2 notes  ◉ 1 cited · 3 read · 1 lookup`, or `◉ no
-note cited` once a turn has answered without reading or citing any injected
-note; the brain lights up for a moment each time the model takes from it. That is
+In Claude Code the mod adds this to the green line, for example `Atrium · 1 past
+session, 2 notes · brain: 1 cited, 3 read, 1 lookup`, or `brain: no note cited`
+once a turn has answered without reading or citing any injected note; that part
+lights up for a moment each time the model takes from the brain. That is
 an observation, not proof the notes went unused: an answer can rely on a note
 without naming it. The cited paths
 go to the debug log. A subagent gets the same evidence: the mod retrieves on the

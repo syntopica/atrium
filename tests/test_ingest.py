@@ -154,6 +154,18 @@ def test_prose_that_mentions_a_tool_is_not_a_rendered_call():
     assert [r.event_id for r in to_records(conversation)] == ["prose", "prompt"]
 
 
+def test_calls_rendered_at_the_end_of_prose_keep_the_prose_and_drop_their_results():
+    conversation = _conversation(
+        [
+            _message("assistant", "Purgo la cache.\ntool: Bash\ntool: Bash", "prose"),
+            _message("user", "cpanel-deploy.sh", "result1"),
+            _message("user", "HTTP/2 200", "result2"),
+            _message("user", "Ya no sale la pagina vieja", "prompt"),
+        ]
+    )
+    assert [r.event_id for r in to_records(conversation)] == ["prose", "prompt"]
+
+
 def test_a_result_archived_with_its_own_role_settles_the_rendered_call():
     """Since scribe 199f393 new results arrive as `role: tool`; dropped by the
     role rule, they must still settle the call, or the next prompt is lost."""

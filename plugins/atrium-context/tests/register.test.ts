@@ -81,6 +81,21 @@ function stubs(on, run, seen, isClockStubbed = true) {
   })
 }
 
+test('states a retirement before the evidence and tags what predates it', async ($, on) => {
+  const seen: any = {}
+  const answer = {
+    ...ANSWER,
+    evidence: [{ ...ANSWER.evidence[0], retired: 'Holded' }, ANSWER.evidence[1]],
+    retired: [{ terms: ['Holded'], since: '2026-09-22', replaced_by: 'InteliFactu', note: 'brain/business/holded.md' }],
+  }
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(answer), stderr: '' } }, seen)
+  await $.prompt.submit({ text: PROMPT })
+  const block = seen.context[0]
+  expect(block).toContain('- RETIRED 2026-09-22: Holded; use InteliFactu instead. Older evidence naming it describes the past; see `brain/business/holded.md`.')
+  expect(block.indexOf('RETIRED')).toBeLessThan(block.indexOf('- [episode]'))
+  expect(block).toContain('- [episode] [retired: Holded] 2026-09-16 synthesis/7a2529ff723a')
+})
+
 test('adds retrieved evidence and says what was retrieved', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } }, seen)

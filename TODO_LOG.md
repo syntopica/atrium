@@ -8,6 +8,20 @@
 
 ### 2026-10
 
+- [x] 2026-10-14 — **Retired tools kept steering agents.** Holded was retired on 2026-09-22,
+  yet `atrium_context` answered "facturacion recurrente mensual hosting" with 6 of 8 excerpts
+  describing it as current practice. A note now declares a retirement in its frontmatter
+  (`retired: since / replaced_by / terms`, documented in brain's SCHEMA.md); context ranks
+  history from before that date naming a term below everything else, plus the declaring
+  page's own chunks, tags each excerpt `[retired: <term>]`, and states the retirement and its
+  replacement above the evidence. Nothing is deleted; a question naming the term is unchanged.
+  - Result: on the live index, auto lane, 8 results: "facturacion recurrente mensual hosting"
+    6 to 1 excerpts naming Holded, "como emito una factura..." 6 to 4, "comprobar si una factura
+    esta pagada" 3 to 2; what remains is history after the retirement and notes calling it
+    retired. Plugin 0.10.0 renders the notice and tags.
+  - Evidence: `uv run pytest -q` 597 passed, 2 skipped; `codeality-py gate` passes;
+    `claude plugin test` 36 pass; `tests/test_retirements.py`.
+
 - [x] 2026-10-14 — **Ingest filed rendered tool calls and their results as conversation.** Older
   Claude Code exports render each tool_use as an assistant message `tool: <Name>` and its
   tool_result as the next unmarked user message; 759,708 calls and 692,868 results, 78% of

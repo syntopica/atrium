@@ -4,13 +4,18 @@ import sqlite3
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
+from atrium.context.annotate_retired import annotate_retired
 from atrium.context.context_hits import context_hits
 from atrium.context.context_indexes_ready import context_indexes_ready
 from atrium.context.context_response import context_response
+from atrium.context.context_steps import context_steps
+from atrium.context.demote_retired import demote_retired
 from atrium.context.dense_matrix_scope import dense_matrix_scope
 from atrium.context.finalize_context import finalize_context
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.linked_hits import linked_hits
+from atrium.context.read_retirements import read_retirements
+from atrium.context.retired_mentions import retired_mentions
 from atrium.context.select_evidence import select_evidence
 from atrium.context.timed import timed
 from atrium.context.validate_request import validate_request
@@ -126,34 +131,14 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
             response["warnings"].append("semantic_unavailable_lexical_fallback")
         (links, warnings), links_ms = timed(lambda: linked_hits(connection, notes[:limit], depth))
         response["warnings"].extend(sorted(exhausted) + warnings)
-        response["steps"] = [
-            {
-                "pass": "history",
-                "scope": workspace or "all_history_explicit_unscoped",
-                "lane": response["route"]["history_lane"],
-                "candidates": len(history),
-                "candidate_limit": depth,
-                "ms": history_ms,
-            },
-            {
-                "pass": "curated",
-                "scope": "curated_notes_in_selected_index",
-                "lane": response["route"]["curated_lane"],
-                "candidates": len(notes),
-                "candidate_limit": depth,
-                "ms": curated_ms,
-            },
-            {
-                "pass": "links",
-                "scope": "one_hop_indexed_curated_same_provider",
-                "lane": "linked",
-                "candidates": len(links),
-                "candidate_limit": depth,
-                "root_limit": limit,
-                "targets_per_root_limit": 50,
-                "ms": links_ms,
-            },
-        ]
+        response["steps"] = context_steps(
+            response,
+            workspace,
+            depth,
+            limit,
+            counts=(len(history), len(notes), len(links)),
+            times=(history_ms, curated_ms, links_ms),
+        )
         candidates: list[tuple[Hit, str, str | None]] = []
         for position in range(max(len(history), len(notes), len(links))):
             if position < len(history):
@@ -165,7 +150,10 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
                     for hit, parent in links
                     if parent == notes[position].record_id
                 )
-        select_evidence(candidates, response)
+        retirements = read_retirements(connection)
+        mentions = retired_mentions(candidates, retirements)
+        select_evidence(demote_retired(candidates, mentions, query), response)
+        annotate_retired(response, mentions, retirements)
     except (sqlite3.Error, RuntimeError, OSError):
         response["index_status"] = "unavailable"
         response["warnings"].append("index_unavailable_or_incompatible")

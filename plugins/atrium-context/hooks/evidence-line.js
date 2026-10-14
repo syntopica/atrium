@@ -6,6 +6,7 @@ import { TRUST_LABEL } from './trust-label.js'
 export function evidenceLine(item) {
   const label = TRUST_LABEL[item.trust ?? ''] ?? item.trust ?? '?'
   const stamp = (item.authored_at ?? '').slice(0, 10)
-  const head = ['[' + label + ']', stamp, evidenceSource(item)].filter(Boolean).join(' ')
+  const retired = item.retired ? '[retired: ' + item.retired + ']' : ''
+  const head = ['[' + label + ']', retired, stamp, evidenceSource(item)].filter(Boolean).join(' ')
   return '- ' + head + '\n  ' + excerpt(item.text ?? '')
 }

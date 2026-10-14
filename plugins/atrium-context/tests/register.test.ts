@@ -413,7 +413,7 @@ test('counts lookups that finish together, and drops one from a finished turn', 
   expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
-test('says searching while retrieval runs, and retrying on a second run', async ($, on) => {
+test('says searching with moving dots while retrieval runs, and retrying on a second run', async ($, on) => {
   const seen: any = {}
   const clock = mock.clock(on)
   let fail, answer
@@ -432,11 +432,13 @@ test('says searching while retrieval runs, and retrying on a second run', async 
   stubs(on, () => runs.shift()(), seen, false)
   const pending = $.prompt.submit({ text: PROMPT })
   await clock.settle()
-  expect(await row($)).toEqual({ text: 'Atrium · searching', colors: ['success'], bold: [false] })
+  expect(await row($)).toEqual({ text: 'Atrium · searching   ', colors: ['success'], bold: [false] })
+  await clock.advance(300)
+  expect((await row($)).text).toBe('Atrium · searching.  ')
   fail()
   await clock.settle()
   const retrying = await row($)
-  expect(retrying.text).toBe('Atrium · retrying')
+  expect(retrying.text).toBe('Atrium · retrying.  ')
   expect(retrying.colors[0]).toBe('warning')
   await clock.advance(1500)
   answer()

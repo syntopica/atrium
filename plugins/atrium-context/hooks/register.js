@@ -1,6 +1,9 @@
 import { BRAIN_ICON } from './brain-icon.js'
+import { addedStats } from './added-stats.js'
 import { brainAccess } from './brain-access.js'
 import { degradation } from './degradation.js'
+import { detailRows } from './detail-rows.js'
+import { EMPTY_STATS } from './empty-stats.js'
 import { EMPTY_USAGE } from './empty-usage.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
 import { FRAME_MS } from './frame-ms.js'
@@ -12,6 +15,7 @@ import { renderEvidence } from './render-evidence.js'
 import { retrievalNotice } from './retrieval-notice.js'
 import { readAnswer } from './read-answer.js'
 import { retrievalArgv } from './retrieval-argv.js'
+import { retrievalDetails } from './retrieval-details.js'
 import { RETRIEVAL_ATTEMPTS } from './retrieval-attempts.js'
 import { RETRIEVAL_TIMEOUT_MS } from './retrieval-timeout.js'
 import { RETRY_DELAY_MS } from './retry-delay.js'
@@ -47,6 +51,8 @@ const USAGE = { plugin: 'atrium-context', key: 'usage' }
 const INSTANCE = { plugin: 'atrium-context', key: 'instance' }
 const ACTIVITY = { plugin: 'atrium-context', key: 'activity' }
 const PULSE = { plugin: 'atrium-context', key: 'pulse' }
+const DETAILS = { plugin: 'atrium-context', key: 'details' }
+const STATS = { plugin: 'atrium-context', key: 'stats' }
 
 // Tool calls finish concurrently, and a read then a write of `$.state` from two
 // of them counted two lookups as one, so the turn's brain use is kept here and
@@ -62,10 +68,39 @@ let written = Promise.resolve()
 // a pulse goes dark only if no later one lit it again.
 let activity = null
 let pulses = 0
+// The session's retrieval totals, kept here for the same reason as `usage`.
+let stats = EMPTY_STATS
 
 // The functions below take `$`, so they stay in this file: the engine follows
 // `$` into functions declared in the hooks module itself, never across an import.
 export function register(on) {
+  // `/atrium` opens the details pane from the keyboard; pressing the footer row
+  // opens it too.
+  on('session.start', async ($, e, next) => {
+    await $.command.register({ name: 'atrium', description: 'Show what atrium retrieved for the last prompt, and how this session used the brain' })
+    return next(e)
+  })
+
+  on('command.run', { command: 'atrium' }, async ($) => {
+    await openDetails($)
+    return { text: 'Atrium details opened.' }
+  })
+
+  // The details pane: the last prompt's retrieval, the turn's brain use and
+  // the session's totals, as rows `detailRows` lays out.
+  on('ui.render', { component: 'Pane', requestId: 'atrium' }, async ($, e) => {
+    const { Box, Text } = $.ui.resolve(e)
+    const { value: details } = await $.state.get(DETAILS)
+    const { value: totals } = await $.state.get(STATS)
+    const { value: used } = await $.state.get(USAGE)
+    const rows = detailRows(details, totals, used)
+    return h(
+      Box,
+      { flexDirection: 'column' },
+      ...rows.map((row) => h(Text, { color: row.color, dimColor: row.isDim, bold: row.isBold }, row.text)),
+    )
+  })
+
   on('prompt.submit', async ($, e, next) => {
     turn += 1
     await recordUse($, turn, () => EMPTY_USAGE)
@@ -78,14 +113,20 @@ export function register(on) {
       return next(e)
     }
     let answer
+    let attempts = 1
+    const startedAt = await $.clock.now()
     const stop = animate($)
+    const took = async () => (await $.clock.now()) - startedAt
     try {
       answer = await retrieve($, e.text, () => {
+        attempts += 1
         activity.kind = 'retrying'
         $.state.set(ACTIVITY, { ...activity }).catch(() => {})
       })
     } catch (error) {
-      await showDegraded($, 'context unavailable (' + (error?.message ?? 'failed or timed out') + ')')
+      const reason = error?.message ?? 'failed or timed out'
+      await showDegraded($, 'context unavailable (' + reason + ')')
+      await recordRetrieval($, { query: e.text, status: 'failed', reason, attempts, ms: await took(), chars: FAILURE_NOTICE.length, answer: null })
       return next({ ...e, context: [...(e.context ?? []), FAILURE_NOTICE] })
     } finally {
       await stop()
@@ -99,6 +140,9 @@ export function register(on) {
     }
     const evidence = answer.evidence ?? []
     const reason = degradation(answer)
+    const block = evidence.length ? renderEvidence(evidence) : ''
+    const status = reason ? 'degraded' : evidence.length ? 'healthy' : 'nothing'
+    await recordRetrieval($, { query: e.text, status, reason, attempts, ms: await took(), chars: block.length, answer })
     if (!evidence.length) {
       if (reason) await showDegraded($, 'nothing retrieved for the last prompt (' + reason + ')')
       else await showHealthy($, NOTHING_RELEVANT)
@@ -111,7 +155,7 @@ export function register(on) {
       const injected = evidence.filter((item) => item.note_path).length
       await recordUse($, turn, () => ({ ...EMPTY_USAGE, injected }))
     }
-    return next({ ...e, context: [...(e.context ?? []), renderEvidence(evidence)] })
+    return next({ ...e, context: [...(e.context ?? []), block] })
   })
 
   // A subagent starts with only the task it was given, so the evidence the
@@ -178,7 +222,7 @@ export function register(on) {
     const used = usageNotice(usage)
     if (!running && !summary && !warning && !used) return next(e)
     const beneath = await next(e)
-    const { Box, Text } = $.ui.resolve(e)
+    const { Box, Button, Text } = $.ui.resolve(e)
     const parts = []
     if (running) {
       const color = running.kind === 'retrying' ? 'warning' : 'success'
@@ -197,7 +241,7 @@ export function register(on) {
       { flexDirection: 'row' },
       beneath,
       h(Text, { dimColor: true }, e.props.modes.length ? ' · ' : ' '),
-      h(Box, { key: 'atrium', flexDirection: 'row' }, ...parts),
+      h(Button, { key: 'atrium', plain: true, onPress: () => openDetails($) }, ...parts),
     )
   })
 }
@@ -251,6 +295,20 @@ function animate($) {
     activity = null
     await $.state.set(ACTIVITY, null).catch(() => {})
   }
+}
+
+// Opens the details pane, asked, so it is placed at any terminal width.
+async function openDetails($) {
+  await $.ui.open({ id: 'atrium', title: 'Atrium', closeOnEscape: true })
+}
+
+// Keeps one prompt's retrieval for the details pane and counts it in the
+// session's totals.
+async function recordRetrieval($, run) {
+  const details = retrievalDetails(run)
+  stats = addedStats(stats, details)
+  await $.state.set(DETAILS, details).catch(() => {})
+  await $.state.set(STATS, stats).catch(() => {})
 }
 
 // Lights the brain for a moment after the model took something from it.

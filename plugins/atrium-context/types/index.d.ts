@@ -7,6 +7,18 @@ declare module 'claude-code' {
       instance: string | null
       activity: { kind: 'searching' | 'retrying'; frame: number } | null
       pulse: boolean | null
+      details: {
+        query: string
+        status: 'healthy' | 'nothing' | 'degraded' | 'failed'
+        reason: string
+        attempts: number
+        ms: number
+        chars: number
+        lane: string | null
+        freshness: string | null
+        items: { kind: string; date: string; source: string; score: number | null; title: string }[]
+      } | null
+      stats: { retrievals: number; failures: number; retries: number; totalMs: number; chars: number } | null
     }
   }
 }

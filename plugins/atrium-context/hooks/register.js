@@ -171,7 +171,7 @@ export function register(on) {
     }
     const evidence = answer.evidence ?? []
     const reason = degradation(answer)
-    const block = evidence.length ? renderEvidence(evidence) : ''
+    const block = evidence.length ? renderEvidence(evidence, answer.retired) : ''
     const status = reason ? 'degraded' : evidence.length ? 'healthy' : 'nothing'
     await recordRetrieval($, { query: e.text, status, reason, attempts, ms: await took(), chars: block.length, answer })
     if (!evidence.length) {
@@ -204,7 +204,7 @@ export function register(on) {
     }
     const evidence = answer?.evidence ?? []
     if (!evidence.length) return next(e)
-    return next({ ...e, prompt: e.prompt + '\n\n' + renderEvidence(evidence) })
+    return next({ ...e, prompt: e.prompt + '\n\n' + renderEvidence(evidence, answer.retired) })
   })
 
   // Counts what each finished tool call took from the brain. Observe only: the

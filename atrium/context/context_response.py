@@ -29,6 +29,7 @@ def context_response(  # noqa: PLR0913, PLR0917 -- mirrors the public request en
         "scope": {"project": str(project) if project is not None else None, "workspace": workspace},
         "route": {"requested_lane": lane, "history_lane": lane, "curated_lane": lane},
         "evidence": [],
+        "retired": [],
         "steps": [],
         "freshness": freshness,
         "configuration": configuration,

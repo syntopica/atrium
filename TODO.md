@@ -403,6 +403,12 @@
       Next step: any future run there goes in a capped transient unit
       (`systemd-run --scope -p MemoryMax=<n>G`) with a memory guard, or runs
       somewhere else.
+      **Memory caps are not enough (2026-10-14):** two memory-capped experiment
+      units (re-embed 1200% CPUQuota, rerank 1000%, Nice 10) held ~19 of 32 cores
+      and Apache hit `MaxRequestWorkers` at 15:52 UTC: every site timed out for
+      ~3.5 min until the units were stopped (`~/p/nubenode/TODO.md`, Server Ops).
+      Daytime runs on nova get CPUQuota <= 400% in total, or run in the night
+      window; check load and `MaxRequestWorkers` headroom before launching.
 
 - [ ] **The context service is swapped out under memory pressure, so the
       prompt hook times out.** Observed 2026-10-12 ~18:55 local: the hook

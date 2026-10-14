@@ -12,9 +12,11 @@ from atrium.context.context_steps import context_steps
 from atrium.context.demote_retired import demote_retired
 from atrium.context.dense_matrix_scope import dense_matrix_scope
 from atrium.context.finalize_context import finalize_context
+from atrium.context.interleave_candidates import interleave_candidates
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.linked_hits import linked_hits
 from atrium.context.read_retirements import read_retirements
+from atrium.context.rerank_populations import rerank_populations
 from atrium.context.retired_mentions import retired_mentions
 from atrium.context.select_evidence import select_evidence
 from atrium.context.timed import timed
@@ -23,12 +25,12 @@ from atrium.context.vector_presence import vector_presence
 from atrium.forget.forget_ledger_file import forget_ledger_file
 from atrium.forget.forgotten_by_term import forgotten_by_term
 from atrium.recall.project_workspace import project_workspace
-from atrium.retrieve.hit import Hit
 from atrium.sql.load_sql import load_sql
 from atrium.store.verify_build_stamp import verify_build_stamp
 
 if TYPE_CHECKING:
     from atrium.context.context_embedder import ContextEmbedder
+    from atrium.context.context_reranker import ContextReranker
     from atrium.context.dense_matrix import DenseMatrix
 
 
@@ -43,12 +45,15 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
     embedder: "ContextEmbedder | None" = None,
     state: Path | None = None,
     dense_matrix: "DenseMatrix | None" = None,
+    reranker: "ContextReranker | None" = None,
 ) -> dict[str, Any]:
     """Combine scoped history with curated notes and bounded indexed links.
 
     ``max_chars`` bounds evidence text, not the JSON provenance envelope. Notes
     have a separate role-filtered pass using the same adaptive fusion; existing
     history fusion and embedding choices remain unchanged. No link reads files.
+    With ``reranker``, each population's fused candidates are reordered by it
+    before links and evidence selection; off unless the caller passes one.
     """
     validate_request(query, limit, max_chars, lane)
     workspace = project_workspace(project) if project is not None else None
@@ -131,6 +136,11 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
             response["route"]["curated_lane"] = "words"
             response["route"]["history_lane"] = "words"
             response["warnings"].append("semantic_unavailable_lexical_fallback")
+        reranked = None
+        if reranker is not None:
+            history, notes, reranked = rerank_populations(reranker, query, (history, notes), depth)
+            if not reranked["applied"]:
+                response["warnings"].append("rerank_unavailable_fused_order")
         (links, warnings), links_ms = timed(lambda: linked_hits(connection, notes[:limit], depth))
         response["warnings"].extend(sorted(exhausted) + warnings)
         response["steps"] = context_steps(
@@ -141,17 +151,9 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
             counts=(len(history), len(notes), len(links)),
             times=(history_ms, curated_ms, links_ms),
         )
-        candidates: list[tuple[Hit, str, str | None]] = []
-        for position in range(max(len(history), len(notes), len(links))):
-            if position < len(history):
-                candidates.append((history[position], "history", None))
-            if position < len(notes):
-                candidates.append((notes[position], "curated", None))
-                candidates.extend(
-                    (hit, "link", parent)
-                    for hit, parent in links
-                    if parent == notes[position].record_id
-                )
+        if reranked is not None:
+            response["steps"].append(reranked)
+        candidates = interleave_candidates(history, notes, links)
         retirements = read_retirements(connection)
         mentions = retired_mentions(candidates, retirements)
         select_evidence(demote_retired(candidates, mentions, query), response)

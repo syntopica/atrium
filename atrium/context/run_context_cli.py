@@ -29,6 +29,11 @@ def run_context_cli(  # noqa: PLR0913, PLR0917 -- parser wiring
     Writes structured output even when the selected store is unavailable.
     """
     started = time.perf_counter()
+    # The service resolves a relative project against its own directory, finds
+    # no repository there and fails, so `--project .` -- the form the agent
+    # guidance prescribes -- fell back to a cold in-process scan on every call
+    # (14 s against 79 ms served, 2026-10-14). The MCP adapter already resolves.
+    project = project.expanduser().resolve() if project is not None else None
     request = {
         "index": str(index),
         "query": query,

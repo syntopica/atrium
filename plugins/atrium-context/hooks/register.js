@@ -53,6 +53,7 @@ const ACTIVITY = { plugin: 'atrium-context', key: 'activity' }
 const PULSE = { plugin: 'atrium-context', key: 'pulse' }
 const DETAILS = { plugin: 'atrium-context', key: 'details' }
 const STATS = { plugin: 'atrium-context', key: 'stats' }
+const IS_SHOWN = { plugin: 'atrium-context', key: 'isShown' }
 
 // Tool calls finish concurrently, and a read then a write of `$.state` from two
 // of them counted two lookups as one, so the turn's brain use is kept here and
@@ -74,22 +75,26 @@ let stats = EMPTY_STATS
 // The functions below take `$`, so they stay in this file: the engine follows
 // `$` into functions declared in the hooks module itself, never across an import.
 export function register(on) {
-  // `/atrium` opens the details pane from the keyboard; pressing the footer row
-  // opens it too.
+  // `/atrium` shows or hides the details from the keyboard; pressing the footer
+  // row does the same.
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'atrium', description: 'Show what atrium retrieved for the last prompt, and how this session used the brain' })
+    await $.command.register({ name: 'atrium', description: 'Show or hide what atrium retrieved for the last prompt, and how this session used the brain' })
     return next(e)
   })
 
   on('command.run', { command: 'atrium' }, async ($) => {
-    await openDetails($)
-    return { text: 'Atrium details opened.' }
+    const isShown = await toggleDetails($)
+    return { text: isShown ? 'Atrium details shown above the prompt.' : 'Atrium details hidden.' }
   })
 
-  // The details pane: the last prompt's retrieval, the turn's brain use and
-  // the session's totals, as rows `detailRows` lays out.
-  on('ui.render', { component: 'Pane', requestId: 'atrium' }, async ($, e) => {
-    const { Box, Text } = $.ui.resolve(e)
+  // The details, as a band above the prompt in the same terminal: a `Pane`
+  // opened its own window in Orca, whose close asked to stop an agent. The last
+  // prompt's retrieval, the turn's brain use and the session's totals, as rows
+  // `detailRows` lays out, then a button that hides them; yields to a survey.
+  on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
+    const { value: isShown } = await $.state.get(IS_SHOWN)
+    if (!isShown || e.props.hasSurvey) return next(e)
+    const { Box, Button, Text } = $.ui.resolve(e)
     const { value: details } = await $.state.get(DETAILS)
     const { value: totals } = await $.state.get(STATS)
     const { value: used } = await $.state.get(USAGE)
@@ -97,6 +102,7 @@ export function register(on) {
     return h(
       Box,
       { flexDirection: 'column' },
+      h(Box, { flexDirection: 'row' }, h(Text, { color: 'success', bold: true }, TEMPLE_ICON + ' Atrium  '), h(Button, { key: 'hide', label: 'Hide', onPress: () => toggleDetails($) })),
       ...rows.map((row) => h(Text, { color: row.color, dimColor: row.isDim, bold: row.isBold }, row.text)),
     )
   })
@@ -224,16 +230,19 @@ export function register(on) {
     const beneath = await next(e)
     const { Box, Button, Text } = $.ui.resolve(e)
     const parts = []
+    // The row always leads with the mark and the name, so it reads as Atrium's
+    // whatever follows it.
     if (running) {
       const color = running.kind === 'retrying' ? 'warning' : 'success'
-      parts.push(h(Text, { color }, TEMPLE_FRAMES[running.frame % TEMPLE_FRAMES.length]))
-      if (running.kind === 'retrying') parts.push(h(Text, { color, dimColor: true }, ' retrying'))
-    } else if (summary || warning) {
+      parts.push(h(Text, { color }, TEMPLE_FRAMES[running.frame % TEMPLE_FRAMES.length] + ' Atrium'))
+      if (running.kind === 'retrying') parts.push(h(Text, { color, dimColor: true }, ' · retrying'))
+    } else {
       const color = warning ? 'warning' : 'success'
-      parts.push(h(Text, { color }, TEMPLE_ICON + ' ' + (warning ?? summary)))
+      const said = warning ?? summary
+      parts.push(h(Text, { color }, TEMPLE_ICON + ' Atrium' + (said ? ' · ' + said : '')))
     }
     if (used && !running) {
-      if (parts.length) parts.push(h(Text, null, '  '))
+      parts.push(h(Text, null, '  '))
       parts.push(h(Text, { color: isLit ? 'claude' : 'success', bold: Boolean(isLit) }, BRAIN_ICON + ' ' + used))
     }
     return h(
@@ -241,7 +250,7 @@ export function register(on) {
       { flexDirection: 'row' },
       beneath,
       h(Text, { dimColor: true }, e.props.modes.length ? ' · ' : ' '),
-      h(Button, { key: 'atrium', plain: true, onPress: () => openDetails($) }, ...parts),
+      h(Button, { key: 'atrium', plain: true, onPress: () => toggleDetails($) }, ...parts),
     )
   })
 }
@@ -297,9 +306,12 @@ function animate($) {
   }
 }
 
-// Opens the details pane, asked, so it is placed at any terminal width.
-async function openDetails($) {
-  await $.ui.open({ id: 'atrium', title: 'Atrium', closeOnEscape: true })
+// Shows the details band if hidden, hides it if shown; resolves to whether it
+// is now shown.
+async function toggleDetails($) {
+  const { value: isShown } = await $.state.get(IS_SHOWN)
+  await $.state.set(IS_SHOWN, !isShown).catch(() => {})
+  return !isShown
 }
 
 // Keeps one prompt's retrieval for the details pane and counts it in the

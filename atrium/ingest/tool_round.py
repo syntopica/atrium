@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 
 from atrium.ingest.is_rendered_tool_call import is_rendered_tool_call
+from atrium.ingest.trailing_tool_calls import trailing_tool_calls
 
 _RESULT_KINDS = frozenset({"tool-result", "tool_result"})
 
@@ -35,6 +36,6 @@ class ToolRound:
             return "rendered tool result"
         if role == "assistant":
             # Prose closes the round: a result that never arrived must not
-            # swallow the next prompt.
-            self.pending = 0
+            # swallow the next prompt. Calls rendered at its end open a new one.
+            self.pending = trailing_tool_calls(text)
         return None

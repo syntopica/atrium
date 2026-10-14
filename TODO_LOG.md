@@ -8,6 +8,18 @@
 
 ### 2026-10
 
+- [x] 2026-10-14 — **`atrium context --project .` never reached the resident service.** The
+  CLI sent the relative path as given; the service resolved it against its own directory,
+  found no repository and failed, so the CLI fell back to a cold in-process scan on every
+  call (14 s, curated pass up to 12 s) instead of the served answer (79 ms). The prompt mod
+  passed an absolute path and was unaffected; agents following the guidance were not.
+  Surfaced by the new `served_by` field.
+  - Result: `run_context_cli` resolves the project before the request (0a9be42); context
+    responses now carry `served_by`, `elapsed_ms` and per-step `ms` (29e6928). Release
+    advanced with `atrium-release` and the service restarted with `launchctl kickstart`.
+  - Evidence: `tests/test_context_cli_project.py`; full suite 584 passed; live
+    `atrium context ... --project .` reports `served_by: service`, 61-66 ms warm.
+
 - [x] 2026-10-12 — **Erase coordinated with every writer.** Writers run by hand took no lock,
   so one active during `atrium erase --apply` could write erased material back. Taking the
   refresh lock in the engine would have broken the refresh: `atrium-refresh` holds it through

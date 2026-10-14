@@ -1,11 +1,13 @@
+import { BRAIN_ICON } from './brain-icon.js'
 import { brainAccess } from './brain-access.js'
 import { degradation } from './degradation.js'
 import { EMPTY_USAGE } from './empty-usage.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
-import { footerLine } from './footer-line.js'
+import { FRAME_MS } from './frame-ms.js'
 import { instanceDirectory } from './instance-directory.js'
 import { NOTHING_RELEVANT } from './nothing-relevant.js'
 import { notePaths } from './note-paths.js'
+import { PULSE_MS } from './pulse-ms.js'
 import { renderEvidence } from './render-evidence.js'
 import { retrievalNotice } from './retrieval-notice.js'
 import { readAnswer } from './read-answer.js'
@@ -15,27 +17,36 @@ import { RETRIEVAL_TIMEOUT_MS } from './retrieval-timeout.js'
 import { RETRY_DELAY_MS } from './retry-delay.js'
 import { shouldSkip } from './should-skip.js'
 import { subagentSkip } from './subagent-skip.js'
+import { TEMPLE_FRAMES } from './temple-frames.js'
+import { TEMPLE_ICON } from './temple-icon.js'
+import { usageNotice } from './usage-notice.js'
 
 // Retrieves atrium context before each turn: the evidence goes to Claude after
-// the prompt. Everything it shows sits at the right of the prompt footer: a
-// green line when retrieval is healthy, a warning-colored one when it failed or
-// was degraded. Nothing is pinned at the left: `$.ui.status` is only cleared,
-// in case an older version of this mod left a line there.
+// the prompt. Everything it shows sits at the right of the prompt footer, after
+// a temple drawn in braille dots: green when retrieval is healthy, the warning
+// color when it failed or was degraded. While a retrieval runs the temple is
+// raised a course at a time, with `retrying` beside it on a second run. Nothing
+// is pinned at the left: `$.ui.status` is only cleared, in case an older
+// version of this mod left a line there.
 // Replaces the UserPromptSubmit shell hook where this mod loads; register one or
 // the other, never both, or every prompt retrieves twice.
 //
-// The green line also says how the turn used the brain, since "2 notes" only
-// says what was handed over: the lookups the model made, the notes it read, and
-// the notes its answer cited (`brain: 1 cited, 2 read`), or `brain: no note
-// cited` once an answer named none of the notes it was given.
+// After a braille brain, the line also says how the turn used the brain, since
+// "2 notes" only says what was handed over: the lookups the model made, the
+// notes it read, and the notes its answer cited (`1 cited · 2 read`), or `no
+// note cited` once an answer named none of the notes it was given. The brain
+// lights up for a moment each time the model takes something from it.
 //
 // Where the healthy line and the warning drawn at the right of the prompt
 // footer are kept, the brain use of the current turn, and the instance the last
-// retrieval served from; a `$.state` reference must be a literal of this file.
+// retrieval served from, the retrieval animation and whether the brain is lit;
+// a `$.state` reference must be a literal of this file.
 const SUMMARY = { plugin: 'atrium-context', key: 'summary' }
 const WARNING = { plugin: 'atrium-context', key: 'warning' }
 const USAGE = { plugin: 'atrium-context', key: 'usage' }
 const INSTANCE = { plugin: 'atrium-context', key: 'instance' }
+const ACTIVITY = { plugin: 'atrium-context', key: 'activity' }
+const PULSE = { plugin: 'atrium-context', key: 'pulse' }
 
 // Tool calls finish concurrently, and a read then a write of `$.state` from two
 // of them counted two lookups as one, so the turn's brain use is kept here and
@@ -47,6 +58,10 @@ let turn = 0
 // The copies handed to `$.state` go one after another, each taking `usage` as
 // it is when its turn comes, so the last write is always the latest count.
 let written = Promise.resolve()
+// The retrieval animation of the prompt under way, and the last brain pulse:
+// a pulse goes dark only if no later one lit it again.
+let activity = null
+let pulses = 0
 
 // The functions below take `$`, so they stay in this file: the engine follows
 // `$` into functions declared in the hooks module itself, never across an import.
@@ -63,11 +78,17 @@ export function register(on) {
       return next(e)
     }
     let answer
+    const stop = animate($)
     try {
-      answer = await retrieve($, e.text)
+      answer = await retrieve($, e.text, () => {
+        activity.kind = 'retrying'
+        $.state.set(ACTIVITY, { ...activity }).catch(() => {})
+      })
     } catch (error) {
       await showDegraded($, 'context unavailable (' + (error?.message ?? 'failed or timed out') + ')')
       return next({ ...e, context: [...(e.context ?? []), FAILURE_NOTICE] })
+    } finally {
+      await stop()
     }
     // Not a project: nothing applies to this directory, healthy or not.
     if (answer === null) {
@@ -125,6 +146,7 @@ export function register(on) {
         lookups: usage.lookups + access.lookups,
         read: [...new Set([...usage.read, ...access.notes])],
       }))
+      if (started === turn) pulse($)
     }
     return result
   })
@@ -142,24 +164,40 @@ export function register(on) {
   })
 
   // Whatever draws the footer's mode labels beneath this mod (the engine, or
-  // another mod), then the warning in the theme's warning color, else the
-  // healthy line in its success color; passes when there is neither. `next(e)` resolves to the tree drawn beneath
-  // (a RenderElement, never null, even with no labels), so the separator
-  // follows the labels rather than the tree.
+  // another mod), then this mod's row: the temple and what was retrieved (or
+  // the animation while a retrieval runs), then the brain and how the turn used
+  // it. Passes when there is nothing to say. `next(e)` resolves to the tree
+  // drawn beneath (a RenderElement, never null, even with no labels), so the
+  // separator follows the labels rather than the tree.
   on('ui.render', { component: 'SessionMode' }, async ($, e, next) => {
+    const { value: running } = await $.state.get(ACTIVITY)
     const { value: summary } = await $.state.get(SUMMARY)
     const { value: warning } = await $.state.get(WARNING)
     const { value: usage } = await $.state.get(USAGE)
-    const line = warning ? '⚠ ' + warning : footerLine(summary, usage)
-    if (!line) return next(e)
+    const { value: isLit } = await $.state.get(PULSE)
+    const used = usageNotice(usage)
+    if (!running && !summary && !warning && !used) return next(e)
     const beneath = await next(e)
     const { Box, Text } = $.ui.resolve(e)
+    const parts = []
+    if (running) {
+      const color = running.kind === 'retrying' ? 'warning' : 'success'
+      parts.push(h(Text, { color }, TEMPLE_FRAMES[running.frame % TEMPLE_FRAMES.length]))
+      if (running.kind === 'retrying') parts.push(h(Text, { color, dimColor: true }, ' retrying'))
+    } else if (summary || warning) {
+      const color = warning ? 'warning' : 'success'
+      parts.push(h(Text, { color }, TEMPLE_ICON + ' ' + (warning ?? summary)))
+    }
+    if (used && !running) {
+      if (parts.length) parts.push(h(Text, null, '  '))
+      parts.push(h(Text, { color: isLit ? 'claude' : 'success', bold: Boolean(isLit) }, BRAIN_ICON + ' ' + used))
+    }
     return h(
       Box,
       { flexDirection: 'row' },
       beneath,
       h(Text, { dimColor: true }, e.props.modes.length ? ' · ' : ' '),
-      h(Text, { color: warning ? 'warning' : 'success' }, line),
+      h(Box, { key: 'atrium', flexDirection: 'row' }, ...parts),
     )
   })
 }
@@ -168,7 +206,7 @@ export function register(on) {
 // short pause when it fails, since a saturated machine often answers the second
 // run; throws the last failure. Keeps the instance it served from, which is how
 // a file read is recognised as a note.
-async function retrieve($, text) {
+async function retrieve($, text, onRetry = () => {}) {
   const cwd = await $.session.cwd()
   let answer
   for (let attempt = 1; ; attempt += 1) {
@@ -179,6 +217,7 @@ async function retrieve($, text) {
     } catch (error) {
       if (attempt >= RETRIEVAL_ATTEMPTS) throw error
       $.ui.log('atrium-context: retrying after ' + (error?.message ?? 'a failure'), { to: 'debug' })
+      onRetry()
       await $.clock.sleep(RETRY_DELAY_MS)
     }
   }
@@ -197,11 +236,37 @@ function recordUse($, of, change) {
   return written
 }
 
+// Raises the temple a course per frame while a prompt's retrieval runs; the
+// function it returns stops it and takes the animation down.
+function animate($) {
+  activity = { kind: 'searching', frame: 0 }
+  const draw = () => $.state.set(ACTIVITY, { ...activity }).catch(() => {})
+  draw()
+  const timer = $.clock.every(FRAME_MS, () => {
+    activity.frame += 1
+    draw()
+  })
+  return async () => {
+    timer.cancel()
+    activity = null
+    await $.state.set(ACTIVITY, null).catch(() => {})
+  }
+}
+
+// Lights the brain for a moment after the model took something from it.
+function pulse($) {
+  const id = (pulses += 1)
+  $.state.set(PULSE, true).catch(() => {})
+  $.clock.after(PULSE_MS, () => {
+    if (id === pulses) $.state.set(PULSE, false).catch(() => {})
+  })
+}
+
 // Retrieval worked: the warning goes, the line goes green at the right of the
 // prompt footer, and the debug log keeps a record of each prompt's line.
 async function showHealthy($, line) {
   $.ui.status(undefined)
-  $.ui.log(line, { to: 'debug' })
+  $.ui.log('atrium-context: ' + line, { to: 'debug' })
   await $.state.set(WARNING, null).catch(() => {})
   await $.state.set(SUMMARY, line).catch(() => {})
 }

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from atrium.embed.document_prefix import DOCUMENT_PREFIX
 from atrium.embed.model_repo import MODEL_REPO
 
 if TYPE_CHECKING:
@@ -17,9 +18,6 @@ if TYPE_CHECKING:
 # CPU is required: on CoreML this model silently returns NaN or all-zero vectors
 # without raising, which is why every batch is validated below.
 _ONNX_FILE = "model_quantized.onnx"
-# The benchmark that produced the fusion weights embedded queries and documents
-# through this same prefix, so changing it invalidates the measured 70/30.
-_PREFIX = "task: sentence similarity | query: "
 _DIM = 384  # Matryoshka truncation -- the first 384 of 768 dims
 _MAX_LEN = 2048
 # The ONNX graph has no internal batching; attention buffers grow superlinearly
@@ -31,8 +29,13 @@ _BATCH_SIZE = 32
 class Embedder:
     """Lazy-loading CPU embedder returning L2-normalized float32 vectors."""
 
-    def __init__(self) -> None:
-        """Defer every heavy load; construction must stay cheap."""
+    def __init__(self, prefix: str = DOCUMENT_PREFIX) -> None:
+        """Defer every heavy load; construction must stay cheap.
+
+        ``prefix`` is the prompt every text is embedded under: the default is the
+        one stored vectors carry, and queries pass theirs (``query_embedder``).
+        """
+        self._prefix = prefix
         self._session: "onnxruntime.InferenceSession | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._tokenizer: "Tokenizer | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._output_index: int | None = None
@@ -68,7 +71,7 @@ class Embedder:
     def _forward(self, texts: list[str]) -> np.ndarray:
         assert self._tokenizer is not None
         assert self._session is not None
-        encodings = self._tokenizer.encode_batch([_PREFIX + text for text in texts])
+        encodings = self._tokenizer.encode_batch([self._prefix + text for text in texts])
         input_ids = np.asarray([e.ids for e in encodings], dtype=np.int64)
         attention_mask = np.asarray([e.attention_mask for e in encodings], dtype=np.int64)
         outputs = self._session.run(

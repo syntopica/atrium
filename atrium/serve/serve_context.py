@@ -7,7 +7,7 @@ import threading
 from pathlib import Path
 
 from atrium.context.lazy_embedder import LazyEmbedder
-from atrium.embed.embedder import Embedder
+from atrium.embed.query_embedder import query_embedder
 from atrium.serve.context_server import ContextServer
 from atrium.serve.context_socket_path import context_socket_path
 from atrium.serve.dense_matrix_file import dense_matrix_file
@@ -38,7 +38,7 @@ def serve_context(index: Path, state: Path, interval: float = 60.0) -> int:
             probe.close()
     holder = DenseMatrixHolder(index, dense_matrix_file(state))
     holder.prepare()
-    embedder = LazyEmbedder(Embedder)
+    embedder = LazyEmbedder(query_embedder)
     embedder.embed(["warm-up"])
     old_mask = os.umask(0o077)
     try:

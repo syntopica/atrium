@@ -22,7 +22,7 @@ def resident_embedder() -> "Embedder":
     global _embedder  # noqa: PLW0603 -- module singleton; the lock is the point
     with _embedder_lock:
         if _embedder is None:
-            from atrium.embed.embedder import Embedder
+            from atrium.embed.query_embedder import query_embedder
 
-            _embedder = Embedder()
+            _embedder = query_embedder()
         return _embedder

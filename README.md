@@ -110,10 +110,11 @@ carries none, so the warning keeps meaning something.
 On Claude Code 2.1.287 or later, the `atrium-context` mod in
 `plugins/atrium-context` does the same retrieval from a `prompt.submit` hook
 and shows the result where the person keeps seeing it once the transcript scrolls:
-a healthy retrieval is a green line at the right of the prompt footer (`Atrium · 2
-notes, 2 past sessions`, or `Atrium · nothing relevant`), and a failed or degraded
-one takes its place in the warning color and names the cause; nothing is drawn
-at the left. A failed run is retried once after a short pause, since a saturated
+a healthy retrieval is a green line at the right of the prompt footer, after a
+temple drawn in braille dots (`⣰⣺⣗⣆ 2 sessions · 2 notes`, or `⣰⣺⣗⣆ nothing
+relevant`), and a failed or degraded one takes its place in the warning color
+and names the cause; nothing is drawn at the left. While retrieval runs the
+temple is raised a course at a time, with `retrying` beside it on a second run. A failed run is retried once after a short pause, since a saturated
 machine often answers the second; if that fails too, the model is told retrieval
 was unavailable rather than empty. Use the mod or the
 shell hook, never both, or every prompt retrieves twice:
@@ -132,9 +133,10 @@ answer relies on (`brain/...md`), and the hooks count what they can observe:
 - **read**: notes an atrium lookup returned as evidence (`note_path`), or opened as files of the instance;
 - **lookups**: calls to the atrium MCP tools, `atrium context|search|recall` or `brain query`.
 
-In Claude Code the mod adds this to the green line, for example `Atrium · 1 past
-session, 2 notes · brain: 1 cited, 3 read, 1 lookup`, or `brain: no note cited`
-once a turn has answered without reading or citing any injected note. That is
+In Claude Code the mod adds this to the green line after a braille brain, for
+example `⣰⣺⣗⣆ 1 session · 2 notes  ⢮⠿⡵ 1 cited · 3 read · 1 lookup`, or `⢮⠿⡵ no
+note cited` once a turn has answered without reading or citing any injected
+note; the brain lights up for a moment each time the model takes from it. That is
 an observation, not proof the notes went unused: an answer can rely on a note
 without naming it. The cited paths
 go to the debug log. A subagent gets the same evidence: the mod retrieves on the

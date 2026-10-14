@@ -1,7 +1,7 @@
 import { addedStats } from './added-stats.js'
 import { brainAccess } from './brain-access.js'
 import { degradation } from './degradation.js'
-import { detailRows } from './detail-rows.js'
+import { detailSections } from './detail-sections.js'
 import { EMPTY_STATS } from './empty-stats.js'
 import { EMPTY_USAGE } from './empty-usage.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
@@ -86,9 +86,9 @@ export function register(on) {
   })
 
   // The details, as a band above the prompt in the same terminal: a `Pane`
-  // opened its own window in Orca, whose close asked to stop an agent. The last
-  // prompt's retrieval, the turn's brain use and the session's totals, as rows
-  // `detailRows` lays out, then a button that hides them; yields to a survey.
+  // opened its own window in Orca, whose close asked to stop an agent. A
+  // rounded frame titled Atrium with Hide at the right, then the sections
+  // `detailSections` lays out, a blank row between each; yields to a survey.
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const { value: isShown } = await $.state.get(IS_SHOWN)
     if (!isShown || e.props.hasSurvey) return next(e)
@@ -96,12 +96,29 @@ export function register(on) {
     const { value: details } = await $.state.get(DETAILS)
     const { value: totals } = await $.state.get(STATS)
     const { value: used } = await $.state.get(USAGE)
-    const rows = detailRows(details, totals, used)
+    const sections = detailSections(details, totals, used, await $.clock.now())
+    const line = (one) => h(Text, { color: one.color, dimColor: one.isDim, italic: one.isItalic, wrap: one.isTruncated ? 'truncate-end' : 'wrap' }, one.text)
+    const item = (one) => h(
+      Box,
+      { flexDirection: 'row' },
+      h(Box, { width: 4 }, h(Text, { dimColor: true }, String(one.index).padStart(2) + '.')),
+      h(Box, { flexDirection: 'column', flexShrink: 1 }, h(Text, null, one.text), h(Text, { dimColor: true, wrap: 'truncate-end' }, one.detail)),
+    )
     return h(
       Box,
-      { flexDirection: 'column' },
-      h(Box, { flexDirection: 'row' }, h(Text, { color: 'success', bold: true }, 'Atrium  '), h(Button, { key: 'hide', label: 'Hide', onPress: () => toggleDetails($) })),
-      ...rows.map((row) => h(Text, { color: row.color, dimColor: row.isDim, bold: row.isBold }, row.text)),
+      { flexDirection: 'column', borderStyle: 'round', borderColor: 'success', borderDimColor: true, paddingX: 1 },
+      h(
+        Box,
+        { flexDirection: 'row', justifyContent: 'space-between' },
+        h(Text, null, h(Text, { color: 'success', bold: true }, 'Atrium'), h(Text, { dimColor: true }, '  what the brain gave Claude')),
+        h(Button, { key: 'hide', label: 'Hide', dimColor: true, onPress: () => toggleDetails($) }),
+      ),
+      ...sections.map((section) => h(
+        Box,
+        { flexDirection: 'column', marginTop: 1 },
+        h(Text, { bold: true }, section.title),
+        h(Box, { flexDirection: 'column', paddingLeft: 2 }, ...section.lines.map((one) => (one.index ? item(one) : line(one)))),
+      )),
     )
   })
 

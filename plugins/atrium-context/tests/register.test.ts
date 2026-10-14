@@ -465,47 +465,52 @@ test('lights the brain part for a moment after a lookup', async ($, on) => {
   expect(dark.bold.at(-1)).toBe(false)
 })
 
-// The details band's text, row by row after its title row, once shown; [] when
-// the band is hidden.
+// Every Text the details band draws, in order; [] when the band is hidden.
 async function pane($) {
   const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 40, bodyColumns: 120 } })
   const rows = (await ui.findAll({ type: 'Text' })).map((text) => text.text)
   await ui.unmount()
-  return rows.slice(1)
+  return rows
 }
 
-test('the details pane says what was asked, how it went and what came back', async ($, on) => {
+test('the details band says in plain words what was asked, how it went and what came back', async ($, on) => {
   const seen: any = {}
-  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ ...ANSWER, evidence: ANSWER.evidence.map((item, index) => ({ ...item, score: 0.7 - index / 10 })), route: { requested_lane: 'dense' }, served_by: 'service', elapsed_ms: 0, steps: [{ pass: 'history', ms: 0, candidates: 3 }, { pass: 'curated', ms: 0, candidates: 1 }], freshness: { last_refresh: '2026-10-14T11:05:37+00:00' } }), stderr: '' } }, seen)
+  const evidence = ANSWER.evidence.map((item, index) => ({ ...item, score: 0.7 - index / 10 }))
+  evidence[0] = { ...evidence[0], excerpt_start: 40, text: '**ingest** done for `agents`' }
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ ...ANSWER, evidence, served_by: 'service', elapsed_ms: 0, steps: [{ pass: 'history', ms: 140, candidates: 3 }, { pass: 'curated', ms: 1200, candidates: 1 }], freshness: { last_refresh: '1970-01-01T00:00:00Z' } }), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
   await $.command.run({ command: 'atrium', args: '' })
   const rows = await pane($)
-  expect(rows[0]).toBe('Last prompt')
-  expect(rows[1]).toBe('  ' + PROMPT)
-  expect(rows[2]).toBe('  healthy · 0 ms · resident service · dense lane')
-  expect(rows.splice(3, 1)).toEqual(['  atrium 0 ms · start-up 0 ms · history 0 ms · curated 0 ms'])
-  expect(rows[3]).toMatch(/^  ~\d+ tokens handed to the model \(\d+ chars\)$/)
-  expect(rows[4]).toBe('  index refreshed 2026-10-14 11:05')
-  expect(rows[5]).toBe('  past session · 2026-09-16 · synthesis/7a2529ff723a · score 0.7')
-  expect(rows[6]).toBe('    The hook pipes stdin JSON to Python.')
-  expect(rows[7]).toBe('  note · 2026-10-01 · brain/topics/atrium.md · score 0.6')
-  expect(rows).toContain('Session')
-  expect(rows.at(-2)).toMatch(/^  1 retrievals · 0 failed · 0 retried · 0 ms average$/)
+  expect(rows).toContain('Atrium')
+  expect(rows).toContain('Last prompt')
+  expect(rows).toContain('"' + PROMPT + '"')
+  expect(rows).toContain('Found 2 items in 0 ms')
+  expect(rows.some((row) => /^Sent to Claude: about \d+ tokens$/.test(row))).toBe(true)
+  expect(rows).toContain('Answered by the background service · index updated just now')
+  expect(rows).toContain('Time: start-up 0 ms · past sessions 140 ms · notes 1.2 s')
+  expect(rows).toContain('What it found')
+  expect(rows).toContain(' 1.')
+  expect(rows).toContain('Past session · 16 Sep 2026 · 70% match')
+  expect(rows).toContain('…ingest done for agents')
+  expect(rows).toContain('Note · topics/atrium · 60% match')
+  expect(rows).toContain('Claude has not looked anything up yet.')
+  expect(rows).toContain('1 search · none failed · none retried · 0 ms on average')
 })
 
-test('the details pane counts a failure that needed a retry', async ($, on) => {
+test('the details band says a failed search and its retry', async ($, on) => {
   stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, {})
   await $.prompt.submit({ text: PROMPT })
   await $.command.run({ command: 'atrium', args: '' })
   const rows = await pane($)
-  expect(rows[2]).toBe('  failed (atrium context exited 1) · 0 ms · 2 attempts')
-  expect(rows.at(-2)).toBe('  1 retrievals · 1 failed · 1 retried · 0 ms average')
+  expect(rows).toContain('Could not search (atrium context exited 1) after 0 ms')
+  expect(rows).toContain('1 search · 1 failed · 1 retried · 0 ms on average')
+  expect(rows).not.toContain('What it found')
 })
 
-test('the details pane says when nothing was retrieved yet', async ($, on) => {
+test('the details band says when nothing was searched yet', async ($, on) => {
   stubs(on, { value: { exitCode: 0, stdout: '{}', stderr: '' } }, {})
   await $.command.run({ command: 'atrium', args: '' })
-  expect(await pane($)).toEqual(['No retrieval yet in this session.'])
+  expect(await pane($)).toContain('No search yet in this session.')
 })
 
 test('pressing the footer row shows the details band, Hide and /atrium hide it', async ($, on) => {
@@ -515,13 +520,13 @@ test('pressing the footer row shows the details band, Hide and /atrium hide it',
   const footerUi = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
   await footerUi.press({ key: 'atrium' })
   await footerUi.unmount()
-  expect((await pane($))[0]).toBe('Last prompt')
+  expect(await pane($)).toContain('Last prompt')
   const band = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'AbovePrompt', props: { hasSurvey: false, isWorking: false, maxRows: 40, bodyColumns: 120 } })
   await band.press({ key: 'hide' })
   await band.unmount()
   expect(await pane($)).toEqual([])
   await $.command.run({ command: 'atrium', args: '' })
-  expect((await pane($))[0]).toBe('Last prompt')
+  expect(await pane($)).toContain('Last prompt')
   await $.command.run({ command: 'atrium', args: '' })
   expect(await pane($)).toEqual([])
 })

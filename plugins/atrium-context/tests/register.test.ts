@@ -32,13 +32,27 @@ async function footer($) {
   return found?.text
 }
 
+// The warning at the right of the prompt footer, or undefined when the footer
+// is drawn without it.
+async function warning($) {
+  const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: [] } })
+  const found = (await ui.findAll({ type: 'Text' })).find((text) => text.props.color === 'warning')
+  await ui.unmount()
+  return found?.text
+}
+
 function stubs(on, run, seen) {
   on('ui.render', engineFooter)
+  on('clock.sleep', ($, e) => {
+    seen.sleeps = [...(seen.sleeps ?? []), e]
+    return { value: undefined }
+  })
   on('session.cwd', () => ({ value: '/work/repo' }))
   on('process.run', ($, e) => {
+    seen.runs = (seen.runs ?? 0) + 1
     seen.argv = e.argv
     seen.init = e.init
-    return run
+    return typeof run === 'function' ? run() : run
   })
   on('ui.status', ($, e) => {
     seen.status = e.text
@@ -63,7 +77,7 @@ test('adds retrieved evidence and says what was retrieved', async ($, on) => {
   expect(seen.argv).toEqual(['atrium', 'context', PROMPT, '--project', '/work/repo', '--lane', 'dense', '--limit', '4', '--max-chars', '1400', '--json'])
   expect(seen.init.timeoutMs).toBe(10000)
   expect(seen.status).toBeUndefined()
-  expect(seen.statusCalls).toBe(1)
+  expect(seen.runs).toBe(1)
   expect(seen.log).toBe('Atrium · 1 past session, 1 note')
   expect(seen.logTo).toBe('debug')
   expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
@@ -94,16 +108,33 @@ test('says the retrieval failed instead of staying silent', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toBe('context unavailable (atrium context exited 1)')
+  expect(seen.status).toBeUndefined()
+  expect(seen.runs).toBe(2)
+  expect(seen.sleeps.length).toBe(1)
+  expect(await warning($)).toBe('⚠ context unavailable (atrium context exited 1)')
   expect(await footer($)).toBeUndefined()
   expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
+})
+
+test('runs retrieval again when the first run fails', async ($, on) => {
+  const seen: any = {}
+  const runs = [
+    { value: { exitCode: 1, stdout: '', stderr: 'busy' } },
+    { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } },
+  ]
+  stubs(on, () => runs.shift(), seen)
+  await $.prompt.submit({ text: PROMPT })
+  expect(runs.length).toBe(0)
+  expect(await warning($)).toBeUndefined()
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+  expect(seen.context[0]).toContain('# atrium context (retrieved for this prompt)')
 })
 
 test('treats an unreadable index as a failure', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ index_status: 'missing', evidence: [] }), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toBe('context unavailable (index not readable (missing))')
+  expect(await warning($)).toBe('⚠ context unavailable (index not readable (missing))')
   expect(seen.context[0]).toContain('unavailable')
 })
 
@@ -111,7 +142,7 @@ test('says a timed-out retrieval failed', async ($, on) => {
   const seen: any = {}
   stubs(on, { deny: 'timed out' }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toMatch(/^context unavailable/)
+  expect(await warning($)).toMatch(/^⚠ context unavailable/)
   expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
 })
 
@@ -128,7 +159,7 @@ test('names the service timeout instead of an exit code', async ($, on) => {
   const timedOut = { index_status: 'unavailable', evidence: [], warnings: ['context_service_timeout'] }
   stubs(on, { value: { exitCode: 1, stdout: JSON.stringify(timedOut), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toBe('context unavailable (context_service_timeout)')
+  expect(await warning($)).toBe('⚠ context unavailable (context_service_timeout)')
   expect(seen.context[0]).toContain('# atrium context unavailable for this prompt')
 })
 
@@ -137,7 +168,7 @@ test('says why nothing was retrieved when retrieval was degraded', async ($, on)
   const missing = { index_status: 'ready', evidence: [], warnings: ['no_matches', 'dense_matrix_unavailable'] }
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(missing), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toBe('nothing retrieved for the last prompt (dense_matrix_unavailable)')
+  expect(await warning($)).toBe('⚠ nothing retrieved for the last prompt (dense_matrix_unavailable)')
   expect(await footer($)).toBeUndefined()
 })
 
@@ -155,7 +186,8 @@ test('warns when evidence came back from a degraded retrieval', async ($, on) =>
   const fallback = { ...ANSWER, warnings: ['semantic_unavailable_lexical_fallback'] }
   stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(fallback), stderr: '' } }, seen)
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toBe('Atrium · 1 past session, 1 note, degraded (semantic_unavailable_lexical_fallback)')
+  expect(seen.status).toBeUndefined()
+  expect(await warning($)).toBe('⚠ Atrium · 1 past session, 1 note, degraded (semantic_unavailable_lexical_fallback)')
   expect(seen.context.length).toBe(1)
   expect(await footer($)).toBeUndefined()
 })
@@ -168,18 +200,30 @@ test('a failure after a healthy prompt takes the green line down', async ($, on)
   ]
   on('ui.render', engineFooter)
   on('session.cwd', () => ({ value: '/work/repo' }))
-  on('process.run', () => runs.shift())
-  on('ui.status', ($, e) => {
-    seen.status = e.text
-    return { value: undefined }
-  })
+  on('process.run', () => runs.shift() ?? { value: { exitCode: 1, stdout: '', stderr: 'boom' } })
+  on('clock.sleep', () => ({ value: undefined }))
+  on('ui.status', () => ({ value: undefined }))
   on('ui.log', () => ({ value: undefined }))
   on('prompt.submit', ($, e) => ({ text: e.text }))
   await $.prompt.submit({ text: PROMPT })
   expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
   await $.prompt.submit({ text: PROMPT })
-  expect(seen.status).toBe('context unavailable (atrium context exited 1)')
+  expect(await warning($)).toBe('⚠ context unavailable (atrium context exited 1)')
   expect(await footer($)).toBeUndefined()
+})
+
+test('a healthy prompt after a failure takes the warning down', async ($, on) => {
+  const runs = [
+    { value: { exitCode: 1, stdout: '', stderr: 'boom' } },
+    { value: { exitCode: 1, stdout: '', stderr: 'boom' } },
+    { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } },
+  ]
+  stubs(on, () => runs.shift(), {})
+  await $.prompt.submit({ text: PROMPT })
+  expect(await warning($)).toBe('⚠ context unavailable (atrium context exited 1)')
+  await $.prompt.submit({ text: PROMPT })
+  expect(await warning($)).toBeUndefined()
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
 })
 
 test('keeps what is drawn beneath and adds the green line after it', async ($, on) => {
@@ -195,12 +239,12 @@ test('keeps what is drawn beneath and adds the green line after it', async ($, o
   await ui.unmount()
 })
 
-test('draws only what is beneath when there is no healthy line', async ($, on) => {
+test('draws the warning instead of a healthy line after what is beneath', async ($, on) => {
   stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, {})
   await $.prompt.submit({ text: PROMPT })
   const ui = await $.ui.mount({ plugin: 'atrium-context', surface: 'terminal', component: 'SessionMode', props: { modes: ['focus'] } })
   expect((await ui.find({ key: 'engine-modes' }))?.text).toBe('mode: focus')
-  expect(await ui.find({ type: 'Text', text: /Atrium/ })).toBeUndefined()
+  expect(await ui.find({ type: 'Text', text: /^Atrium/ })).toBeUndefined()
   await ui.unmount()
 })
 

@@ -4,8 +4,9 @@
 export const FAILURE_NOTICE = [
   '# atrium context unavailable for this prompt',
   '',
-  'Retrieval failed or timed out, so nothing was checked: this is not an',
-  'empty record. Before stating anything about prior work, people, threads',
-  'or decisions, call `atrium_context` (or `atrium context`) yourself and',
-  'check the live source.',
+  'Retrieval failed or timed out twice, so nothing was checked: this is not',
+  'an empty record, and the machine may be saturated. Before stating',
+  'anything about prior work, people, threads or decisions, call',
+  '`atrium_context` (or `atrium context`) yourself, retrying once if it',
+  'times out, and check the live source.',
 ].join('\n')

@@ -7,6 +7,7 @@ from typing import Any
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.record_identity import record_identity
+from atrium.ingest.tool_round import ToolRound
 from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.record import Record
 
@@ -38,7 +39,8 @@ def to_records(
 ) -> Iterator[Record]:
     """Yield one record per conversational event worth retrieving.
 
-    Skips non-conversational events and bare acknowledgements. Nothing is
+    Skips non-conversational events, tool invocations rendered as messages
+    with the results that answer them, and bare acknowledgements. Nothing is
     deleted by skipping: the archive keeps every event, and this only decides
     what earns a row in a derived index that can be rebuilt with a different
     rule tomorrow. Pass a ``tally`` to learn what each rule turned away -- the
@@ -56,28 +58,31 @@ def to_records(
         conversation.get("workspace"), aliases=aliases, started_at=conversation.get("startedAt")
     )
     title = conversation.get("title")
+    tool_round = ToolRound()
+    # Counting into a throwaway tally when the caller passed none keeps one code
+    # path for every rule; nothing reads it.
+    counts = tally if tally is not None else AdmissionTally()
 
     for index, event in enumerate(conversation.get("events") or []):
+        text = (event.get("text") or "").strip()
+        tool_rule = tool_round.classify(event.get("role"), event.get("kind"), text)
+        if tool_rule:
+            counts.reject(tool_rule)
+            continue
         if event.get("kind") != "message":
-            if tally:
-                tally.reject(f"kind {event.get('kind') or 'absent'}")
+            counts.reject(f"kind {event.get('kind') or 'absent'}")
             continue
         if event.get("role") not in CONVERSATIONAL_ROLES:
-            if tally:
-                tally.reject(f"role {event.get('role') or 'absent'}")
+            counts.reject(f"role {event.get('role') or 'absent'}")
             continue
-        text = (event.get("text") or "").strip()
         if not text or _ACKNOWLEDGEMENT.match(text):
-            if tally:
-                tally.reject("empty or acknowledgement")
+            counts.reject("empty or acknowledgement")
             continue
         event_id = event.get("id")
         if not event_id:
-            if tally:
-                tally.reject("missing event id")
+            counts.reject("missing event id")
             continue
-        if tally:
-            tally.admit(event["role"])
+        counts.admit(event["role"])
         yield Record(
             record_id=record_identity(conversation_id, event_id),
             event_id=event_id,

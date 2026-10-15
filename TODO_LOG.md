@@ -8,6 +8,28 @@
 
 ### 2026-10
 
+- [-] 2026-10-15 — **Retrieval:** Re-embedding the documents under EmbeddingGemma's document prompt (plan step 3).
+  - Resolution: measured without a re-embed, from the 2026-10-14 nova vectors swapped
+    into an experimental matrix (68,955 of 69,041 rows,
+    `evaluations/docprompt-2026-10-15/`), end to end with the reranker on the 85
+    acceptance questions: similarity query 0.33/0.21, search 0.39/0.22, qa
+    0.36/0.21, against 0.39/0.22 in production; without the reranker, search
+    0.29/0.14 against 0.28/0.12. No gain worth a ~22 h re-embed.
+
+- [x] 2026-10-15 — **Retrieval:** History fusion moved to 50/50 in context answers once the reranker was on.
+  - Result: `HISTORY_LEXICAL_WEIGHT = 0.5` in `context_hits`; `atrium search`
+    keeps `fuse_ranked`'s 0.7. Curated stays 0.3 (0.15 changed nothing, 0.5 lost
+    3).
+  - Evidence: R/MRR at 8 with gte rerank, acceptance 0.39/0.22 -> 0.40/0.25
+    (gained 3, lost 2), held-out 0.50/0.39 -> 0.52/0.43 (gained 2, lost 0); gate
+    passes.
+
+- [x] 2026-10-15 — **Observability:** `doctor` probes both full-text indexes for orphan postings.
+  - Result: `fts` check, a ranked query over common words per index; broken
+    names `atrium repair-index --apply`. The cause stays open in `TODO.md`.
+  - Evidence: atrium `3d08ac7`; `tests/test_fts_consistency.py`; live `fts ok`
+    in ~3 s (words 1.1 s over 89% of records, substrings 1.7 s over 92%).
+
 - [x] 2026-10-15 — **Context answers are reranked; the query prompt stays.** Measured with
   an honest harness (`~/p/wiki/atrium/evaluations/retrieval-2026-10-15/e2e.py`: the real
   `retrieve_context`, production weights, links and budget, limit 8; the 2026-10-14

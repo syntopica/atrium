@@ -5,5 +5,7 @@
 # questions the curated pass scored R@10 / MRR@10 0.50 / 0.40 at the history
 # weight of 0.7, 0.60 / 0.47 at 0.5 and 0.70 / 0.50 at 0.3 (dense alone 0.65 /
 # 0.46). Notes are curated prose a question paraphrases rather than quotes, so
-# the dense lane carries them; history stays at 0.7, where 0.5 and 0.3 lost MRR.
+# the dense lane carries them. History moved to 0.5 once the reranker was on
+# (see `history_lexical_weight.py`); curated re-measured then: 0.15 changed nothing
+# and 0.5 lost 3 questions.
 CURATED_LEXICAL_WEIGHT = 0.3

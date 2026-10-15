@@ -7,6 +7,7 @@ from atrium.context.curated_lexical_weight import CURATED_LEXICAL_WEIGHT
 from atrium.context.dense_hits import dense_hits
 from atrium.context.dense_matrix_hits import dense_matrix_hits
 from atrium.context.dense_matrix_scope import dense_matrix_scope
+from atrium.context.history_lexical_weight import HISTORY_LEXICAL_WEIGHT
 from atrium.context.lexical_hits import lexical_hits
 from atrium.context.vector_presence import vector_presence
 from atrium.retrieve.fuse_ranked import fuse_ranked
@@ -30,7 +31,7 @@ def context_hits(  # noqa: PLR0913 -- shared scope and lane contract
     exhausted: set[str] | None = None,
     dense_matrix: "DenseMatrix | None" = None,
 ) -> list[Hit]:
-    """Fuse 70/30 for history and 30/70 for notes, at 60-candidate depth per population.
+    """Fuse 50/50 for history and 30/70 for notes, at 60-candidate depth per population.
 
     With ``dense_matrix`` the dense pass ranks a resident copy of the vectors and
     reads only the winners from the index; without it, the index is scanned.
@@ -82,4 +83,4 @@ def context_hits(  # noqa: PLR0913 -- shared scope and lane contract
         return dense[:limit]
     if curated:
         return fuse_ranked(lexical, dense, limit, CURATED_LEXICAL_WEIGHT)
-    return fuse_ranked(lexical, dense, limit)
+    return fuse_ranked(lexical, dense, limit, HISTORY_LEXICAL_WEIGHT)

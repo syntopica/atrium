@@ -1,6 +1,6 @@
 # Retrieval: query prompt, reranker, document prompt
 
-Status: steps 0-2 done 2026-10-15; step 3 open. Owner: "look at it with Codex, make a plan, and go".
+Status: done 2026-10-15; step 3 dropped on measurement. Owner: "look at it with Codex, make a plan, and go".
 Measurements behind it are in `TODO.md` (Measurement) and in the instance at
 `atrium/evaluations/ideas-2026-10-14/`.
 
@@ -82,6 +82,13 @@ this pass.
   speed. No configuration met added p95 < 1.5 s on this Mac; the owner chose
   gte at 256 tokens with a 3 s budget, shipped in `5a4ea74` (live rerank
   1.9-2.1 s). Numbers in `TODO_LOG.md`, 2026-10-15.
+
+- Fusion weights re-measured with the reranker: history 0.7 -> 0.5 in context
+  answers only (acceptance 0.39/0.22 -> 0.40/0.25, held-out 0.50/0.39 ->
+  0.52/0.43); curated stays 0.3.
+- Document prompt (step 3): no gain with the reranker on (best 0.39/0.22, equal
+  to production), measured from the 2026-10-14 nova vectors without a re-embed.
+  Dropped.
 
 ## Out of scope
 

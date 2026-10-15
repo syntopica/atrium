@@ -8,6 +8,9 @@
 
 ### 2026-10
 
+- [-] 2026-10-15 — **Retrieval:** Per-fact vectors (one dense row per episode line, carrying its parent's id).
+  - Resolution: measured and dropped. 598,646 fact units from 69,385 episodes embedded (`facts-2026-10-15/export_units.py`, `embed_units.py`, `build_matrix.py`; 668,031-row matrix, 1.65 GB float32). End to end with the gte reranker: holdout R 0.52 / MRR 0.44 unchanged (3 ranks moved, no hit gained or lost); acceptance 0.40 / 0.27 fell to 0.38 / 0.26 (2 hits lost, none gained). The reranker already reads the whole episode, so a closer dense match on one line adds candidates it does not need, at ten times the resident matrix. The dedupe in `dense_matrix_hits` (`8a6acb6`) stays: it is correct for any record with several rows. Artifacts trashed; the scripts remain.
+
 - [x] 2026-10-15 — **Review:** Four defects a Codex review found in remember, file-context, the rerank floor and the query log.
   - Result: the query log redacts the question with the archive's patterns; a lone reranked candidate is scored instead of keeping its fused score (which the -0.8 floor and `gaps` read as a logit); `insert_supersession` keeps the later statement (ties by record id, as ingest now does), so a retried older `remember` cannot undo a newer one; `file-context` returns and the mod renders the `[superseded <date>]` mark. Existing query logs scanned: 0 lines would change.
   - Evidence: `ca04dff`; new tests in `tests/test_query_log.py`, `tests/test_rerank_hits.py`, `tests/test_remember.py`, mod `register.test.ts` (40 pass); `codeality-py gate` 0 failed.

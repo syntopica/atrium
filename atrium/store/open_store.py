@@ -5,6 +5,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from atrium.context.ensure_context_indexes import ensure_context_indexes
+from atrium.store.ensure_archive_generation import ensure_archive_generation
 from atrium.store.ensure_conversation_revisions import ensure_conversation_revisions
 from atrium.store.ensure_dense_generation import ensure_dense_generation
 from atrium.store.ensure_record_total import ensure_record_total
@@ -59,4 +60,5 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
         ensure_record_total(connection)
         ensure_conversation_revisions(connection)
         ensure_supersessions(connection)
+        ensure_archive_generation(connection)
     return connection

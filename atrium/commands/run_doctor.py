@@ -6,8 +6,14 @@ from atrium.state.state_directory import state_directory
 from atrium.synthesize.default_registry import default_registry
 
 
-def run_doctor(
-    index: Path, archive: Path, stamp: Path, *, as_json: bool = False, publish: bool = False
+def run_doctor(  # noqa: PLR0913 -- the CLI's flags, each a real caller need
+    index: Path,
+    archive: Path,
+    stamp: Path,
+    *,
+    as_json: bool = False,
+    publish: bool = False,
+    inventory: Path | None = None,
 ) -> int:
     """Report every coherence check, and fail when the memory is answering wrongly.
 
@@ -16,9 +22,17 @@ def run_doctor(
     refresh that reports "done" whatever happened. None of those were subtle --
     they were invisible because nothing printed the right number.
     """
+    import json
+
     from atrium.doctor.run_doctor import run_doctor
 
-    findings = run_doctor(index, archive, stamp, default_registry())
+    findings = run_doctor(
+        index,
+        archive,
+        stamp,
+        default_registry(),
+        json.loads(inventory.read_text()) if inventory is not None else None,
+    )
     if publish:
         import time
 
@@ -30,8 +44,6 @@ def run_doctor(
             status_file(state_directory(), "doctor"), doctor_status(findings, time.time())
         )
     if as_json:
-        import json
-
         from atrium.status.doctor_report import doctor_report
 
         report = doctor_report(findings)

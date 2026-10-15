@@ -37,13 +37,19 @@
     newest first) on `export-materialized` and `export-pending`. Its
     `materialized-after-erasure.jsonl` is vendored and the apply tests run against it.
     Not yet run against the live archive.
-  - [ ] Freshness after cutover: `archive_path()` stays the full materialized export,
-    regenerated on every generation change, so `doctor` coverage and `recall` keep reading
-    one file. Record the ingested generation id in the index; report stale when
-    `scribe segments-inventory`'s `generationId` differs or `pendingDeliveries` > 0.
-  - [ ] Workstream 4 support: rebuild a test index from `export-materialized` and compare
-    raw records, both FTS lanes, synthesis records and vector identities against the live
-    inventory, read-only against live.
+  - Done 2026-10-16: a full ingest records the manifest's `generationId` in the index
+    (table `archive_generation`, cleared by an archive that names none; `--partial` never
+    writes it), and `doctor --segment-inventory <file>` reads `scribe segments-inventory`
+    JSON and warns `archive_generation_stale` or `archive_deliveries_pending`
+    (`tests/test_archive_generation_and_parity.py`). Remaining at cutover: the refresh
+    (dotfiles) runs `scribe segments-inventory` and passes its output to `doctor`; Atrium
+    does not run scribe itself, because the `--state` path is not fixed yet.
+  - Done 2026-10-16: `atrium --index <live> parity <test>` compares, read-only on both,
+    records by id and text digest per provider (raw, notes, synthesis), the ranked probe
+    of both FTS lanes on each side, and vector identities; exits 1 on any record
+    difference. Live against itself: `equal`, 53 s, 494 MB peak. Remaining: run it on a
+    test index rebuilt from the first live `export-materialized`, which is the
+    workstream 4 parity check itself.
 
 
 - [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured

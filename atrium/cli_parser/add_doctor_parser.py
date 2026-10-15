@@ -17,6 +17,12 @@ def add_doctor_parser(subcommands: SubParsers, archive: Path) -> None:
         help="Print checks as JSON (name, ok, severity, fixed code) instead of prose",
     )
     doctor.add_argument(
+        "--segment-inventory",
+        type=Path,
+        metavar="FILE",
+        help="`scribe segments-inventory` JSON; adds the archive-generation check",
+    )
+    doctor.add_argument(
         "--publish",
         action="store_true",
         help="Also publish status/doctor.json atomically. Only the refresh job passes "

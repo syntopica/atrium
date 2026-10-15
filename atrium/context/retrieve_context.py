@@ -13,9 +13,9 @@ from atrium.context.context_steps import context_steps
 from atrium.context.current_first import current_first
 from atrium.context.dense_matrix_scope import dense_matrix_scope
 from atrium.context.finalize_context import finalize_context
-from atrium.context.interleave_candidates import interleave_candidates
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.linked_hits import linked_hits
+from atrium.context.ordered_candidates import ordered_candidates
 from atrium.context.read_retirements import read_retirements
 from atrium.context.rerank_populations import rerank_populations
 from atrium.context.retired_mentions import retired_mentions
@@ -154,7 +154,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         )
         if reranked is not None:
             response["steps"].append(reranked)
-        candidates = interleave_candidates(history, notes, links)
+        candidates = ordered_candidates(history, notes, links, reranked)
         retirements = read_retirements(connection)
         mentions = retired_mentions(candidates, retirements)
         select_evidence(current_first(connection, candidates, mentions, query), response)

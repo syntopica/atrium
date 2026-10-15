@@ -118,18 +118,6 @@
   baseline of 226.91 s). Stage 3 remains: transport, erasure, the pending slice handed to
   `atrium ingest --partial`, and cutover. It moves with the capture code to
   `syntopica/scribe` (owner decision 2026-10-11).
-- [ ] One JSONL rewritten in full on
-      every import: 2.6 GB -> 3.36 GB in a day, and the 2026-08-31 recovery import
-      took roughly 45 minutes to add 3,008 conversations. With an hourly refresh
-      that is O(corpus) write amplification per hour to append a handful of
-      conversations, and it gets worse monotonically. The archive is meant to hold
-      everything forever, so the format has to stop being rewritten whole --
-      segment by period or by source, or make append the normal path and the full
-      rewrite a compaction. Cross-project: rocket-agents.
-      Measured 2026-10-10 19:29-19:48: a 19-minute refresh to add 1 conversation and
-      update 5 (export 7.1 min re-reading 47,957 artifacts, import 4.6 min rewriting the
-      6.8 GB archive plus a 6.8 GB backup, ingest 3.6, ingest-synthesis 2.5, embed 1.2);
-      refreshes start every 30-50 min, so the machine is refreshing about half the time.
 - [ ] **Whole conversations that have never entered the archive at all.** The
       codex gap is closed (streaming export since 2026-08-31; every refresh reports
       `skipped: 0` over 31,119 codex artifacts); the Windsurf and Trae exporters emit zero conversations; ChatGPT
@@ -205,7 +193,11 @@
       the backlog. **Owner approved the confirmation run 2026-10-11**; `gen_or.py` in the
       same evaluation directory is armed to start at 02:05 CEST on 2026-10-12 after the
       key's daily reset (`run_or.sh`, watchdog `watch_or.sh`, log `run_or.log`), stopping
-      if the key's free headroom falls to 100. Next step to confirm: generate fresh OpenRouter qwen3.8-27b
+      if the key's free headroom falls to 100. **Ran 2026-10-12 02:05-02:14:** nemotron
+      24 of 24 generated (`gen_or-nemotron.json`); `qwen/qwen3.8-27b:free` 0 of 24, every
+      request `HTTP 404`, so that model is gone from OpenRouter and the 6.1% lane cannot be
+      confirmed or used. Nothing judged yet: judging the 24 nemotron outputs is GPT-6 quota
+      and needs owner approval. Next step to confirm: generate fresh OpenRouter qwen3.8-27b
       and nemotron outputs for the same 24 episodes (48 requests) after the
       daily quota resets, through the worker's agy runner as well, and judge
       them the same way. Summaries are the weak field in every lane (37-79%
@@ -293,28 +285,6 @@
       copy the index before repairing and bisect the refresh log for the last
       write between the two doctor runs.
 
-- [~] **Refresh runs went from 12-15 min to 1-2.5 h on 2026-10-09.** Each stage now
-  logs its start (dotfiles db6b097), so the next slow run names its step; the 22:45
-  run was back to 13 min. Suspect: the import waits up to 5400 s on the archive
-  lock that `sync-conversations` also takes. `refresh.log`:
-  13:27-15:42, 16:54-19:19 and 20:19-21:28 (local), against 11-23 min for every run on
-  2026-10-08; record counts grew by only a few hundred. No run since the stage logging
-  landed has been slow (22:45 took 13 min), so the evidence is still to come. Smallest
-  next step: when a run passes 30 min, read the `stage` lines in `refresh.log` and name
-  the step; the archive is 6.7 GB and rewritten whole on every import, which is the
-  first suspect (see Ingest / Store).
-  Update 2026-10-10: 18 runs since the stage logging (2026-10-09 21:45 to
-  2026-10-10 11:00), all 10-17 min, none slow. Typical split: export 4-7 min,
-  import 3-4.5, ingest 3-3.5, ingest-synthesis 2, ingest-notes 12 s, embed 1-3,
-  doctor 2. The slow window stays unexplained (2026-10-09 11:38-20:19 only);
-  close as not reproduced if another week passes without a run over 30 min.
-  Per-prompt retrieval (`--lane dense --limit 4`) measured 0.8-1.0 s warm,
-  well inside the mod's 10 s budget.
-
-- [ ] **`synthesis recent` costs 2-6 s** because `daily` opens every record
-      of its window (15,696 files for 14 days). If a reader ever needs it
-      polled, keep per-day totals for closed days in a derived file.
-
 - [~] **`atrium embed` sat at 0% CPU for twelve minutes printing nothing.** The
   network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):
   the model load made three `hf_hub_download` calls that each revalidate the
@@ -354,49 +324,6 @@
 
 ## Measurement
 
-- [~] Acceptance set — built; the measurement phase is unblocked. **Protocol decided
-  2026-10-11 (owner):** GPT-6 labels, Claude audits a sample, rather than the owner
-  labeling by hand. In progress in the instance state
-  (`atrium/evaluations/acceptance-2026-10-11/`, private: `syntopica/atrium` is public):
-  90 sources sampled from the index (35 recent, 35 old conversations, 20 notes; half
-  `no-overlap`), GPT-6 writes one question per source, a candidate pool from the
-  words/dense/auto lanes goes to a GPT-6 judge for other answering sources, then the
-  audit. **Built and audited 2026-10-11:** `labeled.jsonl`, 85 questions (es 47 / en 38,
-  conversation 65 / note 20, overlap 41 / no-overlap 44 by a mechanical two-shared-word
-  rule, recent 32 / old 33). The judge read 1,402 pooled candidates: 13 `answers`,
-  68 `partial`; 10 questions carry alternatives. Claude's audit (`audit.md`): 15/15
-  gists supported by their source; q030, q036, q060 vague; two judge `answers` doubtful.
-  **First baseline (`baseline.py`, R@10 / MRR@10 by source conversation, live index):**
-  all: words 0.28/0.18, dense 0.20/0.10, auto 0.28/0.17. overlap (41): words 0.56,
-  dense 0.27, auto 0.56. no-overlap (44): words 0.02, dense 0.14, auto 0.02. notes (20):
-  words 0.10, dense 0.30, auto 0.10. So the 80% R@10 of the machine-extracted set does
-  not survive human-shaped questions, and `auto` behaves as `words`: on no-overlap
-  questions the OR-match lexical lane almost never comes back empty, so
-  `search_hybrid` fuses and buries the dense hit (dense alone finds 6 of 44, auto 1).
-  Same on notes. Next steps, each measured on this set: (1) the routing rule in
-  `search_hybrid` (when to trust dense over a weak lexical match), (2) the notes-only
-  FTS table below, (3) the dense-over-raw reserve lane (measured and kept unshipped
-  2026-10-12, see `TODO_LOG.md`). Known defect in `baseline.py`:
-  the `note` kind and `note` age share a group key, so that row prints n=40; rates are
-  unaffected (fixed in `baseline.py`).
-  **Routing, measured 2026-10-11 (`lanes.py`, `simulate.py`):** on the context surface,
-  history keeps the 0.7 lexical weight (0.5 and 0.3 lose MRR) and the curated pass now
-  fuses at 0.3 (`14aa1ab`): end to end 0.45/0.39 to 0.55/0.47 on the 20 note questions. A
-  rule gated on the narrow AND pass does not help: it matches for only 12 of 85 questions.
-  `search_hybrid` (the `atrium search` CLI) is unchanged: 0.5 gains R@10 (0.28 to 0.31) but
-  loses MRR (0.17 to 0.15). Earlier text: The 365/389
-  question-answer pairs used so far are machine-extracted and not valid for
-  production decisions ("better than memstore" needs a number). Smallest
-  unblock: the user labels a stratified question set over the corpus, or
-  approves a labeling protocol.
-  This is the project's ceiling, and the 2026-08-31 retirement made it
-  concrete: every decision that day — which population to serve, which events
-  to admit, whether the recovery was worth importing — was settled by counting
-  rows, comparing sets and measuring bytes. Not one was settled by whether the
-  answers got better. memstore is now switched off on structural evidence
-  alone, which is enough to call it an operational replacement and not enough
-  to call it an improvement.
-
 ## Integrations
 
 - [!] Windsurf and Trae remain unindexable at layer 1, and not for an exporter
@@ -417,21 +344,6 @@
       `sha256(conversation_id, event_id)`; the canonical contract should carry the
       identity itself. It re-keys every archived event, so it lands with the v2
       stage 3 cutover.
-
-- [ ] **Bulk jobs on nova must be memory-capped.** Filed from the hosting
-      ops repo (2026-10-12): the nova embedding run of 2026-10-11
-      (`run_shards.sh`, 12 `nova_embed.py` shards at 5-8 GB RSS each) had a
-      guard that watched output growth, not memory, and the kernel OOM-killed
-      the host's MariaDB at 2026-10-12 04:10 UTC. nova serves production.
-      Next step: any future run there goes in a capped transient unit
-      (`systemd-run --scope -p MemoryMax=<n>G`) with a memory guard, or runs
-      somewhere else.
-      **Memory caps are not enough (2026-10-14):** two memory-capped experiment
-      units (re-embed 1200% CPUQuota, rerank 1000%, Nice 10) held ~19 of 32 cores
-      and Apache hit `MaxRequestWorkers` at 15:52 UTC: every site timed out for
-      ~3.5 min until the units were stopped (`~/p/nubenode/TODO.md`, Server Ops).
-      Daytime runs on nova get CPUQuota <= 400% in total, or run in the night
-      window; check load and `MaxRequestWorkers` headroom before launching.
 
 - [ ] **The context service is swapped out under memory pressure, so the
       prompt hook times out.** Observed 2026-10-12 ~18:55 local: the hook

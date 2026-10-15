@@ -22,6 +22,7 @@ from atrium.serve.request_context_service import request_context_service
 from atrium.serve.service_timeout_response import service_timeout_response
 from atrium.state.state_directory import state_directory
 from atrium.telemetry.append_lane_event import append_lane_event
+from atrium.telemetry.append_query_event import append_query_event
 
 # No hook deadline binds a tool call, so the wait is longer than the CLI's 7 s;
 # a service that is listening but stalled is reported, never retried in-process,
@@ -74,11 +75,15 @@ def atrium_context(
         served = request_context_service(context_socket_path(state), request, _SERVICE_TIMEOUT_S)
     except TimeoutError:
         timed_out = service_timeout_response(query, project_path, limit, max_chars, lane, state)
-        return stamp_serving(timed_out, "service_timeout", started)
+        answered = stamp_serving(timed_out, "service_timeout", started)
+        append_query_event(state, answered, "mcp.context")
+        return answered
     except (OSError, ValueError):
         served = None
     if served is not None and "error" not in served:
-        return stamp_serving(served, "service", started)
+        answered = stamp_serving(served, "service", started)
+        append_query_event(state, answered, "mcp.context")
+        return answered
     try:
         local = context_from_index(
             INDEX,
@@ -93,4 +98,6 @@ def atrium_context(
         )
     except ValueError as error:
         raise ToolError(str(error)) from error
-    return stamp_serving(local, "in_process", started)
+    answered = stamp_serving(local, "in_process", started)
+    append_query_event(state, answered, "mcp.context")
+    return answered

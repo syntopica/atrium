@@ -10,6 +10,7 @@ from atrium.rerank.cross_encoder import CrossEncoder
 from atrium.serve.context_socket_path import context_socket_path
 from atrium.serve.request_context_service import request_context_service
 from atrium.serve.service_timeout_response import service_timeout_response
+from atrium.telemetry.append_query_event import append_query_event
 
 # Below the prompt hook's 10 s kill, leaving room for interpreter startup: a
 # late answer is discarded by the hook anyway, an explicit timeout is not.
@@ -65,5 +66,6 @@ def run_context_cli(  # noqa: PLR0913, PLR0917 -- parser wiring
         )
         served_by = "in_process"
     stamp_serving(result, served_by, started)
+    append_query_event(state, result, "cli.context")
     print(json.dumps(result, ensure_ascii=False, allow_nan=False))
     return 1 if result["index_status"] == "unavailable" else 0

@@ -123,6 +123,10 @@ def run_command(  # noqa: PLR0911, PLR0912 -- one return per subcommand; a dispa
         from atrium.serve.serve_context import serve_context
 
         return serve_context(args.index, state, args.interval)
+    if args.command == "gaps":
+        from atrium.gaps.run_gaps_cli import run_gaps_cli
+
+        return run_gaps_cli(state, args.days, args.top)
     if args.command == "file-context":
         from atrium.recall.run_file_context_cli import run_file_context_cli
 

@@ -64,3 +64,8 @@ def test_context_reports_the_rerank_step_and_its_fallback(corpus):
     assert [item["record_id"] for item in late["evidence"]] == [
         item["record_id"] for item in plain["evidence"]
     ]
+
+
+def test_each_reordered_hit_carries_its_cross_encoder_score():
+    hits, _ = rerank_hits(_ByLength(), "q", _HITS, 1.0)
+    assert [(hit.score, hit.lane) for hit in hits][:2] == [(3.0, "reranked"), (3.0, "reranked")]

@@ -592,3 +592,11 @@ test('leaves a file call as it was when the lookup fails or finds nothing', asyn
   expect(bash.context ?? []).toEqual([])
   expect(seen.runs).toBe(1)
 })
+
+test('marks evidence a later statement superseded', async ($, on) => {
+  const seen: any = {}
+  const answer = { ...ANSWER, evidence: [{ ...ANSWER.evidence[0], superseded_by: 'r2', superseded_at: '2026-10-15T09:00:00Z' }] }
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify(answer), stderr: '' } }, seen)
+  await $.prompt.submit({ text: PROMPT })
+  expect(seen.context[0]).toContain('- [episode] [superseded 2026-10-15] 2026-09-16 synthesis/7a2529ff723a')
+})

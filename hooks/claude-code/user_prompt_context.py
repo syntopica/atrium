@@ -72,7 +72,10 @@ def _line(item: dict) -> str:
     where = item.get("note_path") or item.get("conversation_id") or ""
     if where and not item.get("note_path"):
         where = where.split("/")[0] + "/" + where.split("/")[-1][:12]
-    head = " ".join(part for part in (f"[{label}]", stamp, where) if part)
+    superseded = (
+        f"[superseded {(item.get('superseded_at') or '')[:10]}]" if item.get("superseded_by") else ""
+    )
+    head = " ".join(part for part in (f"[{label}]", superseded, stamp, where) if part)
     return f"- {head}\n  {_excerpt(item.get('text', ''))}"
 
 

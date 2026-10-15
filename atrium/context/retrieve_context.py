@@ -5,11 +5,12 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from atrium.context.annotate_retired import annotate_retired
+from atrium.context.annotate_superseded import annotate_superseded
 from atrium.context.context_hits import context_hits
 from atrium.context.context_indexes_ready import context_indexes_ready
 from atrium.context.context_response import context_response
 from atrium.context.context_steps import context_steps
-from atrium.context.demote_retired import demote_retired
+from atrium.context.current_first import current_first
 from atrium.context.dense_matrix_scope import dense_matrix_scope
 from atrium.context.finalize_context import finalize_context
 from atrium.context.interleave_candidates import interleave_candidates
@@ -156,7 +157,8 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         candidates = interleave_candidates(history, notes, links)
         retirements = read_retirements(connection)
         mentions = retired_mentions(candidates, retirements)
-        select_evidence(demote_retired(candidates, mentions, query), response)
+        select_evidence(current_first(connection, candidates, mentions, query), response)
+        annotate_superseded(connection, response)
         annotate_retired(
             response, mentions, retirements, lambda: forgotten_by_term(forget_ledger_file())
         )

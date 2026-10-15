@@ -1,6 +1,6 @@
 # Retrieval: query prompt, reranker, document prompt
 
-Status: plan, 2026-10-15. Owner: "look at it with Codex, make a plan, and go".
+Status: steps 0-2 done 2026-10-15; step 3 open. Owner: "look at it with Codex, make a plan, and go".
 Measurements behind it are in `TODO.md` (Measurement) and in the instance at
 `atrium/evaluations/ideas-2026-10-14/`.
 
@@ -79,8 +79,9 @@ this pass.
   reranker instead.
 - Reranker: wins on the 85 and on the 88 held-out questions with every model
   tried; gte-multilingual-reranker-base matches bge-reranker-v2-m3 at 2.5x the
-  speed. No configuration meets added p95 < 1.5 s on this Mac. Numbers and
-  the open owner decision are in `TODO.md` (Measurement).
+  speed. No configuration met added p95 < 1.5 s on this Mac; the owner chose
+  gte at 256 tokens with a 3 s budget, shipped in `5a4ea74` (live rerank
+  1.9-2.1 s). Numbers in `TODO_LOG.md`, 2026-10-15.
 
 ## Out of scope
 

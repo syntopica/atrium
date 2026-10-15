@@ -337,27 +337,6 @@
 
 ## Measurement
 
-- [!] **Reranker: wins on both sets, too slow for the 1.5 s gate; the query prompt
-      does not win.** Re-measured 2026-10-15 with the honest harness
-      (`~/p/wiki/atrium/evaluations/retrieval-2026-10-15/e2e.py`: real
-      `retrieve_context`, production weights, links, budget, limit 8; the
-      2026-10-14 numbers used an oracle population and w=0.5 and are void). R/MRR
-      on acceptance (85) | held-out (88, `holdout-2026-10-15`, judged and audited):
-      production 0.28/0.12 | 0.43/0.29. Query prompts `search` 0.26/0.13, `qa`
-      0.26/0.15: `QUERY_PREFIX` stays. Rerank of each population's 32 fused hits
-      (`retrieve_context(reranker=...)`, atrium `4addedc`, off by default):
-      bge-reranker-v2-m3 0.39/0.24 | 0.51/0.39 (gained 9/7, lost 0/0);
-      gte-multilingual-reranker-base 0.40/0.25 | 0.51/0.41 (10/8, 0/1), at 256
-      tokens 0.39/0.22 | 0.50/0.39; mmarco-mMiniLMv2-L12 0.35/0.19 | 0.48/0.38
-      (lost 1/3). Rerank wall time alone (`latency.py`, 20 questions, Mac load
-      9-15): bge 512 tokens p50 10.4 s / p95 12.6 s; gte 512 4.0/6.8; gte 256
-      1.8/4.5; gte 256 top-16 0.9/3.3; mini 512 1.5/4.3. CoreML: 167 s vs 1.3 s on
-      CPU (172 partitions), unusable. **Blocked on:** the owner choosing between
-      ~2 s more per context answer for +0.08-0.11 R@8, a shallower rerank, or
-      waiting for the p95 to be measured on an idle Mac. Smallest step: the
-      owner's answer; then switch `CrossEncoder`'s defaults to gte at 256 tokens
-      and enable it in the context service with the budget the owner picks.
-
 - [~] Acceptance set — built; the measurement phase is unblocked. **Protocol decided
   2026-10-11 (owner):** GPT-6 labels, Claude audits a sample, rather than the owner
   labeling by hand. In progress in the instance state

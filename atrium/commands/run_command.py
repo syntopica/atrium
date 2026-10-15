@@ -112,6 +112,11 @@ def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand
         return run_record_session_cli(
             args.checkpoint, default_registry(), state, nothing_durable=args.nothing_durable
         )
+    if args.command == "remember":
+        from atrium.remember.run_remember_cli import run_remember_cli
+
+        append_lane_event(state, "cli.remember", "write")
+        return run_remember_cli(args.index, default_registry(), args.project, args.supersedes)
     if args.command == "erase":
         return run_erase(args.index, args.plan, archive, apply=args.apply)
     if args.command == "repair-index":

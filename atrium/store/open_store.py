@@ -8,6 +8,7 @@ from atrium.context.ensure_context_indexes import ensure_context_indexes
 from atrium.store.ensure_conversation_revisions import ensure_conversation_revisions
 from atrium.store.ensure_dense_generation import ensure_dense_generation
 from atrium.store.ensure_record_total import ensure_record_total
+from atrium.store.ensure_supersessions import ensure_supersessions
 from atrium.store.schema import SCHEMA
 from atrium.store.verify_build_stamp import verify_build_stamp
 
@@ -57,4 +58,5 @@ def open_store(path: Path, *, read_only: bool = False) -> sqlite3.Connection:
         ensure_dense_generation(connection)
         ensure_record_total(connection)
         ensure_conversation_revisions(connection)
+        ensure_supersessions(connection)
     return connection

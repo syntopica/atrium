@@ -4,12 +4,14 @@ from pathlib import Path
 
 from atrium.forget.forget_ledger_file import forget_ledger_file
 from atrium.forget.forgotten_ids import forgotten_ids
+from atrium.ingest.supersession_rows import supersession_rows
 from atrium.record import Record
 from atrium.store.delete_absent_conversations import delete_absent_conversations
 from atrium.store.delete_absent_revisions import delete_absent_revisions
 from atrium.store.open_store import open_store
 from atrium.store.read_revisions import read_revisions
 from atrium.store.read_source_revisions import read_source_revisions
+from atrium.store.replace_supersessions import replace_supersessions
 from atrium.store.revision import Revision
 from atrium.store.revisions_backfilled import revisions_backfilled
 from atrium.store.upsert_revision import upsert_revision
@@ -104,6 +106,7 @@ def run_ingest_synthesis(index: Path) -> int:
                 total += max(written, 0)
             removed = delete_absent_conversations(connection, "synthesis", seen)
             delete_absent_revisions(connection, "synthesis", seen)
+            replace_supersessions(connection, supersession_rows(chosen.values()))
     finally:
         connection.close()
     swept = f", {removed} absent removed" if removed else ""

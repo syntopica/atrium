@@ -12,8 +12,9 @@ from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 # The brain's routing rule: whole-corpus bulk goes to Gemini via agy -- its
 # quota is the one that survives it. Newest Flash at medium effort; synthesis
 # is extraction, not judgement, which is the one place the measured comparison
-# preferred Pro.
-AGY_MODEL_ID = "gemini-3.7-flash-medium"
+# preferred Pro. 3.8 since 2026-10-15, when agy stopped listing 3.7; its runs
+# are the new population `agy-gemini-3.8-flash-medium`.
+AGY_MODEL_ID = "gemini-3.8-flash-medium"
 
 _JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
 _ATTEMPTS = 3

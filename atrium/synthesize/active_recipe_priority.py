@@ -8,7 +8,12 @@ from pathlib import Path
 # one record per episode. This priority list decides which: first match wins.
 # Codex first by operator directive (2026-08-28) -- it is the active producer;
 # the Max-lane records remain as fallback for episodes codex has not covered.
-_DEFAULT_PRIORITY = ["codex-cli-default", "claude-sonnet-5", "gemini-3.7-flash-medium"]
+_DEFAULT_PRIORITY = [
+    "codex-cli-default",
+    "claude-sonnet-5",
+    "gemini-3.7-flash-medium",
+    "agy-gemini-3.8-flash-medium",
+]
 
 
 def active_recipe_priority(registry: Path) -> list[str]:

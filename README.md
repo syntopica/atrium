@@ -60,7 +60,29 @@ atrium search "that indexing outage" --dense      # semantic lane alone
 atrium status                                     # what the index holds
 atrium session-stop < hook.json                   # Claude Code Stop hook: refuse when a record is owed
 atrium record-session --checkpoint ID < synth.json  # the running session writes its own episode
+atrium remember --project . < statement.json      # keep one statement now; --supersedes RECORD_ID replaces an episode
+atrium file-context path/to/file.py               # this project's newest episodes naming one file
+atrium gaps --days 14                             # questions asked and not answered, from the query log
 ```
+
+## Keeping a statement on purpose
+
+A session that settles a decision, a correction or a gotcha can keep it
+without waiting for the Stop hook or a batch lane: `atrium remember --project .`
+(or the `atrium_remember` MCP tool) takes `{"title", "summary", "facts",
+"open_ends"}` with the lists optional, redacts it, writes it to the registry as
+its own population and indexes it with its vector at once. `--supersedes
+RECORD_ID`, repeatable, names episodes it replaces by the `record_id` that
+`atrium context` printed: they stay searchable as history, ranked after current
+evidence and marked `superseded_by` (the hooks show `[superseded <date>]`).
+The same statement twice is one record.
+
+Every `atrium context` answer from the CLI or MCP also appends one line to
+`synthesis/queries/<day>.jsonl` beside the registry: the question, its scope,
+and the evidence ids, scores and lanes, never evidence text. `atrium gaps`
+reads it back: the questions whose best reranked evidence scored under 0, or
+that returned nothing, most-asked first, which are the notes worth writing; and
+the records served most.
 
 ## Recording from the session
 
@@ -120,7 +142,9 @@ how its time split between start-up and each pass, the approximate tokens
 handed to the model, each item with its score, the turn's lookups and the notes
 read and cited, and the session's totals; on a short terminal each item takes one row so the band fits without scrolling. A failed run is retried once after a short pause, since a saturated
 machine often answers the second; if that fails too, the model is told retrieval
-was unavailable rather than empty. Use the mod or the
+was unavailable rather than empty. The first Read, Edit or Write of each file in a session also gets the project's
+three newest episodes naming that file (`atrium file-context`), after the
+tool's result. Use the mod or the
 shell hook, never both, or every prompt retrieves twice:
 
 ```

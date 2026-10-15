@@ -8,6 +8,71 @@
 
 ### 2026-10
 
+- [x] 2026-10-15 — **Durability:** Records written on the peer reach the primary.
+  - Result: `sync-all-safe` pushed the registry from the primary only, so session (and now
+    remembered) records written on the mini stayed there: 314 did (session-claude-opus-5-5
+    and -fable-5-1, some ollama). It now pulls `records/` from the peer with
+    `--ignore-existing` before pushing; the 314 were pulled by hand the same day.
+  - Evidence: dotfiles `86d3d10`; `rsync --dry-run` listed 314 peer-only files, 0 after.
+
+- [x] 2026-10-15 — **Integrations:** Explicit memory with supersession: `atrium remember` and the `atrium_remember` MCP tool.
+  - Result: a statement is written to the registry as population `remember`, redacted, and
+    indexed at once with its vector and the revision `ingest-synthesis` computes, so the next
+    refresh finds it unchanged. `--supersedes RECORD_ID` marks synthesized episodes it
+    replaces; the additive `supersessions` table is rebuilt from the registry on every
+    `ingest-synthesis`; context ranks superseded evidence last and marks it
+    `superseded_by`, and both hooks show `[superseded <date>]`. The fact-level update that
+    Mem0 and Graphiti do, by explicit statement rather than an LLM merge.
+  - Evidence: `310c5b8`, `d20a194`; `tests/test_remember.py` (6), mod test 39/39; gates green.
+
+- [x] 2026-10-15 — **Integrations:** File context on the first Read/Edit/Write of a file (claude-mem's PreToolUse timeline).
+  - Result: `atrium file-context <path>` returns the project's three newest episodes naming
+    the file (word-index phrase; a generic name takes its directory), 0.2 s on the live
+    index; the atrium-context mod adds them as tool-result context once per file per session.
+  - Evidence: `62849d6`; `tests/test_file_context.py`, mod tests; live run on
+    `retrieve_context.py` and `register.js` returned the relevant 2026-10-09..14 episodes.
+
+- [x] 2026-10-15 — **Retrieval:** Reranked evidence ordered by logit across history and notes, floor -0.8.
+  - Result: rerank keeps the gte logit as the hit score; with both populations reranked the
+    alternation is replaced by one logit order (notes keep their links), candidates under
+    -0.8 dropped.
+  - Evidence: `d321af1`; `evaluations/retrieval-2026-10-15/merge-*.log`: holdout R 0.52 /
+    MRR 0.43 to 0.52 / 0.44, acceptance 0.40 / 0.25 to 0.40 / 0.27; note questions 0.47 to
+    0.57 and 0.25 to 0.34.
+
+- [x] 2026-10-15 — **Self-improvement:** Query log and gap detection.
+  - Result: placement resolved as the registry directory (`synthesis/queries/<day>.jsonl`),
+    which `sync-all-safe` now carries (dotfiles `9e75805`); ids, scores and lanes only,
+    never evidence text. `atrium gaps` lists questions whose best reranked logit is under 0
+    or that got nothing (flags 28/42 missed and 5/46 answered holdout questions), most-asked
+    first, plus the records served most. The gap list is the proposal list: a gap is by
+    definition something the memory cannot draft, so the note is written by whoever answers it.
+  - Evidence: `d321af1`; `tests/test_gaps.py`, `tests/test_query_log.py`; live
+    `atrium context` wrote a line and `atrium gaps --days 1` read it.
+
+- [-] 2026-10-15 — **Retrieval:** Recency boost (claude-mem ACT-R, Engram/Anchored decay) and a per-conversation cap (Anchored).
+  - Resolution: simulated on both sets from one reranked dump
+    (`evaluations/ranking-2026-10-15/`): recency w=1, half-life 30 days moved holdout
+    R 0.52 to 0.53 but acceptance MRR 0.25 to 0.22, w=2 acceptance R 0.40 to 0.34; the cap
+    changed nothing at k=1..3. Neither shipped.
+
+- [-] 2026-10-15 — **Retrieval:** ES/EN query expansion (Anchored).
+  - Resolution: ceiling measured with Gemini 3.8 Flash translations of every question run
+    as a second word-lane pass (`evaluations/expansion-2026-10-15/`, `expansion-*.log`):
+    acceptance R 0.40 to 0.42, holdout 0.52 to 0.51, MRR unchanged on both. A glossary would
+    do worse than a perfect translation, and a translation per prompt costs a model call.
+
+- [-] 2026-10-15 — **Retrieval:** Entity graph expansion (Graphiti, HippoRAG 2, cognee).
+  - Resolution: ceiling measured before building (`evaluations/entities-2026-10-15/`): the
+    answer is a one-hop neighbour of the top candidates' backticked entities for 11/42 missed
+    holdout questions, but among ~1,300 neighbours; ranked by IDF-weighted shared entities it
+    is in the top 32 for 3/42 holdout and 0/51 acceptance, before any reranker. Not built.
+
+- [-] 2026-10-15 — **Retrieval:** Reinforcement by use (claude-mem).
+  - Resolution: the query log now counts what is served (`atrium gaps` lists it), but a
+    served-count boost cannot be measured on the fixed evaluation sets and feeds back on
+    itself (served because boosted). Counts kept as data, no boost.
+
 - [-] 2026-10-15 — **Retrieval:** Re-embedding the documents under EmbeddingGemma's document prompt (plan step 3).
   - Resolution: measured without a re-embed, from the 2026-10-14 nova vectors swapped
     into an experimental matrix (68,955 of 69,041 rows,

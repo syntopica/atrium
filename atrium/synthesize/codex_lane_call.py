@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
+from atrium.synthesize.codex_mcp_overrides import codex_mcp_overrides
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 
 # The job key needs a deterministic model string BEFORE the call; the account
@@ -58,13 +59,9 @@ def codex_lane_call(
                 "exec",
                 "--skip-git-repo-check",
                 *selection,
-                # Synthesis is pure text-to-JSON: no MCP server is needed, and
-                # serena is `required = true` in the user config -- under
-                # parallel workers its per-session startup times out and kills
-                # session creation (179 conversations failed that way before
-                # this flag).
-                "-c",
-                "mcp_servers.serena.enabled=false",
+                # Synthesis is pure text-to-JSON: no MCP server is needed (179
+                # conversations once failed on a required server's startup).
+                *codex_mcp_overrides(),
                 "-s",
                 "read-only",
                 "-C",

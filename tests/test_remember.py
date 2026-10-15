@@ -10,8 +10,11 @@ from atrium.cli import main
 from atrium.context.demote_superseded import demote_superseded
 from atrium.context.read_supersessions import read_supersessions
 from atrium.context.supersession import Supersession
+from atrium.ingest.record_identity import record_identity
+from atrium.ingest.supersession_rows import supersession_rows
 from atrium.remember.remember import remember
 from atrium.retrieve.hit import Hit
+from atrium.sql.load_sql import load_sql
 from atrium.store.open_store import open_store
 from atrium.synthesize.write_record import write_record
 
@@ -127,3 +130,33 @@ def test_superseded_candidates_go_last_and_nothing_is_dropped():
     candidates = [hit("old"), hit("new"), hit("other")]
     ordered = demote_superseded(candidates, {"old": Supersession("new", None)})
     assert [one[0].record_id for one in ordered] == ["new", "other", "old"]
+
+
+def test_a_retried_older_statement_never_undoes_a_newer_supersession(tmp_path):
+    connection = open_store(tmp_path / "index.sqlite3")
+    insert = load_sql("store/insert_supersession")
+    with connection:
+        connection.execute(insert, ("x", "b", "2026-10-15T10:00:00Z"))
+        connection.execute(insert, ("x", "a", "2026-10-15T09:00:00Z"))
+    newer = connection.execute(load_test_sql("remember/supersession_of"), ("x",)).fetchone()
+    with connection:
+        connection.execute(insert, ("x", "c", "2026-10-15T11:00:00Z"))
+    latest = connection.execute(load_test_sql("remember/supersession_of"), ("x",)).fetchone()
+    connection.close()
+    assert newer == ("b", "2026-10-15T10:00:00Z")
+    assert latest == ("c", "2026-10-15T11:00:00Z")
+
+
+def test_ingest_breaks_a_same_instant_tie_as_the_insert_does():
+    at = "2026-10-15T10:00:00Z"
+    records = [
+        {"conversation_id": conversation, "episode_id": "e", "authored_at": at, "supersedes": ["x"]}
+        for conversation in ("one", "two")
+    ]
+    ((_, forward, _),) = supersession_rows(records)
+    ((_, backward, _),) = supersession_rows(list(reversed(records)))
+    assert (
+        forward
+        == backward
+        == max(record_identity(f"synthesis/{conversation}", "e") for conversation in ("one", "two"))
+    )

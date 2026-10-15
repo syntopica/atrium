@@ -11,7 +11,8 @@ def supersession_rows(records: Iterable[dict[str, Any]]) -> list[tuple[str, str,
 
     When two statements supersede the same record, the later one names it: a
     reader following the mark should land on what is current, not on an
-    intermediate correction.
+    intermediate correction. On the same instant the larger record id wins, the
+    same tie rule `insert_supersession` applies.
     """
     latest: dict[str, tuple[str, str | None]] = {}
     for record in records:
@@ -22,6 +23,6 @@ def supersession_rows(records: Iterable[dict[str, Any]]) -> list[tuple[str, str,
         at = record.get("authored_at")
         for target in targets:
             current = latest.get(target)
-            if current is None or (at or "") > (current[1] or ""):
+            if current is None or (at or "", by) > (current[1] or "", current[0]):
                 latest[target] = (by, at)
     return sorted((target, by, at) for target, (by, at) in latest.items())

@@ -21,6 +21,11 @@ class _Late:
         raise TimeoutError("rerank deadline passed")
 
 
+class _Low:
+    def score(self, query, texts, deadline):
+        return [-5.0 for _ in texts]
+
+
 class _Short:
     def score(self, query, texts, deadline):
         return [1.0]
@@ -69,3 +74,9 @@ def test_context_reports_the_rerank_step_and_its_fallback(corpus):
 def test_each_reordered_hit_carries_its_cross_encoder_score():
     hits, _ = rerank_hits(_ByLength(), "q", _HITS, 1.0)
     assert [(hit.score, hit.lane) for hit in hits][:2] == [(3.0, "reranked"), (3.0, "reranked")]
+
+
+def test_a_lone_candidate_is_scored_so_the_floor_can_judge_it():
+    hits, applied = rerank_hits(_Low(), "q", _HITS[:1], 1.0)
+    assert [(hit.record_id, hit.score, hit.lane) for hit in hits] == [("a", -5.0, "reranked")]
+    assert applied

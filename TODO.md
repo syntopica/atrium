@@ -226,25 +226,30 @@
 
 ## Promotion pipeline
 
-- [ ] The subject/predicate/value triple is the suspect part of the claim
-      schema: it degrades a quarter of the sample and adds nothing the sentence
-      does not already carry. Consider replacing it with an `entities` list of
-      quoted identifiers, which is what a merge actually needs, and keeping the
-      sentence as the claim. Decide after the stage-three design lands, because
-      the merge algorithm is what says which fields it needs.
-- [ ] Spend the new 100-claim holdout once, on stage three's acceptance, not on
-      stage two. Two failure shapes are already visible and neither is
+- [!] **The pipeline is built and its output is unreviewed.** Stages one to four exist
+      (`curate-screen`, `curate-extract`, `curate-cluster`/`curate-neighbours`,
+      `curate-publishable`, `curate-propose`; 2026-09-17/18). The last run,
+      `$SYNTOPICA_DATA/atrium/curation/proposals/20260918T031838Z/review.md`, places 200
+      claims on 80 pages and refuses 70; nobody has read it, and it is four weeks old.
+      **Waiting on the owner:** how proposals should reach the wiki (see the 2026-10-16
+      recommendation in the session record: regenerate, review ~20 per sitting, a session
+      applies only the accepted ones).
+- [ ] `curate-propose` does not read the retirements notes declare (`retired:`
+      frontmatter, 2026-10-14), so it can propose a claim that presents a retired tool
+      as current -- the entity lifecycle question stage three was meant to answer. Smallest
+      step: drop or mark candidates that `names_retirement` matches, before placement.
+- [ ] Drop the subject/predicate/value triple from the extraction schema at the next
+      extraction run. Its condition is met: the merge adjudicates sentences
+      (`pair_relation_tool`) and placement reads the sentence (`claim_destination`);
+      nothing downstream reads the triple, which degrades a quarter of the sample.
+- [ ] Spend the new 100-claim holdout once, on the placement's acceptance (stage four),
+      not on extraction. Two failure shapes are already visible and neither is
       fixed by prompt-fiddling: a sentence carrying two assertions loses one
       (the Apache 503 claim kept "contains maintenance downtime" and dropped
       "now reads the title first"), and a claim whose sentence names no file or
       repository is classified `general` even when it is plainly about one
       project (`/findings expects to be an array`, in project-after). 64 of 498 came
       back `general`; that is the number to check by hand.
-- [ ] Stage three: semantic merge and page proposal. Inputs are the claims
-      ledger plus the entity lifecycle question (a claim about a renamed or
-      replaced tool is worse than no claim). It writes proposals only:
-      `AGENTS.md:24` forbids writing the curated layer, and the pilot that did
-      so had to be reverted with `git checkout`.
 - [ ] The claim ledger stores `project` as resolved at extraction time. It is
       derived from the index and cheap to recompute, so if the resolution rule
       changes again, rewrite the field rather than re-calling the model -- the

@@ -33,6 +33,12 @@ rebuilds in 27 days on the system this replaces.
   never enter `SEMANTIC_ROLES`, never be embedded, and never reach session-start
   injection; it stays lexically searchable on request, displayed with its mark.
   A retrieved instruction inside third-party text can steer a tool-bearing agent.
+- **A bulk job on nova runs capped in memory and CPU, or elsewhere.** nova serves
+  production: an uncapped embedding run OOM-killed its MariaDB (2026-10-12), and two
+  memory-capped units holding ~19 of 32 cores starved Apache into `MaxRequestWorkers`
+  (2026-10-14). Use a transient unit (`systemd-run --scope -p MemoryMax=<n>G -p
+  CPUQuota=<=400%`) in the day, or the night window; check load and Apache worker
+  headroom before launching.
 
 ## Measured decisions
 

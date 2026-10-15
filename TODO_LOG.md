@@ -8,6 +8,24 @@
 
 ### 2026-10
 
+- [x] 2026-10-16 — **Observability:** Refresh runs of 1-2.5 h (2026-10-09) closed as not reproduced.
+  - Result: 135 refreshes from 2026-10-09 23:55 to 2026-10-16 00:23, every one with stage logging. Export-to-embed took at most 42 min, and only one run passed 30: 2026-10-15 19:39, whose export stage alone took 23 min (19:39:04 to 20:02:32) against the usual 4-7. That stage belongs to scribe, and its cost is the v1 full rewrite that segment archive v2 stage 3 removes. The 1-2.5 h window of 2026-10-09 did not recur in a week.
+  - Evidence: stage lines in `~/p/wiki/atrium/refresh.log`, grouped per run from `stage export` to `stage embed`.
+
+- [x] 2026-10-16 — **Cross-project:** Bulk jobs on nova capped in memory and CPU.
+  - Result: the rule is now a hard boundary in `AGENTS.md`, with both incidents (MariaDB OOM-killed 2026-10-12, Apache `MaxRequestWorkers` 2026-10-14) and the transient-unit recipe.
+  - Evidence: `AGENTS.md`, "Hard boundaries".
+
+- [x] 2026-10-16 — **Measurement:** Acceptance set built and used for every retrieval decision since.
+  - Result: GPT-6 labels with a Claude audit (85 questions, 2026-10-11), then a held-out set of 88 (2026-10-15). Its three next steps are settled: history fusion and the reranker shipped (context reranked, 50/50), the notes-only FTS table was rejected, dense-over-raw stays unshipped. `search_hybrid` for the CLI keeps 0.7 (0.5 gains R@10 and loses MRR).
+  - Evidence: the 2026-10-11, 2026-10-12 and 2026-10-15 entries in this log; `atrium/evaluations/acceptance-2026-10-11/` and `holdout-2026-10-15/` in the instance.
+
+- [-] 2026-10-16 — **Ingest / Store:** One archive JSONL rewritten in full on every import.
+  - Resolution: duplicate of the archive-shape entry. Segment archive stage 2 (`8cc2849`) removes the rewrite and stage 3 cuts over to it; both are tracked in `~/p/scribe/TODO.md`, and Atrium's side stays in TODO.md (Segment archive v2 stage 3, archive shape).
+
+- [-] 2026-10-16 — **Observability:** `synthesis recent` costs 2-6 s.
+  - Resolution: the entry was conditional on a reader polling it, and none does. Only the CLI view calls `synthesis_recent` (`atrium/ledger/run_synthesis_cli.py`); no hook, launch agent or script in `~/p/atrium`, `~/p/dotfiles`, `~/p/worker` or `~/.local/bin` runs it. Reopen if one starts to.
+
 - [x] 2026-10-15 — **Synthesis:** The agy lane calls a model agy still serves.
   - Result: `AGY_MODEL_ID` is `gemini-3.8-flash-medium` (agy stopped listing 3.7). Its runs are the new population `agy-gemini-3.8-flash-medium`; `gemini-3.7-flash-medium` keeps its bare name (`LEGACY_AGY_POPULATION`) so its 19,151 records stay one population. The default priority and the live `active-recipe.json` list 3.8 right after 3.7; no 3.8 records exist yet, so nothing served changes. The worker lane names its own runs from the executor and was not touched.
   - Evidence: `agy --print='Reply with the single word ok' --model gemini-3.8-flash-medium` answered `ok`; `tests/test_agy_lane_model_id.py`; pytest 639 passed.

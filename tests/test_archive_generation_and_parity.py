@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 
 import pytest
+from load_test_sql import load_test_sql
 
 from atrium.cli import main
 
@@ -70,4 +71,20 @@ def test_parity_reports_equal_rebuilds_and_names_what_differs(state, tmp_path, c
     report = json.loads(capsys.readouterr().out)
     only_live = sum(row["only_live"]["count"] for row in report["records"].values())
     assert only_live > 0
-    assert report["fts"] == {"test": "fts_ranked_probe_passed", "live": "fts_ranked_probe_passed"}
+    assert {side["probe"] for side in report["fts"].values()} == {"fts_ranked_probe_passed"}
+
+
+def test_parity_sees_an_emptied_lane_and_a_moved_provider():
+    import sqlite3
+
+    from atrium.parity.compare_digests import compare_digests
+    from atrium.parity.fts_row_counts import fts_row_counts
+    from atrium.store.schema import SCHEMA
+
+    moved = compare_digests({"r": ("codex", "d")}, {"r": ("cursor", "d")})
+    assert moved["cursor"]["changed"]["count"] == 1
+    connection = sqlite3.connect(":memory:")
+    connection.executescript(SCHEMA)
+    connection.execute(load_test_sql("parity/insert_one_record"))
+    connection.execute(load_test_sql("parity/empty_words_lane"))
+    assert fts_row_counts(connection) == {"records": 1, "words": 0, "substrings": 1}

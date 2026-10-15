@@ -12,5 +12,5 @@ def is_machine_prompt(role: str | None, text: str) -> bool:
     if role != "user":
         return False
     # Collapsed so "<role>\nYou are" matches the same opening as "<role> You are".
-    opening = _WHITESPACE.sub(" ", text[:160]).strip()
+    opening = _WHITESPACE.sub(" ", text[:240]).strip()
     return opening.startswith(MACHINE_PROMPT_PREFIXES)

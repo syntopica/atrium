@@ -1,14 +1,14 @@
 """The `ingest` handler of the atrium CLI."""
 
 from pathlib import Path
+from typing import Any
 
 from atrium.forget.forget_ledger_file import forget_ledger_file
 from atrium.forget.forgotten_ids import forgotten_ids
 from atrium.ingest.admission_tally import AdmissionTally
+from atrium.ingest.archive_conversations import archive_conversations
 from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.is_excluded_automation import is_excluded_automation
-from atrium.ingest.read_archive import read_archive
-from atrium.ingest.read_archive_manifest import read_archive_manifest
 from atrium.ingest.rows_sha256 import rows_sha256
 from atrium.ingest.to_records import to_records
 from atrium.ingest.workspace_aliases import workspace_aliases
@@ -55,11 +55,12 @@ def run_ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
     # this loop runs 30,000 times.
     aliases = workspace_aliases()
     forgotten = forgotten_ids(forget_ledger_file())
+    manifest: dict[str, Any] = {}
     seen_by_provider: dict[str, set[str]] = {}
     revisions_by_provider: dict[str, dict[str, Revision]] = {}
     try:
-        with connection:
-            for conversation in read_archive(archive):
+        with connection, archive.open(encoding="utf-8") as handle:
+            for conversation in archive_conversations(handle, archive, manifest):
                 conversations += 1
                 conversation_id = conversation["id"]
                 provider = conversation.get("source") or "unknown"
@@ -101,9 +102,7 @@ def run_ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
                     delete_absent_revisions(connection, provider, seen)
                 mark_revision_backfill(connection)
                 # Only a full ingest speaks for a generation: a slice covers a subset.
-                write_archive_generation(
-                    connection, read_archive_manifest(archive).get("generationId")
-                )
+                write_archive_generation(connection, manifest.get("generationId"))
     finally:
         connection.close()
     swept = f", {removed} absent removed" if removed else ""

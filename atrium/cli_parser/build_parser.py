@@ -11,6 +11,7 @@ from atrium.cli_parser.add_curate_propose_parser import add_curate_propose_parse
 from atrium.cli_parser.add_curate_publishable_parser import add_curate_publishable_parser
 from atrium.cli_parser.add_doctor_parser import add_doctor_parser
 from atrium.cli_parser.add_erase_parser import add_erase_parser
+from atrium.cli_parser.add_file_context_parser import add_file_context_parser
 from atrium.cli_parser.add_forget_parser import add_forget_parser
 from atrium.cli_parser.add_ingest_notes_parser import add_ingest_notes_parser
 from atrium.cli_parser.add_ingest_parser import add_ingest_parser
@@ -64,6 +65,7 @@ def build_parser(
     add_context_parser(subcommands)
     add_serve_context_parser(subcommands)
     add_recall_parser(subcommands, archive, refresh_stamp)
+    add_file_context_parser(subcommands)
     add_status_parser(subcommands, archive, refresh_stamp)
     add_synthesis_parser(subcommands)
     return parser

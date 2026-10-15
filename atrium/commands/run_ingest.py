@@ -8,6 +8,7 @@ from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.is_excluded_automation import is_excluded_automation
 from atrium.ingest.read_archive import read_archive
+from atrium.ingest.read_archive_manifest import read_archive_manifest
 from atrium.ingest.rows_sha256 import rows_sha256
 from atrium.ingest.to_records import to_records
 from atrium.ingest.workspace_aliases import workspace_aliases
@@ -18,6 +19,7 @@ from atrium.store.open_store import open_store
 from atrium.store.read_revisions import read_revisions
 from atrium.store.revision import Revision
 from atrium.store.upsert_revision import upsert_revision
+from atrium.store.write_archive_generation import write_archive_generation
 from atrium.store.write_conversation import UNCHANGED, write_conversation
 
 
@@ -98,6 +100,10 @@ def run_ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
                     removed += delete_absent_conversations(connection, provider, seen)
                     delete_absent_revisions(connection, provider, seen)
                 mark_revision_backfill(connection)
+                # Only a full ingest speaks for a generation: a slice covers a subset.
+                write_archive_generation(
+                    connection, read_archive_manifest(archive).get("generationId")
+                )
     finally:
         connection.close()
     swept = f", {removed} absent removed" if removed else ""

@@ -11,6 +11,7 @@ from atrium.commands.run_forget import run_forget
 from atrium.commands.run_ingest import run_ingest
 from atrium.commands.run_ingest_notes import run_ingest_notes
 from atrium.commands.run_ingest_synthesis import run_ingest_synthesis
+from atrium.commands.run_parity import run_parity
 from atrium.commands.run_recall import run_recall
 from atrium.commands.run_rekey_synthesis import run_rekey_synthesis
 from atrium.commands.run_repair_index import run_repair_index
@@ -24,7 +25,7 @@ from atrium.telemetry.append_lane_event import append_lane_event
 from atrium.telemetry.run_lane_status import run_lane_status
 
 
-def run_command(  # noqa: PLR0911, PLR0912 -- one return per subcommand; a dispatch table would hide the arg wiring this makes greppable, and the parser it dispatches on stays flat in cli_parser/build_parser.py
+def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand; a dispatch table would hide the arg wiring this makes greppable, and the parser it dispatches on stays flat in cli_parser/build_parser.py
     args: Namespace, parser: ArgumentParser, state: Path, refresh_stamp: Path, archive: Path
 ) -> int:
     """Run the subcommand ``args`` names; the adapters wrap this, never each other."""
@@ -99,9 +100,16 @@ def run_command(  # noqa: PLR0911, PLR0912 -- one return per subcommand; a dispa
         )
     if args.command == "rekey-synthesis":
         return run_rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
+    if args.command == "parity":
+        return run_parity(args.test, args.index)
     if args.command == "doctor":
         return run_doctor(
-            args.index, args.archive, refresh_stamp, as_json=args.json, publish=args.publish
+            args.index,
+            args.archive,
+            refresh_stamp,
+            as_json=args.json,
+            publish=args.publish,
+            inventory=args.segment_inventory,
         )
     if args.command == "search":
         lane = search_lane(args)

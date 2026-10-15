@@ -23,7 +23,9 @@ def dense_matrix_hits(  # noqa: PLR0913 -- same contract as dense_hits plus the 
 
     A matrix older than the index can name records that have since gone; those
     are skipped and the next candidates read instead, so a stale copy loses
-    recall for what changed but never returns a deleted record.
+    recall for what changed but never returns a deleted record. A record with
+    several rows (an episode and each of its facts) is returned once, at its
+    best row's score.
     """
     rows = np.flatnonzero(dense_matrix_scope(matrix, curated=curated, workspace=workspace))
     if not len(rows):
@@ -34,6 +36,7 @@ def dense_matrix_hits(  # noqa: PLR0913 -- same contract as dense_hits plus the 
     order = rows[np.argsort(-scores, kind="stable")]
     by_row = dict(zip(rows.tolist(), scores.tolist(), strict=True))
     hits: list[Hit] = []
+    returned: set[str] = set()
     for start in range(0, len(order), max(limit * 2, 16)):
         batch = order[start : start + max(limit * 2, 16)]
         ids = [str(matrix.ids[i]) for i in batch]
@@ -46,8 +49,9 @@ def dense_matrix_hits(  # noqa: PLR0913 -- same contract as dense_hits plus the 
         }
         for position, record_id in zip(batch.tolist(), ids, strict=True):
             row = found.get(record_id)
-            if row is None:
+            if row is None or record_id in returned:
                 continue
+            returned.add(record_id)
             hits.append(
                 Hit(
                     row[0],

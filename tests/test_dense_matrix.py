@@ -147,3 +147,23 @@ def test_a_rebuild_overtaken_by_a_delete_is_neither_saved_nor_served(store, tmp_
     assert holder.matrix is not None
     assert holder.matrix.generation == read_dense_generation(store)
     assert cache.exists()
+
+
+def test_a_record_with_several_rows_is_returned_once_at_its_best_score(store):
+    from atrium.context.dense_matrix import DenseMatrix
+
+    matrix = build_dense_matrix(store)
+    query = np.ones(8, dtype=np.float32) / np.sqrt(8)
+    first = dense_matrix_hits(store, matrix, query, 1, curated=False, workspace=_PROJECT)[0]
+    position = list(matrix.ids).index(first.record_id)
+    doubled = DenseMatrix(
+        matrix.generation,
+        np.concatenate([matrix.ids, matrix.ids[[position]]]),
+        np.concatenate([matrix.roles, matrix.roles[[position]]]),
+        np.concatenate([matrix.workspaces, matrix.workspaces[[position]]]),
+        np.concatenate([matrix.vectors, query[np.newaxis, :]]),
+    )
+    hits = dense_matrix_hits(store, doubled, query, 5, curated=False, workspace=_PROJECT)
+    ids = [hit.record_id for hit in hits]
+    assert ids[0] == first.record_id and len(set(ids)) == len(ids) == 5
+    assert hits[0].score == pytest.approx(1.0)

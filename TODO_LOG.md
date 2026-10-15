@@ -8,6 +8,14 @@
 
 ### 2026-10
 
+- [x] 2026-10-16 — **Ingest / Store:** Machine-written prompts no longer fill the `user` role.
+  - Result: tool output had already gone (`750ae09`, `5552415`); what remained was harness and app prompts, 69.5% of the role's text across 102,613 records (security-review template 39%, Vexa classifier 11.5%), against 7.9% for human-sized prompts. Ingest now rejects them as `machine prompt`, matching each template's whole opening sentence (`atrium/ingest/machine_prompt_prefixes.py`) so a person typing the same first words keeps the message (a Codex review caught the first, shorter prefixes). No longer blocked on scribe.
+  - Evidence: refresh 2026-10-16 01:11 at `234d4c2`: `24,743 machine prompt` rejected, index 470,650 to 449,748 records; `tests/test_admission_breakdown.py`.
+
+- [x] 2026-10-16 — **Observability:** Synthesis written about a lone harness echo leaves the index.
+  - Result: `atrium forget --echoes` reads the registry's single-event episodes against the archive (one pass, ~20 s) and ledgers those whose only event is a known echo under the restorable rule `harness-echo`; `status` counts forgotten episodes apart instead of as NOT IN INDEX. Applied: 2,239 records (2,152 "Structured output provided successfully", 87 "[Request interrupted by user]"), wiki `93d6ac74b`.
+  - Evidence: refresh 2026-10-16 01:17: synthesis records 63,156 to 60,923; `status` shows each population's `forgotten` count and no NOT IN INDEX drift except 1 session record; `tests/test_forget.py`, `tests/test_population_report.py`.
+
 - [x] 2026-10-16 — **Cross-project:** The context service was swapped out under memory pressure.
   - Result: the 14 GB holder was the synthesis driver itself: `newest_conversations` parsed all ~56,000 archived conversations (6.8 GB) into memory before the first call. The pass now keeps a stub per conversation (id, workspace, dates, byte offset) and loads each one by offset inside its pool thread. The other holder, the local Ollama model, has leased only while the Mac is idle since worker `e00ac0b` (2026-10-12). `serve-context` is not pinned: neither cause remains, and Python offers no supported way to lock its working set on macOS.
   - Evidence: `atrium synthesize <archive> --dry-run --limit 200` on the live archive peaks at 556 MB resident (`/usr/bin/time -l`, 135 s); `tests/test_synthesis_collects_pending_results.py::test_the_pass_holds_stubs_and_loads_each_conversation_by_offset`; gate passes.

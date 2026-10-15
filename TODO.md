@@ -78,28 +78,6 @@
       it is not urgent. Smallest step: an `atrium compact` command run under
       `refresh.lock`, sized after the trigram decision, since dropping that lane
       reclaims most of the same space.
-- [!] **The `user` role carries tool output and machine prompts.** A 200k-rowid sample
-      (2026-10-10, ~7.2k user records) by bytes: atrium synthesis prompts 23%, other
-      records over 5k chars 20%, human-sized prompts 17%, tool-output-shaped text (Read
-      `N<tab>` listings, `[TOOL ...]`, search results) 16.5%, `<tag>` harness text
-      11.6%, the security-review template 7.4%, app batch prompts (Vexa classifier,
-      invoice extraction) 3.8%, skill bodies 1%. Average user record 2,967 chars against
-      288 for assistant. These bloat both FTS lanes and crowd lexical ranking. Smallest
-      next step was to find the archive event kinds; found 2026-10-11: scribe's
-      `conversationEventKindFromRecord` reads only `type`/`kind`/`payload.type`, and a
-      Claude Code line is `type: "user"` with `tool_result` blocks in `message.content`,
-      so the archive itself files it as `kind: message, role: user`. The fix is
-      scribe's, and it changes content hashes, which the split froze until the v2
-      cutover. **Blocked on:** scribe v2 stage 3; tracked in `~/p/scribe/TODO.md`
-      ("Event classification"). The machine-prompt shapes (synthesis prompts, the
-      security-review template, app batch prompts) are separate: most of the first are
-      already gone with the `atrium-codex-*` exclusion.
-      2026-10-14: the tool-output share no longer waits on scribe. Atrium `750ae09`
-      and `5552415` reject a rendered `tool: <Name>` call and the unmarked results
-      that answer it; the 18:30 refresh rejected 760,326 calls and 683,384 results and
-      left 111,298 user and 300,790 assistant records (index 1,923,985 to 483,624). What
-      remains here is the machine-prompt shapes; re-sample the user role before
-      deciding whether this entry is still blocked.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable
@@ -323,19 +301,6 @@
 > Filed 2026-08-31, from the memstore retirement. Every defect that session
 > found had been running silently for days, and none of them were subtle --
 > they were invisible because nothing reported the right number.
-
-- [~] **Lone harness echoes no longer cost a synthesis call (2026-10-10).** Measured over the
-      registry: 2,468 single-event episodes, of which 2,126 are only "Structured output
-      provided successfully" and 87 only "[Request interrupted by user]" (role `user`, the
-      tail of a subagent session). `is_trivial_episode` skips exactly those echoes -- an
-      exact-match set, not a length floor, after a Codex review showed a length floor drops
-      a short real message -- and the pass prints them as "harness echoes not synthesized".
-      A floor, not a fold: folding would re-key and re-pay the neighbouring episode.
-      Remaining: the ~2,213 echo records already in the registry are still indexed and can
-      surface in recall. Excluding them at `ingest-synthesis` needs each record's event
-      text from the index and would make `status`/`doctor` report them as intended but not
-      indexed, so it was not done; smallest next step is a per-record `excluded` reason in
-      the served-record choice that status counts separately.
 
 ## Measurement
 

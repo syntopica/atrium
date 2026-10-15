@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-15 — **Synthesis:** The agy lane calls a model agy still serves.
+  - Result: `AGY_MODEL_ID` is `gemini-3.8-flash-medium` (agy stopped listing 3.7). Its runs are the new population `agy-gemini-3.8-flash-medium`; `gemini-3.7-flash-medium` keeps its bare name (`LEGACY_AGY_POPULATION`) so its 19,151 records stay one population. The default priority and the live `active-recipe.json` list 3.8 right after 3.7; no 3.8 records exist yet, so nothing served changes. The worker lane names its own runs from the executor and was not touched.
+  - Evidence: `agy --print='Reply with the single word ok' --model gemini-3.8-flash-medium` answered `ok`; `tests/test_agy_lane_model_id.py`; pytest 639 passed.
+
 - [-] 2026-10-15 — **Retrieval:** Per-fact vectors (one dense row per episode line, carrying its parent's id).
   - Resolution: measured and dropped. 598,646 fact units from 69,385 episodes embedded (`facts-2026-10-15/export_units.py`, `embed_units.py`, `build_matrix.py`; 668,031-row matrix, 1.65 GB float32). End to end with the gte reranker: holdout R 0.52 / MRR 0.44 unchanged (3 ranks moved, no hit gained or lost); acceptance 0.40 / 0.27 fell to 0.38 / 0.26 (2 hits lost, none gained). The reranker already reads the whole episode, so a closer dense match on one line adds candidates it does not need, at ten times the resident matrix. The dedupe in `dense_matrix_hits` (`8a6acb6`) stays: it is correct for any record with several rows. Artifacts trashed; the scripts remain.
 

@@ -140,12 +140,6 @@
 
 ## Synthesis
 
-- [ ] **`AGY_MODEL_ID` names a model agy no longer serves.** On 2026-10-15
-      `agy --model gemini-3.7-flash-medium` failed "not recognized"; `agy models` lists
-      `gemini-3.8-flash-{high,medium,low}`. `atrium/synthesize/agy_lane_call.py` and the
-      default recipe priority still name 3.7. The worker ladder may use its own id; check
-      which path still calls this one before renaming (a new id is a new population).
-
 - [ ] **Synthesis coverage and quality.** Built 2026-08-28 (`6263938`); the lane question is
       settled by the owner routing rule of 2026-09-30 (bulk on the worker's agy and local
       lanes, cursor cancelled, `drip-loop.sh` retired). The build history, the lane

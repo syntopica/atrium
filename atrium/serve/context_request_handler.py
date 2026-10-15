@@ -18,7 +18,9 @@ class ContextRequestHandler(socketserver.StreamRequestHandler):
             # A ContextServer; typed loosely because the server imports this
             # handler, so naming the class here would be an import cycle.
             server: Any = self.server
-            reply = serve_context_request(request, server.index, server.holder, server.embedder)
+            reply = serve_context_request(
+                request, server.index, server.holder, server.embedder, server.reranker
+            )
         except (ValueError, KeyError, TypeError) as error:
             reply = {"error": f"bad_request: {error}"}
         except Exception as error:

@@ -12,6 +12,7 @@ from atrium.store.open_store import open_store
 
 if TYPE_CHECKING:
     from atrium.context.context_embedder import ContextEmbedder
+    from atrium.context.context_reranker import ContextReranker
     from atrium.context.dense_matrix import DenseMatrix
 
 
@@ -26,6 +27,7 @@ def context_from_index(  # noqa: PLR0913 -- shared adapter contract
     state: Path | None = None,
     embedder: "ContextEmbedder | None" = None,
     dense_matrix: "DenseMatrix | None" = None,
+    reranker: "ContextReranker | None" = None,
 ) -> dict[str, Any]:
     """Turn an unavailable store into explicit structured degradation."""
     validate_request(query, limit, max_chars, lane)
@@ -49,6 +51,7 @@ def context_from_index(  # noqa: PLR0913 -- shared adapter contract
             state=state,
             embedder=embedder,
             dense_matrix=dense_matrix,
+            reranker=reranker,
         )
         if state is not None and index.resolve().parent != state.resolve():
             result["freshness"] = {"status": "unknown", "last_refresh": None, "source": None}

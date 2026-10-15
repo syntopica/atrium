@@ -1,4 +1,4 @@
-"""Score query-text pairs with bge-reranker-v2-m3 (ONNX, int8) on CPU."""
+"""Score query-text pairs with a multilingual cross-encoder (ONNX, int8) on CPU."""
 
 import threading
 import time
@@ -14,7 +14,9 @@ if TYPE_CHECKING:
 
 _ONNX_FILE = "model_quantized.onnx"
 # Pairs are cut on the text side only, so the whole question always survives.
-_MAX_LEN = 512
+# 256 kept the measured gain and halved the time against 512 (1.8 s vs 4.0 s
+# median for 64 pairs on this Mac under load).
+_MAX_LEN = 256
 _BATCH_SIZE = 16
 
 

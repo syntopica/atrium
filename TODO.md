@@ -140,6 +140,12 @@
 
 ## Synthesis
 
+- [ ] **`AGY_MODEL_ID` names a model agy no longer serves.** On 2026-10-15
+      `agy --model gemini-3.7-flash-medium` failed "not recognized"; `agy models` lists
+      `gemini-3.8-flash-{high,medium,low}`. `atrium/synthesize/agy_lane_call.py` and the
+      default recipe priority still name 3.7. The worker ladder may use its own id; check
+      which path still calls this one before renaming (a new id is a new population).
+
 - [ ] **Synthesis coverage and quality.** Built 2026-08-28 (`6263938`); the lane question is
       settled by the owner routing rule of 2026-09-30 (bulk on the worker's agy and local
       lanes, cursor cancelled, `drip-loop.sh` retired). The build history, the lane
@@ -407,14 +413,6 @@
   store, and a server-side export for Windsurf if one exists.
 
 ## Self-improvement
-
-- [ ] Query log, gap detection, and brain proposals. The durable-state
-      contradiction this waited on was the Durability item, closed 2026-09-05
-      (`TODO_LOG.md`) by replicating the synthesis registry through
-      `sync-all-safe`; a query log would be a _second_ durable store that nothing
-      carries yet. Resolve the placement rule first (brain, or an explicitly
-      backed-up sidecar that the sync actually carries), then build; layer 2 must
-      stay disposable, and as designed today a rebuild would erase it.
 
 ## Cross-project
 

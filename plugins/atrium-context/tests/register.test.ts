@@ -567,3 +567,28 @@ test('pressing the footer row shows the details band, Hide and /atrium hide it',
   await $.command.run({ command: 'atrium', args: '' })
   expect(await pane($)).toEqual([])
 })
+
+test('hands the first read of a file what the project concluded about it, once', async ($, on) => {
+  const seen: any = {}
+  const episodes = [{ authored_at: '2026-10-11T09:00:00Z', text: 'Moved the  hook\nto the mod.' }]
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ episodes }), stderr: '' } }, seen)
+  on('tool.call', () => ({ result: 'ok', text: 'contents' }))
+  const first = await $.tool.call({ tool: 'Read', file_path: '/work/repo/hooks/register.js' })
+  expect(seen.argv).toEqual(['atrium', 'file-context', '/work/repo/hooks/register.js', '--limit', '3'])
+  expect(first.context?.[0]).toContain('# atrium: earlier work on /work/repo/hooks/register.js')
+  expect(first.context?.[0]).toContain('- 2026-10-11 Moved the hook to the mod.')
+  const again = await $.tool.call({ tool: 'Edit', file_path: '/work/repo/hooks/register.js', old_string: 'a', new_string: 'b' })
+  expect(again.context ?? []).toEqual([])
+  expect(seen.runs).toBe(1)
+})
+
+test('leaves a file call as it was when the lookup fails or finds nothing', async ($, on) => {
+  const seen: any = {}
+  stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, seen)
+  on('tool.call', () => ({ result: 'ok', text: 'contents' }))
+  const failed = await $.tool.call({ tool: 'Read', file_path: '/work/repo/a.py' })
+  expect(failed.context ?? []).toEqual([])
+  const bash = await $.tool.call({ tool: 'Bash', command: 'ls' })
+  expect(bash.context ?? []).toEqual([])
+  expect(seen.runs).toBe(1)
+})

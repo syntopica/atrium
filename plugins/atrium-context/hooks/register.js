@@ -5,6 +5,9 @@ import { degradation } from './degradation.js'
 import { detailSections } from './detail-sections.js'
 import { EMPTY_STATS } from './empty-stats.js'
 import { EMPTY_USAGE } from './empty-usage.js'
+import { fileContextArgv } from './file-context-argv.js'
+import { fileContextBlock } from './file-context-block.js'
+import { FILE_CONTEXT_TIMEOUT_MS } from './file-context-timeout.js'
 import { FAILURE_NOTICE } from './failure-notice.js'
 import { FRAME_MS } from './frame-ms.js'
 import { instanceDirectory } from './instance-directory.js'
@@ -22,6 +25,7 @@ import { RETRIEVAL_TIMEOUT_MS } from './retrieval-timeout.js'
 import { RETRY_DELAY_MS } from './retry-delay.js'
 import { shouldSkip } from './should-skip.js'
 import { subagentSkip } from './subagent-skip.js'
+import { touchedFile } from './touched-file.js'
 import { usageNotice } from './usage-notice.js'
 
 // Retrieves atrium context before each turn: the evidence goes to Claude after
@@ -70,6 +74,10 @@ let activity = null
 let pulses = 0
 // The session's retrieval totals, kept here for the same reason as `usage`.
 let stats = EMPTY_STATS
+// The files this session already got earlier work on: once per file, since a
+// session reads and edits the same file many times and the history of a file
+// does not change between those calls. A reload starts it over.
+const filesSeen = new Set()
 
 // The functions below take `$`, so they stay in this file: the engine follows
 // `$` into functions declared in the hooks module itself, never across an import.
@@ -226,6 +234,11 @@ export function register(on) {
     return result
   })
 
+  on('tool.call', { tool: 'Read' }, fileContext)
+  on('tool.call', { tool: 'Edit' }, fileContext)
+  on('tool.call', { tool: 'Write' }, fileContext)
+  on('tool.call', { tool: 'NotebookEdit' }, fileContext)
+
   // The notes the main loop's answer names are the ones it relied on: the
   // evidence block asks for the path of each note an answer uses. Logged in
   // full to the debug log, where the footer has room only for the count.
@@ -301,6 +314,27 @@ async function retrieve($, text, onRetry = () => {}) {
   const instance = instanceDirectory(answer)
   if (instance) await $.state.set(INSTANCE, instance).catch(() => {})
   return answer
+}
+
+// The first call that reads or changes a file hands the model what this
+// project concluded about that file before, after the tool's own result:
+// the edit a session is about to make is often the one a past session
+// already made, reverted, or explained. Observe only on failure: a lookup
+// that fails or finds nothing leaves the result exactly as the tool gave it.
+async function fileContext($, e, next) {
+  const result = await next(e)
+  const path = touchedFile(e)
+  if (!path || filesSeen.has(path) || result.deny || result.isError) return result
+  filesSeen.add(path)
+  try {
+    const run = await $.process.run(fileContextArgv(path), { timeoutMs: FILE_CONTEXT_TIMEOUT_MS })
+    if (run.exitCode !== 0) return result
+    const episodes = JSON.parse(run.stdout).episodes ?? []
+    if (!episodes.length) return result
+    return { ...result, context: [...(result.context ?? []), fileContextBlock(path, episodes)] }
+  } catch {
+    return result
+  }
 }
 
 // Applies one change to the brain use of the turn `of`, synchronously so no

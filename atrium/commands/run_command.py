@@ -3,6 +3,7 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from atrium.commands.run_curate_command import run_curate_command
 from atrium.commands.run_doctor import run_doctor
 from atrium.commands.run_embed import run_embed
 from atrium.commands.run_erase import run_erase
@@ -18,13 +19,12 @@ from atrium.commands.run_status import run_status
 from atrium.commands.run_synthesize import run_synthesize
 from atrium.commands.search_lane import search_lane
 from atrium.state.record_refresh import record_refresh
-from atrium.state.state_directory import state_directory
 from atrium.synthesize.default_registry import default_registry
 from atrium.telemetry.append_lane_event import append_lane_event
 from atrium.telemetry.run_lane_status import run_lane_status
 
 
-def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand; a dispatch table would hide the arg wiring this makes greppable, and the parser it dispatches on stays flat in cli_parser/build_parser.py
+def run_command(  # noqa: PLR0911, PLR0912 -- one return per subcommand; a dispatch table would hide the arg wiring this makes greppable, and the parser it dispatches on stays flat in cli_parser/build_parser.py
     args: Namespace, parser: ArgumentParser, state: Path, refresh_stamp: Path, archive: Path
 ) -> int:
     """Run the subcommand ``args`` names; the adapters wrap this, never each other."""
@@ -72,36 +72,8 @@ def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand
         )
     if args.command == "ingest-synthesis":
         return run_ingest_synthesis(args.index)
-    if args.command == "curate-screen":
-        from atrium.curate.run_curate_screen_cli import run_curate_screen_cli
-
-        return run_curate_screen_cli(state_directory() / "synthesis")
-    if args.command == "curate-extract":
-        from atrium.curate.run_curate_extract_cli import run_curate_extract_cli
-        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
-
-        return run_curate_extract_cli(args.size, args.holdout, args.model or LOCAL_DEFAULT_MODEL)
-    if args.command == "curate-cluster":
-        from atrium.curate.run_curate_cluster_cli import run_curate_cluster_cli
-        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
-
-        return run_curate_cluster_cli(
-            args.threshold, args.neighbours, args.budget, args.model or LOCAL_DEFAULT_MODEL
-        )
-    if args.command == "curate-neighbours":
-        from atrium.curate.run_curate_neighbours_cli import run_curate_neighbours_cli
-
-        return run_curate_neighbours_cli(args.threshold, args.neighbours)
-    if args.command == "curate-publishable":
-        from atrium.curate.run_curate_publishable_cli import run_curate_publishable_cli
-        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
-
-        return run_curate_publishable_cli(args.budget, args.model or LOCAL_DEFAULT_MODEL)
-    if args.command == "curate-propose":
-        from atrium.curate.run_curate_propose_cli import run_curate_propose_cli
-        from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
-
-        return run_curate_propose_cli(args.budget, args.model or LOCAL_DEFAULT_MODEL)
+    if args.command.startswith("curate-"):
+        return run_curate_command(args)
     if args.command == "session-stop":
         from atrium.session.run_session_stop_cli import run_session_stop_cli
 
@@ -151,6 +123,11 @@ def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand
         from atrium.serve.serve_context import serve_context
 
         return serve_context(args.index, state, args.interval)
+    if args.command == "file-context":
+        from atrium.recall.run_file_context_cli import run_file_context_cli
+
+        append_lane_event(state, "cli.file_context", "words")
+        return run_file_context_cli(args.index, args.path, args.limit)
     if args.command == "recall":
         append_lane_event(state, "cli.recall", "recent")
         return run_recall(args.index, args.cwd, args.limit, args.archive, args.refresh_stamp)

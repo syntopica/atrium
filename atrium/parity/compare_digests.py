@@ -11,7 +11,8 @@ def compare_digests(
 ) -> dict[str, dict[str, Any]]:
     """Return provider to counts: in each index, only in one, and changed text.
 
-    A changed record counts under the live index's provider. Each difference
+    A record whose text or provider differs is ``changed``, counted under the
+    live index's provider. Each difference
     keeps up to three ids as a sample, enough to start a trace.
     """
     providers = {provider for provider, _ in live.values()} | {
@@ -26,7 +27,7 @@ def compare_digests(
         other = test.get(record_id)
         if other is None:
             ids[provider]["only_live"].append(record_id)
-        elif other[1] != digest:
+        elif other != (provider, digest):
             ids[provider]["changed"].append(record_id)
     for record_id, (provider, _) in test.items():
         totals[provider]["test"] += 1

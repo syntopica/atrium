@@ -1,16 +1,18 @@
-"""Load one archived conversation by the byte offset of its line."""
+"""Load one archived conversation from the open file its stub was read from."""
 
 import json
-from pathlib import Path
+import os
 from typing import Any
 
 
-def conversation_at(archive: Path, offset: int) -> dict[str, Any]:
-    """Return the conversation whose line starts at ``offset``.
+def conversation_at(descriptor: int, stub: dict[str, Any]) -> dict[str, Any]:
+    """Return the conversation ``stub`` points at, checked to be the same one.
 
-    Opens the file per call, so pool threads never share a file position.
+    ``os.pread`` reads at a position without moving a shared file offset, so
+    pool threads can read one descriptor at once.
     """
-    with archive.open("rb") as handle:
-        handle.seek(offset)
-        conversation: dict[str, Any] = json.loads(handle.readline())
+    line = os.pread(descriptor, stub["length"], stub["offset"])
+    conversation: dict[str, Any] = json.loads(line)
+    if conversation.get("id") != stub["id"]:
+        raise ValueError(f"archive offset {stub['offset']} no longer holds {stub['id']}")
     return conversation

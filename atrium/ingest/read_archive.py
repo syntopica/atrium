@@ -1,9 +1,10 @@
 """Stream conversations out of a canonical rocket-agents archive."""
 
-import json
 from collections.abc import Iterator
 from pathlib import Path
 from typing import Any
+
+from atrium.ingest.archive_conversations import archive_conversations
 
 
 def read_archive(path: Path) -> Iterator[dict[str, Any]]:
@@ -19,13 +20,4 @@ def read_archive(path: Path) -> Iterator[dict[str, Any]]:
     must not be silently half-ingested: the resulting index would look complete.
     """
     with path.open(encoding="utf-8") as handle:
-        for line_number, line in enumerate(handle, start=1):
-            if not line.strip():
-                continue
-            try:
-                payload = json.loads(line)
-            except json.JSONDecodeError as error:
-                raise ValueError(f"{path}:{line_number} is not valid JSON") from error
-            if payload.get("kind") == "rocket-agents-conversation-export":
-                continue
-            yield payload
+        yield from archive_conversations(handle, path)

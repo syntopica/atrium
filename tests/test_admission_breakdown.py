@@ -100,8 +100,18 @@ def test_ingest_prints_the_breakdown(tmp_path, capsys):
 def test_machine_written_user_prompts_are_rejected_and_a_person_is_kept():
     conversation = _conversation(
         [
-            _message("user", "Review this change for security vulnerabilities. " + LONG, "sr"),
-            _message("user", "<role>\nYou are an expert invoice extraction " + LONG, "inv"),
+            _message(
+                "user",
+                "Review this change for security vulnerabilities. Changed files (you may Read"
+                " these and any other file in the repo): " + LONG,
+                "sr",
+            ),
+            _message(
+                "user",
+                "<role>\nYou are an expert invoice extraction and reconciliation engine. " + LONG,
+                "inv",
+            ),
+            _message("user", "Review this change for security vulnerabilities. In auth.py", "own"),
             _message("user", "<system-reminder>x</system-reminder>\n" + LONG, "sys"),
             _message("assistant", "Review this change for security vulnerabilities. " + LONG, "a"),
             _message("user", "Por qué falla el deploy? " + LONG, "human"),
@@ -109,5 +119,5 @@ def test_machine_written_user_prompts_are_rejected_and_a_person_is_kept():
     )
     tally = AdmissionTally()
     kept = [record.event_id for record in to_records(conversation, tally)]
-    assert kept == ["sys", "a", "human"]
+    assert kept == ["own", "sys", "a", "human"]
     assert tally.rejected == {"machine prompt": 2}

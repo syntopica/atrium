@@ -179,17 +179,27 @@ def test_deferred_counts_only_conversations_with_work_left(worker, tmp_path, mon
 def test_the_pass_holds_stubs_and_loads_each_conversation_by_offset(tmp_path):
     import json as json_module
 
+    import pytest
+
     from atrium.synthesis_pass.conversation_at import conversation_at
     from atrium.synthesis_pass.newest_conversations import newest_conversations
 
     archive = tmp_path / "archive.jsonl"
     rows = [
         {"kind": "rocket-agents-conversation-export"},
-        {"id": "old", "startedAt": "2026-01-01", "events": [{"text": "á" * 50}]},
+        {"id": "old", "startedAt": "2026-01-01", "events": [{"text": "\u00e1" * 50}]},
         {"id": "new", "updatedAt": "2026-10-01", "events": [{"text": "b"}]},
     ]
-    archive.write_text("\n".join(json_module.dumps(row, ensure_ascii=False) for row in rows) + "\n")
-    stubs = newest_conversations(archive)
-    assert [stub["id"] for stub in stubs] == ["new", "old"]
-    assert "events" not in stubs[0]
-    assert conversation_at(archive, stubs[1]["offset"]) == rows[1]
+    text = "\r\n\n".join(json_module.dumps(row, ensure_ascii=False) for row in rows) + "\n"
+    archive.write_text(text)
+    with archive.open("rb") as handle:
+        stubs = newest_conversations(handle, str(archive))
+        assert [stub["id"] for stub in stubs] == ["new", "old"]
+        assert "events" not in stubs[0]
+        # The refresh renames a new archive into place; the open file keeps the old one.
+        replacement = tmp_path / "next.jsonl"
+        replacement.write_text(json_module.dumps({"id": "other"}) + "\n")
+        replacement.replace(archive)
+        assert conversation_at(handle.fileno(), stubs[1]) == rows[1]
+        with pytest.raises(ValueError, match="no longer holds"):
+            conversation_at(handle.fileno(), stubs[1] | {"id": "new"})

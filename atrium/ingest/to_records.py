@@ -6,6 +6,7 @@ from typing import Any
 
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.canonical_workspace import canonical_workspace
+from atrium.ingest.is_machine_prompt import is_machine_prompt
 from atrium.ingest.record_identity import record_identity
 from atrium.ingest.tool_round import ToolRound
 from atrium.ingest.workspace_alias import WorkspaceAlias
@@ -76,6 +77,9 @@ def to_records(
             continue
         if event.get("role") not in CONVERSATIONAL_ROLES:
             counts.reject(f"role {event.get('role') or 'absent'}")
+            continue
+        if is_machine_prompt(event.get("role"), text):
+            counts.reject("machine prompt")
             continue
         if not text or _ACKNOWLEDGEMENT.match(text):
             counts.reject("empty or acknowledgement")

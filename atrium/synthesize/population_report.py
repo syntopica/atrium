@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import Any
 
+from atrium.ingest.record_identity import record_identity
 from atrium.synthesize.choose_served_records import choose_served_records
 from atrium.synthesize.read_recipe_priority import read_recipe_priority
 from atrium.synthesize.read_records import read_records
@@ -12,6 +13,7 @@ def population_report(
     registry: Path,
     indexed_episodes: set[str] | None = None,
     excluded_conversations: frozenset[str] | set[str] = frozenset(),
+    forgotten: frozenset[str] = frozenset(),
 ) -> list[dict[str, Any]]:
     """Return one row per population: records, episodes, intended, indexed.
 
@@ -31,6 +33,8 @@ def population_report(
     Episodes of ``excluded_conversations`` (automation the ingest refuses) are
     not intended: the synthesis ingest drops them on purpose, and counting them
     would print a deliberate exclusion as drift. ``excluded`` says how many.
+    Episodes whose index record the forget ledger holds (``forgotten``, record
+    ids) are left out the same way and counted as ``forgotten``.
     """
     if not (registry / "records").is_dir():
         return []
@@ -39,12 +43,19 @@ def population_report(
     records: dict[str, int] = {}
     episodes: dict[str, set[str]] = {}
     excluded: dict[str, set[str]] = {}
+    dropped: dict[str, set[str]] = {}
     for record in read_records(registry):
         model = record.get("model_requested") or "unknown"
         records[model] = records.get(model, 0) + 1
         episodes.setdefault(model, set()).add(record["episode_id"])
         if record.get("conversation_id") in excluded_conversations:
             excluded.setdefault(model, set()).add(record["episode_id"])
+            continue
+        if forgotten and (
+            record_identity(f"synthesis/{record['conversation_id']}", record["episode_id"])
+            in forgotten
+        ):
+            dropped.setdefault(model, set()).add(record["episode_id"])
             continue
         projections.append(
             {"episode_id": record["episode_id"], "model_requested": record.get("model_requested")}
@@ -60,6 +71,7 @@ def population_report(
             "episodes": len(episodes[model]),
             "intended": len(intended.get(model, set())),
             "excluded": len(excluded.get(model, set())),
+            "forgotten": len(dropped.get(model, set())),
             "indexed": (
                 None
                 if indexed_episodes is None

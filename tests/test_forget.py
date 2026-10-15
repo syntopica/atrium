@@ -222,3 +222,29 @@ def test_a_question_naming_the_term_learns_what_was_forgotten(instance):
     assert holded["forgotten"] == 1
     assert holded["restore"] == "atrium forget --restore retired:Holded --apply"
     assert all("forgotten" not in one for one in plain["retired"])
+
+
+def test_echo_rule_selects_a_lone_echo_episode_and_spares_a_real_one(tmp_path):
+    from atrium.forget.echo_forget_plan import echo_forget_plan
+
+    registry = tmp_path / "synthesis"
+    (registry / "records").mkdir(parents=True)
+    for episode, event in (("echo", "e1"), ("real", "e2"), ("pair", "e1")):
+        event_ids = [event] if episode != "pair" else ["e1", "e2"]
+        (registry / "records" / f"{episode}.json").write_text(
+            json.dumps({"episode_id": episode, "conversation_id": "c", "event_ids": event_ids})
+        )
+    archive = tmp_path / "archive.jsonl"
+    conversation = _conversation("c", "Structured output provided successfully", "2026-10-01")
+    conversation["events"].append({"id": "e2", "kind": "message", "role": "user", "text": "ok?"})
+    _archive(archive, [conversation])
+    ledger = tmp_path / "forget.jsonl"
+
+    events, report = echo_forget_plan(registry, archive, ledger, "2026-10-16")
+
+    assert [event["record_id"] for event in events] == [record_identity("synthesis/c", "echo")]
+    assert events[0]["rule"] == "harness-echo"
+    assert report["new_by_echo"] == {"Structured output provided successfully": 1}
+    append_ledger(ledger, events)
+    assert echo_forget_plan(registry, archive, ledger, "2026-10-17")[0] == []
+    assert len(restore_events("harness-echo", latest_events(ledger), "2026-10-17")) == 1

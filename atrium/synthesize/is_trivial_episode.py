@@ -2,17 +2,7 @@
 
 from typing import Any
 
-# Measured 2026-10-10 over the registry's 2,468 single-event episodes: these
-# echoes alone were 2,213 of them ("Structured output provided successfully"
-# 2,126, "[Request interrupted by user]" 87), and each paid a full synthesis
-# call to produce a record about the echo. Matched exactly, never by length:
-# a short lone message from the operator can still be worth remembering.
-_ECHOES = frozenset(
-    {
-        "Structured output provided successfully",
-        "[Request interrupted by user]",
-    }
-)
+from atrium.synthesize.harness_echoes import HARNESS_ECHOES
 
 
 def is_trivial_episode(event_indexes: list[int], events: list[dict[str, Any]]) -> bool:
@@ -23,4 +13,4 @@ def is_trivial_episode(event_indexes: list[int], events: list[dict[str, Any]]) -
     """
     if len(event_indexes) != 1:
         return False
-    return (events[event_indexes[0]].get("text") or "").strip() in _ECHOES
+    return (events[event_indexes[0]].get("text") or "").strip() in HARNESS_ECHOES

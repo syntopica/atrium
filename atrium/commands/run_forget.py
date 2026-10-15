@@ -7,11 +7,13 @@ from pathlib import Path
 from atrium.erase.hold_locks import hold_locks
 from atrium.forget.append_ledger import append_ledger
 from atrium.forget.forget_ledger_file import forget_ledger_file
-from atrium.forget.forget_plan import forget_plan
+from atrium.forget.selected_forget_plan import selected_forget_plan
 
 
-def run_forget(index: Path, state: Path, *, restore: str | None, apply: bool) -> int:
-    """Forget what the retirement rule selects, or restore a selection.
+def run_forget(
+    index: Path, state: Path, *, restore: str | None, apply: bool, echoes: bool = False
+) -> int:
+    """Forget what the retirement or echo rule selects, or restore a selection.
 
     Reports first and writes only with ``apply``, holding the refresh lock so
     no ingest reads the ledger mid-append. Nothing leaves the index here: the
@@ -20,12 +22,12 @@ def run_forget(index: Path, state: Path, *, restore: str | None, apply: bool) ->
     """
     ledger = forget_ledger_file()
     today = datetime.now(UTC).date().isoformat()
-    events, report = forget_plan(index, ledger, restore, today)
+    events, report = selected_forget_plan(index, ledger, restore, today, echoes=echoes)
     if apply:
         try:
             with hold_locks([state / "refresh.lock"]):
                 # Planned again under the lock: a refresh may have changed the index.
-                events, report = forget_plan(index, ledger, restore, today)
+                events, report = selected_forget_plan(index, ledger, restore, today, echoes=echoes)
                 append_ledger(ledger, events)
         except BlockingIOError:
             print("refused: a refresh holds the instance; run again after it")

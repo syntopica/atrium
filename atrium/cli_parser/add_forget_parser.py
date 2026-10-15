@@ -15,5 +15,10 @@ def add_forget_parser(subcommands: SubParsers) -> None:
         help="A record id, a rule, or rule:detail (e.g. retired:Holded) to bring back",
     )
     forget.add_argument(
+        "--echoes",
+        action="store_true",
+        help="Select synthesis records written about a lone harness echo instead",
+    )
+    forget.add_argument(
         "--apply", action="store_true", help="Write the ledger; otherwise only report"
     )

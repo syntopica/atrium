@@ -6,6 +6,7 @@ from atrium.doctor.archive_freshness import archive_freshness
 from atrium.doctor.archive_schema_coherence import archive_schema_coherence
 from atrium.doctor.entry_point_health import entry_point_health
 from atrium.doctor.finding import Finding
+from atrium.doctor.fts_consistency import fts_consistency
 from atrium.doctor.index_coverage import index_coverage
 from atrium.doctor.read_archive_admissions import read_archive_admissions
 from atrium.doctor.record_total_coherence import record_total_coherence
@@ -33,6 +34,7 @@ def run_doctor(index: Path, archive: Path, stamp: Path, registry: Path) -> list[
     try:
         findings.append(index_coverage(connection, admissions))
         findings.append(record_total_coherence(connection))
+        findings.append(fts_consistency(connection))
     finally:
         connection.close()
     findings.append(synthesis_coherence(registry, admissions.all_ids))

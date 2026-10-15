@@ -276,6 +276,23 @@
 
 ## Observability
 
+- [ ] **Cause of the 2026-10-15 orphan posting is unknown.** `words` held a posting
+      for rowid 19395878, in neither `records` nor `words_docsize`, so every ranked
+      query touching it raised "database disk image is malformed" and the context
+      service answered `index_unavailable_or_incompatible`. `repair-index --apply`
+      rebuilt both indexes (atrium `83b1498`; words check 30.5 s / rebuild 55.1 s,
+      substrings 719.1 s / 564.8 s), and `doctor` now probes for it (`fts` check,
+      ~3 s). The triggers (`schema.sql` `records_ad`/`records_au`) delete with
+      `old.text`, so the shape the fixture reproduces -- a 'delete' whose text
+      differs from what was indexed -- needs a path that changes `records.text`
+      or the FTS outside them. Suspects, none proven: the erase path toggling FTS5
+      `secure-delete` on and off around its deletes (`delete_erased_rows.py`), two
+      SQLite builds writing one file (the release venv and another interpreter),
+      or the forced refresh of 2026-10-14 after the forget pass rewriting 18,093
+      records. Smallest step: when `doctor` next reports `fts_orphan_postings`,
+      copy the index before repairing and bisect the refresh log for the last
+      write between the two doctor runs.
+
 - [~] **Refresh runs went from 12-15 min to 1-2.5 h on 2026-10-09.** Each stage now
   logs its start (dotfiles db6b097), so the next slow run names its step; the 22:45
   run was back to 13 min. Suspect: the import waits up to 5400 s on the archive

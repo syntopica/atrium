@@ -20,9 +20,10 @@ def rerank_hits(
     fails or runs past ``budget_s`` leaves the fused order as it was.
     Each reordered hit carries the cross-encoder's logit as its score: unlike
     a fused rank score it is comparable across questions, which is what the
-    query log's gap detection reads.
+    query log's gap detection reads. A lone candidate is scored too, or its
+    fused score would be read as a logit by the floor and by gap detection.
     """
-    if len(hits) < 2:  # noqa: PLR2004 -- nothing to reorder
+    if not hits:
         return hits, True
     try:
         scores = reranker.score(query, [hit.text for hit in hits], time.monotonic() + budget_s)

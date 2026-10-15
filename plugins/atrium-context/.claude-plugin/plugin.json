@@ -1,6 +1,6 @@
 {
   "name": "atrium-context",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "Retrieves atrium context for each prompt and each subagent task, hands the first read or edit of a file what the project concluded about it, and says how the turn used the brain: a green line at the right of the footer when it works, pressable for a details band, and a warning in the same place when it does not, after one retry",
   "author": {
     "name": "Syntopica"

@@ -34,3 +34,13 @@ def test_an_unwritable_log_never_fails_the_answer(tmp_path, capsys):
     (tmp_path / "synthesis").write_text("not a directory")
     append_query_event(tmp_path, RESPONSE, "cli.context")
     assert "query log unavailable" in capsys.readouterr().err
+
+
+def test_a_credential_in_the_question_is_redacted_before_it_is_logged(tmp_path):
+    token = "Bearer " + "x" * 32
+    append_query_event(
+        tmp_path, {**RESPONSE, "query": "why does " + token + " fail"}, "cli.context"
+    )
+    (log,) = (tmp_path / "synthesis" / "queries").iterdir()
+    (line,) = [json.loads(line) for line in log.read_text().splitlines()]
+    assert line["query"] == "why does Bearer [REDACTED:token] fail"

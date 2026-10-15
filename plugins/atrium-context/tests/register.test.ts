@@ -582,6 +582,15 @@ test('hands the first read of a file what the project concluded about it, once',
   expect(seen.runs).toBe(1)
 })
 
+test('marks a file episode a later statement superseded', async ($, on) => {
+  const seen: any = {}
+  const episodes = [{ authored_at: '2026-10-11T09:00:00Z', text: 'TTL is 60s.', superseded_by: 'r2', superseded_at: '2026-10-15T09:00:00Z' }]
+  stubs(on, { value: { exitCode: 0, stdout: JSON.stringify({ episodes }), stderr: '' } }, seen)
+  on('tool.call', () => ({ result: 'ok', text: 'contents' }))
+  const first = await $.tool.call({ tool: 'Read', file_path: '/work/repo/cache.py' })
+  expect(first.context?.[0]).toContain('- 2026-10-11 [superseded 2026-10-15] TTL is 60s.')
+})
+
 test('leaves a file call as it was when the lookup fails or finds nothing', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 1, stdout: '', stderr: 'boom' } }, seen)

@@ -25,8 +25,18 @@ class CrossEncoder:
     tokenizer is read-only after load, so only loading takes the lock.
     """
 
-    def __init__(self) -> None:
-        """Defer every heavy load; construction must stay cheap."""
+    def __init__(
+        self, repo: str = RERANKER_REPO, onnx_file: str = _ONNX_FILE, max_len: int = _MAX_LEN
+    ) -> None:
+        """Defer every heavy load; construction must stay cheap.
+
+        ``repo`` and ``onnx_file`` (under the repository's ``onnx/``) name the
+        model, so a candidate can be measured without editing this class.
+        """
+        self._repo = repo
+        self._onnx_file = onnx_file
+        self._max_len = max_len
+        self._type_ids = False
         self._session: "onnxruntime.InferenceSession | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._tokenizer: "Tokenizer | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._load_lock = threading.Lock()
@@ -53,9 +63,10 @@ class CrossEncoder:
         encodings = self._tokenizer.encode_batch([(query, text) for text in texts])
         input_ids = np.asarray([e.ids for e in encodings], dtype=np.int64)
         attention_mask = np.asarray([e.attention_mask for e in encodings], dtype=np.int64)
-        (logits,) = self._session.run(
-            None, {"input_ids": input_ids, "attention_mask": attention_mask}
-        )
+        feed = {"input_ids": input_ids, "attention_mask": attention_mask}
+        if self._type_ids:
+            feed["token_type_ids"] = np.asarray([e.type_ids for e in encodings], dtype=np.int64)
+        (logits,) = self._session.run(None, feed)
         return [float(value) for value in np.asarray(logits).reshape(-1)]
 
     def _lazy_load(self) -> None:
@@ -69,11 +80,11 @@ class CrossEncoder:
 
             from atrium.embed.cached_model_file import cached_model_file
 
-            model_path = cached_model_file(RERANKER_REPO, _ONNX_FILE, subfolder="onnx")
-            tokenizer = Tokenizer.from_file(cached_model_file(RERANKER_REPO, "tokenizer.json"))
+            model_path = cached_model_file(self._repo, self._onnx_file, subfolder="onnx")
+            tokenizer = Tokenizer.from_file(cached_model_file(self._repo, "tokenizer.json"))
             tokenizer.enable_padding()
-            tokenizer.enable_truncation(max_length=_MAX_LEN, strategy="only_second")
+            tokenizer.enable_truncation(max_length=self._max_len, strategy="only_second")
+            session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+            self._type_ids = any(one.name == "token_type_ids" for one in session.get_inputs())
             self._tokenizer = tokenizer
-            self._session = onnxruntime.InferenceSession(
-                model_path, providers=["CPUExecutionProvider"]
-            )
+            self._session = session

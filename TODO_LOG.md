@@ -8,6 +8,9 @@
 
 ### 2026-10
 
+- [-] 2026-10-16 — **Promotion pipeline:** "Stage three: semantic merge and page proposal" as a pending design.
+  - Resolution: already built on 2026-09-17/18: near pairs adjudicated into clusters and contradictions (`21df872`), a quantity difference blocking a merge (`9a2a3d8`), placement of a durable claim on a curated page writing a manifest and `review.md` only (`eebe8e1`). What it left open is tracked in TODO.md: the unreviewed run, retirements unread by `curate-propose`, the unused triple.
+
 - [x] 2026-10-16 — **Ingest / Store:** Machine-written prompts no longer fill the `user` role.
   - Result: tool output had already gone (`750ae09`, `5552415`); what remained was harness and app prompts, 69.5% of the role's text across 102,613 records (security-review template 39%, Vexa classifier 11.5%), against 7.9% for human-sized prompts. Ingest now rejects them as `machine prompt`, matching each template's whole opening sentence (`atrium/ingest/machine_prompt_prefixes.py`) so a person typing the same first words keeps the message (a Codex review caught the first, shorter prefixes). No longer blocked on scribe.
   - Evidence: refresh 2026-10-16 01:11 at `234d4c2`: `24,743 machine prompt` rejected, index 470,650 to 449,748 records; `tests/test_admission_breakdown.py`.

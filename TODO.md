@@ -238,8 +238,9 @@
       in the owner's routing order. DeepSeek has no free model on OpenRouter any
       more. **Waiting on the owner:** adopt the short summary description and system
       sentence in `atrium/synthesize/synthesis_schema.py` and `synthesis_prompt.py`
-      (it changes every lane's future records and, through the job key, may count
-      as a new recipe).
+      (`PROMPT_SHA256` and the schema version enter `job_identity`, so every existing
+      record's job key stops matching: decide whether the ~61k records stay as they
+      are or are redone over time).
 
 ## Promotion pipeline
 

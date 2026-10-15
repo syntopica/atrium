@@ -72,6 +72,16 @@ Later: a full re-embed (about 22 h here, or nova's batch slice at night) behind
 a vector recipe stamp the service checks, swapped per generation. Not part of
 this pass.
 
+## Results, 2026-10-15
+
+- Query prompt: no win end to end (similarity 0.28/0.12, search 0.26/0.13, qa
+  0.26/0.15 on the 85). Not flipped; the held-out set was built for the
+  reranker instead.
+- Reranker: wins on the 85 and on the 88 held-out questions with every model
+  tried; gte-multilingual-reranker-base matches bge-reranker-v2-m3 at 2.5x the
+  speed. No configuration meets added p95 < 1.5 s on this Mac. Numbers and
+  the open owner decision are in `TODO.md` (Measurement).
+
 ## Out of scope
 
 Distillation, supersession and the rest of `docs/designs/memory-lifecycle.md`.

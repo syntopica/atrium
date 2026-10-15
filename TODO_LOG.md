@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-15 — **Review:** Four defects a Codex review found in remember, file-context, the rerank floor and the query log.
+  - Result: the query log redacts the question with the archive's patterns; a lone reranked candidate is scored instead of keeping its fused score (which the -0.8 floor and `gaps` read as a logit); `insert_supersession` keeps the later statement (ties by record id, as ingest now does), so a retried older `remember` cannot undo a newer one; `file-context` returns and the mod renders the `[superseded <date>]` mark. Existing query logs scanned: 0 lines would change.
+  - Evidence: `ca04dff`; new tests in `tests/test_query_log.py`, `tests/test_rerank_hits.py`, `tests/test_remember.py`, mod `register.test.ts` (40 pass); `codeality-py gate` 0 failed.
+
 - [x] 2026-10-15 — **Durability:** Records written on the peer reach the primary.
   - Result: `sync-all-safe` pushed the registry from the primary only, so session (and now
     remembered) records written on the mini stayed there: 314 did (session-claude-opus-5-5

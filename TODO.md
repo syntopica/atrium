@@ -223,6 +223,23 @@
       `~/p/wiki/atrium/evaluations/openjev-faithfulness-2026-10-10/` (local,
       git-ignored). The recipe is in the wiki at `brain/topics/openjev.md`;
       the owner holds a commercial licence.
+      **Measured 2026-10-16** (same directory; GPT-6 via Codex judging blind, lanes
+      mixed per episode in `judge_new/`). Fresh nemotron-3-super with the current
+      prompt (24 outputs, `judge_or/`): 14.3% unsupported, summaries 19/24, facts 9.2%.
+      The same model with a short, fact-bound summary (`gen_or_short.py`: 1-3
+      sentences, at most 60 words, only outcomes the transcript shows, plus one
+      system sentence): 6.8%, summaries 9/24, facts 3.0%. A second, blind judge from
+      another family (Claude Sonnet, summaries only, `judge_summary_claude/`) agrees
+      on direction: current 12/24, short 5/24, codex 2/24; it matched GPT-6 on 61 of
+      72 summaries. New free models: `nvidia/nemotron-3.5-super-vl:free` (released
+      2026-10-15) 15.1%, summaries 13/24; `nvidia/nemotron-3-ultra-550b-a55b:free`
+      17.8%, summaries 15/23 -- neither beats the current one. The production codex
+      lane (`gpt-6.1-sol`, low) 6.7%, summaries 2/24, facts 0/114, but Codex is last
+      in the owner's routing order. DeepSeek has no free model on OpenRouter any
+      more. **Waiting on the owner:** adopt the short summary description and system
+      sentence in `atrium/synthesize/synthesis_schema.py` and `synthesis_prompt.py`
+      (it changes every lane's future records and, through the job key, may count
+      as a new recipe).
 
 ## Promotion pipeline
 

@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+from atrium.forget.forget_ledger_file import forget_ledger_file
+from atrium.forget.forgotten_ids import forgotten_ids
 from atrium.synthesize.default_registry import default_registry
 
 
@@ -22,6 +24,7 @@ def print_populations(
         registry if registry is not None else default_registry(),
         indexed_episodes,
         excluded_conversations,
+        forgotten_ids(forget_ledger_file()),
     )
     if not rows:
         return
@@ -32,8 +35,9 @@ def print_populations(
         drift = f"  <- {missing:,} NOT IN INDEX" if missing else ""
         dropped = "  <- SERVES NOTHING" if row["intended"] == 0 else ""
         automation = f"  ({row['excluded']:,} automation excluded)" if row["excluded"] else ""
+        forgotten = f"  ({row['forgotten']:,} forgotten)" if row["forgotten"] else ""
         print(
             f"    {row['model']:<26} {row['records']:>7,} records "
             f"{row['episodes']:>7,} episodes {row['intended']:>7,} intended "
-            f"{row['indexed']:>7,} indexed{unlisted}{automation}{dropped}{drift}"
+            f"{row['indexed']:>7,} indexed{unlisted}{automation}{forgotten}{dropped}{drift}"
         )

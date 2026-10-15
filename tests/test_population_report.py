@@ -94,3 +94,17 @@ def test_a_missing_manifest_is_read_as_the_default_and_never_created(tmp_path):
     rows = population_report(registry)
     assert rows and rows[0]["model"] == "codex-cli-default"
     assert not (registry / "active-recipe.json").exists()
+
+
+def test_a_forgotten_episode_is_counted_apart_and_not_as_drift(tmp_path):
+    from atrium.ingest.record_identity import record_identity
+
+    registry = tmp_path / "synthesis"
+    (registry / "records").mkdir(parents=True)
+    for episode in ("e1", "e2"):
+        (registry / "records" / f"{episode}.json").write_text(
+            json.dumps({"episode_id": episode, "conversation_id": "c", "model_requested": "m"})
+        )
+    forgotten = frozenset({record_identity("synthesis/c", "e2")})
+    (row,) = population_report(registry, {"e1"}, forgotten=forgotten)
+    assert (row["intended"], row["indexed"], row["forgotten"]) == (1, 1, 1)

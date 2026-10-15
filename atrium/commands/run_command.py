@@ -94,7 +94,9 @@ def run_command(  # noqa: PLR0911, PLR0912 -- one return per subcommand; a dispa
     if args.command == "repair-index":
         return run_repair_index(args.index, state, apply=args.apply)
     if args.command == "forget":
-        return run_forget(args.index, state, restore=args.restore, apply=args.apply)
+        return run_forget(
+            args.index, state, restore=args.restore, apply=args.apply, echoes=args.echoes
+        )
     if args.command == "rekey-synthesis":
         return run_rekey_synthesis(apply=args.apply, repair=args.repair, archive=args.archive)
     if args.command == "doctor":

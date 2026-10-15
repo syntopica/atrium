@@ -90,6 +90,7 @@ def test_the_document_carries_counts_and_instants(tmp_path):
             "intended": 2,
             "indexed": 1,
             "excluded": 0,
+            "forgotten": 0,
         }
     ]
 

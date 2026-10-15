@@ -1,15 +1,18 @@
 """The `synthesize` handler of the atrium CLI."""
 
+import functools
 import time
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
+from atrium.synthesis_pass.conversation_at import conversation_at
 from atrium.synthesis_pass.conversations_in_workspace import conversations_in_workspace
 from atrium.synthesis_pass.holding_conversations import holding_conversations
 from atrium.synthesis_pass.make_conversation_runner import make_conversation_runner
 from atrium.synthesis_pass.newest_conversations import newest_conversations
 from atrium.synthesis_pass.publish_pass_status import publish_pass_status
 from atrium.synthesis_pass.read_registry_state import read_registry_state
+from atrium.synthesis_pass.run_loaded import run_loaded
 from atrium.synthesis_pass.select_producer_lane import select_producer_lane
 from atrium.synthesize.default_registry import default_registry
 from atrium.synthesize.prune_partials import prune_partials
@@ -61,11 +64,13 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
     if limit is not None:
         conversations = conversations[:limit]
     if dry_run:
-        episodes = sum(
-            not is_trivial_episode(episode["event_indexes"], c.get("events") or [])
-            for c in conversations
-            for episode in segment_episodes(c.get("events") or [])
-        )
+        episodes = 0
+        for stub in conversations:
+            events = conversation_at(archive, stub["offset"]).get("events") or []
+            episodes += sum(
+                not is_trivial_episode(episode["event_indexes"], events)
+                for episode in segment_episodes(events)
+            )
         print(f"  {len(conversations)} conversations -> {episodes} episodes (no calls made)")
         return 0
     # A worker lane journals each job it submits against its conversation, so
@@ -101,7 +106,8 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
     started = time.time()
     run_one = make_conversation_runner(lane, state, holding, journal, total)
     with ThreadPoolExecutor(max_workers=workers) as pool:
-        for result in pool.map(run_one, enumerate(conversations, start=1)):
+        step = functools.partial(run_loaded, run_one, archive)
+        for result in pool.map(step, enumerate(conversations, start=1)):
             made += result["synthesized"]
             skipped += result["skipped"]
             failed += result["failed"]

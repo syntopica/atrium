@@ -174,3 +174,22 @@ def test_deferred_counts_only_conversations_with_work_left(worker, tmp_path, mon
     last = _last_pass(registry)
     # conv-wall hit the wall and conv-todo has no record at its revision; conv-done has one.
     assert (last["deferred"], last["skipped"], last["synthesized"]) == (2, 1, 0)
+
+
+def test_the_pass_holds_stubs_and_loads_each_conversation_by_offset(tmp_path):
+    import json as json_module
+
+    from atrium.synthesis_pass.conversation_at import conversation_at
+    from atrium.synthesis_pass.newest_conversations import newest_conversations
+
+    archive = tmp_path / "archive.jsonl"
+    rows = [
+        {"kind": "rocket-agents-conversation-export"},
+        {"id": "old", "startedAt": "2026-01-01", "events": [{"text": "á" * 50}]},
+        {"id": "new", "updatedAt": "2026-10-01", "events": [{"text": "b"}]},
+    ]
+    archive.write_text("\n".join(json_module.dumps(row, ensure_ascii=False) for row in rows) + "\n")
+    stubs = newest_conversations(archive)
+    assert [stub["id"] for stub in stubs] == ["new", "old"]
+    assert "events" not in stubs[0]
+    assert conversation_at(archive, stubs[1]["offset"]) == rows[1]

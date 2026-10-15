@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-16 — **Cross-project:** The context service was swapped out under memory pressure.
+  - Result: the 14 GB holder was the synthesis driver itself: `newest_conversations` parsed all ~56,000 archived conversations (6.8 GB) into memory before the first call. The pass now keeps a stub per conversation (id, workspace, dates, byte offset) and loads each one by offset inside its pool thread. The other holder, the local Ollama model, has leased only while the Mac is idle since worker `e00ac0b` (2026-10-12). `serve-context` is not pinned: neither cause remains, and Python offers no supported way to lock its working set on macOS.
+  - Evidence: `atrium synthesize <archive> --dry-run --limit 200` on the live archive peaks at 556 MB resident (`/usr/bin/time -l`, 135 s); `tests/test_synthesis_collects_pending_results.py::test_the_pass_holds_stubs_and_loads_each_conversation_by_offset`; gate passes.
+
 - [x] 2026-10-16 — **Observability:** Refresh runs of 1-2.5 h (2026-10-09) closed as not reproduced.
   - Result: 135 refreshes from 2026-10-09 23:55 to 2026-10-16 00:23, every one with stage logging. Export-to-embed took at most 42 min, and only one run passed 30: 2026-10-15 19:39, whose export stage alone took 23 min (19:39:04 to 20:02:32) against the usual 4-7. That stage belongs to scribe, and its cost is the v1 full rewrite that segment archive v2 stage 3 removes. The 1-2.5 h window of 2026-10-09 did not recur in a week.
   - Evidence: stage lines in `~/p/wiki/atrium/refresh.log`, grouped per run from `stage export` to `stage embed`.

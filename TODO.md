@@ -287,7 +287,16 @@
       `secure-delete` on and off around its deletes (`delete_erased_rows.py`), two
       SQLite builds writing one file (the release venv and another interpreter),
       or the forced refresh of 2026-10-14 after the forget pass rewriting 18,093
-      records. Smallest step: when `doctor` next reports `fts_orphan_postings`,
+      records. Two suspects eliminated 2026-10-16: (1) erase has never run on the live
+      index (no `erased-conversations.txt` in the state directory), so `secure-delete`
+      was never toggled there; (2) Homebrew installed SQLite 3.54.0 on 2026-10-14 12:47,
+      the day before, but tokenizing every seventh live record (67,233) through
+      `unicode61 remove_diacritics 2` and `trigram` under 3.54.0 and under a bundled
+      3.50.4 (`sqlean.py`) gives identical terms and offsets on every document, so a
+      build change does not make a trigger's 'delete' miss what its insert indexed. No
+      `INSERT OR REPLACE` touches `records` (whose implicit delete would skip the
+      triggers). Left: the forced refresh rewriting 18,093 records, a path that only
+      uses the triggers. Smallest step: when `doctor` next reports `fts_orphan_postings`,
       copy the index before repairing and bisect the refresh log for the last
       write between the two doctor runs.
 
@@ -351,20 +360,7 @@
       identity itself. It re-keys every archived event, so it lands with the v2
       stage 3 cutover.
 
-- [ ] **The context service is swapped out under memory pressure, so the
-      prompt hook times out.** Observed 2026-10-12 ~18:55 local: the hook
-      reported `context_service_timeout`; swap was 44.6 of 45 GB used, and
-      `serve-context` (pid 1046) had 44 MB resident and 1.3 GB swapped or
-      compressed. Direct socket requests took 0.2-0.6 s, but the first
-      `atrium context --lane dense` after idle took 23 s (later ones 1.2-1.5 s),
-      past the hook's 10 s kill. Holders at the time: Ollama `llama-server`
-      24 GB (qwen3.6:35b, reloaded mid-pass), Backblaze `bztransmit` 17 GB,
-      the `atrium synthesize --workers 4` Python process 14 GB (flat over
-      20 s). Next step: find why the synthesis driver holds 14 GB (the model
-      lives in Ollama, not in it), and decide whether `serve-context` should
-      pin its working set (matrix and ONNX session) so it survives pressure.
-
-- [ ] **The local synthesis lane finishes nothing and holds ~38 GB doing it.**
+- [!] **The local synthesis lane finishes nothing and holds ~38 GB doing it.**
       `synthesis.log` on 2026-10-12: every local pass from 11:36 to 18:23
       ended `exit 124` (the 3300 s time box) or 143, with no `synthesized`
       line, and the 18:38 pass had printed only "13 conversations were left
@@ -376,3 +372,13 @@
       (`launchctl bootout gui/$(id -u)/com.cristian.atrium-synthesis`); bring
       it back with `launchctl bootstrap gui/$(id -u)
       ~/Library/LaunchAgents/com.cristian.atrium-synthesis.plist` once fixed.
+      **Findings 2026-10-16, `[~]`:** the 14 GB driver is fixed (see `TODO_LOG.md`); the
+      task lane never ran after 2026-10-08 because `tasks-cooling-until` holds its value
+      twice and the script's `[ -ge ]` errors out on every tick (filed in
+      `~/p/dotfiles/TODO.md`, "Routed from atrium (2026-10-16)"), so every pass went to the
+      local lane alone; and since worker `e00ac0b` (2026-10-12) the local lane leases only
+      while the Mac is idle, so a daytime pass waits its whole 3300 s box by design. Why the
+      walk of 13 half-done conversations finished none before that is still unproven, and
+      proving it means running the local model, which the owner's rule forbids while the
+      Mac is in use. **Waiting on the owner:** fix the dotfiles line, then decide whether
+      to bootstrap the job again (a recurring automation) and watch one idle-window pass.

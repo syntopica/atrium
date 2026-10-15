@@ -6,6 +6,7 @@ from pathlib import Path
 
 from atrium.context.context_from_index import context_from_index
 from atrium.context.stamp_serving import stamp_serving
+from atrium.rerank.cross_encoder import CrossEncoder
 from atrium.serve.context_socket_path import context_socket_path
 from atrium.serve.request_context_service import request_context_service
 from atrium.serve.service_timeout_response import service_timeout_response
@@ -53,7 +54,14 @@ def run_context_cli(  # noqa: PLR0913, PLR0917 -- parser wiring
         result = None
     if result is None or "error" in result:
         result = context_from_index(
-            index, query, project=project, limit=limit, max_chars=max_chars, lane=lane, state=state
+            index,
+            query,
+            project=project,
+            limit=limit,
+            max_chars=max_chars,
+            lane=lane,
+            state=state,
+            reranker=CrossEncoder(),
         )
         served_by = "in_process"
     stamp_serving(result, served_by, started)

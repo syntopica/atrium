@@ -8,6 +8,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 
 from atrium.adapters.mcp_app import MCP, READ_ONLY
 from atrium.adapters.resident_embedder import resident_embedder
+from atrium.adapters.resident_reranker import resident_reranker
 from atrium.adapters.served_index import INDEX
 from atrium.context.context_from_index import context_from_index
 from atrium.context.lazy_embedder import LazyEmbedder
@@ -88,6 +89,7 @@ def atrium_context(
             lane=lane,
             state=state,
             embedder=LazyEmbedder(resident_embedder),
+            reranker=resident_reranker(),
         )
     except ValueError as error:
         raise ToolError(str(error)) from error

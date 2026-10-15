@@ -4,10 +4,12 @@ import os
 import socket
 import sys
 import threading
+import time
 from pathlib import Path
 
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.embed.query_embedder import query_embedder
+from atrium.rerank.cross_encoder import CrossEncoder
 from atrium.serve.context_server import ContextServer
 from atrium.serve.context_socket_path import context_socket_path
 from atrium.serve.dense_matrix_file import dense_matrix_file
@@ -40,9 +42,18 @@ def serve_context(index: Path, state: Path, interval: float = 60.0) -> int:
     holder.prepare()
     embedder = LazyEmbedder(query_embedder)
     embedder.embed(["warm-up"])
+    # A reranker that cannot load (no network for the first download) costs
+    # quality, not service: answers keep the fused order.
+    reranker: CrossEncoder | None = None
+    try:
+        loaded = CrossEncoder()
+        loaded.score("warm-up", ["warm-up"], time.monotonic() + 60)
+        reranker = loaded
+    except (OSError, RuntimeError, ValueError) as error:
+        print(f"atrium serve-context: reranker unavailable: {error!r}", file=sys.stderr)
     old_mask = os.umask(0o077)
     try:
-        server = ContextServer(path, index, holder, embedder)
+        server = ContextServer(path, index, holder, embedder, reranker)
     finally:
         os.umask(old_mask)
     threading.Thread(

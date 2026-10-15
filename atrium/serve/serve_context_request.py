@@ -10,6 +10,7 @@ from atrium.store.open_store import open_store
 
 if TYPE_CHECKING:
     from atrium.context.context_embedder import ContextEmbedder
+    from atrium.context.context_reranker import ContextReranker
     from atrium.serve.dense_matrix_holder import DenseMatrixHolder
 
 
@@ -18,6 +19,7 @@ def serve_context_request(
     index: Path,
     holder: "DenseMatrixHolder",
     embedder: "ContextEmbedder",
+    reranker: "ContextReranker | None" = None,
 ) -> dict[str, Any]:
     """Run the shared context operation; refuse a request for another index.
 
@@ -46,6 +48,7 @@ def serve_context_request(
         state=Path(request["state"]) if request.get("state") else None,
         embedder=embedder,
         dense_matrix=matrix,
+        reranker=reranker,
     )
     if warnings:
         result["warnings"].extend(warnings)

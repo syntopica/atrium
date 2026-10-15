@@ -8,6 +8,26 @@
 
 ### 2026-10
 
+- [x] 2026-10-15 — **Context answers are reranked; the query prompt stays.** Measured with
+  an honest harness (`~/p/wiki/atrium/evaluations/retrieval-2026-10-15/e2e.py`: the real
+  `retrieve_context`, production weights, links and budget, limit 8; the 2026-10-14
+  figures routed by the answer's kind and fused at w=0.5, and are void) on the 85
+  acceptance questions and a new held-out set of 88 (`holdout-2026-10-15`, GPT-6
+  questions and judge, Claude audit). R/MRR acceptance | held-out: production
+  0.28/0.12 | 0.43/0.29; query prompts `search` 0.26/0.13 and `qa` 0.26/0.15 (no
+  flip); bge-reranker-v2-m3 0.39/0.24 | 0.51/0.39 at 10.4 s median;
+  gte-multilingual-reranker-base at 256 tokens 0.39/0.22 | 0.50/0.39 (gained 9 | 8,
+  lost 0 | 2) at 1.8 s median / 4.5 s p95 under load; mmarco-mMiniLMv2 lost 1 | 3.
+  CoreML was 167 s against 1.3 s on CPU. Owner chose gte at 256 tokens over the
+  1.5 s gate.
+  - Result: atrium `4addedc`, `8fe443b`, `5a4ea74`: each population's 32 fused hits
+    are reranked before links and evidence selection, in the service (warmed at
+    start), the MCP fallback and the CLI fallback; past 3 s, or with no model, the
+    fused order is served with `rerank_unavailable_fused_order`.
+  - Evidence: gate passes (614 tests, also with an empty offline HF cache); live
+    through the socket after `atrium-release` and a service restart, 12 held-out
+    questions all `applied`, rerank 1.86-2.13 s, whole `atrium context` 2.3-2.8 s.
+
 - [x] 2026-10-14 — **Retired tools kept steering agents.** Holded was retired on 2026-09-22,
   yet `atrium_context` answered "facturacion recurrente mensual hosting" with 6 of 8 excerpts
   describing it as current practice. A note now declares a retirement in its frontmatter

@@ -11,6 +11,7 @@ from atrium.synthesize.ack_worker_results import ack_worker_results
 from atrium.synthesize.empty_synthesis_error import EmptySynthesisError
 from atrium.synthesize.episode_identity import episode_identity
 from atrium.synthesize.has_record import has_record
+from atrium.synthesize.is_machine_job_episode import is_machine_job_episode
 from atrium.synthesize.is_trivial_episode import is_trivial_episode
 from atrium.synthesize.job_identity import GENERATOR_VERSION, job_identity
 from atrium.synthesize.producer import Producer
@@ -31,8 +32,8 @@ def synthesize_conversation(
 ) -> dict[str, Any]:
     """Synthesize each episode not already in the registry. Returns counts.
 
-    ``trivial`` counts lone harness echoes left unsynthesized on purpose; they
-    are neither present nor pending.
+    ``trivial`` counts lone harness echoes and machine jobs left unsynthesized
+    on purpose; they are neither present nor pending.
 
     The job key hashes every input and recipe field except the output, so a
     re-run skips finished episodes for free, an interrupted run resumes, and
@@ -53,7 +54,9 @@ def synthesize_conversation(
         if has_record(registry, job_key) or (done_episodes and episode_id in done_episodes):
             skipped += 1
             continue
-        if is_trivial_episode(episode["event_indexes"], events):
+        if is_trivial_episode(episode["event_indexes"], events) or is_machine_job_episode(
+            episode["event_indexes"], events
+        ):
             trivial += 1
             continue
         # Marked before the first call and cleared only when every episode is

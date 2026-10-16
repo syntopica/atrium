@@ -247,7 +247,12 @@
       cooldown. Profiles moved to `gemini-4-argon-high` (wiki `e7bdf9dbf`, unmeasured for
       faithfulness); worker `aa992c4` now prints an unmatched runner failure's tail;
       machine-job episodes (security reviews, Vexa, invoices) are no longer synthesized
-      (`babafc9`). First argon records carry the new prompt, summaries 23-32 words.
+      (`babafc9`). First argon records carry the new prompt, summaries 23-32 words. The first
+      36 argon production records with the short prompt, judged blind by GPT-6
+      (`evaluations/argon-production-2026-10-16/`): 9 of 261 claims unsupported (3.4%),
+      summaries 1/36, facts 3.1%; the 11 that are not security reviews 6.0%. Argon's
+      agy quota walled after ~50 jobs (cooldown ~3 h); the script then hands over to
+      the local lane, which the worker's `local_idle_only` holds until the Mac is idle.
 
 ## Promotion pipeline
 

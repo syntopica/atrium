@@ -11,7 +11,8 @@ SYNTHESIS_SYSTEM_TEXT = (
     "commands and numbers exactly as written -- exact recall is what this "
     "memory is for. State outcomes, not narration; a fact nobody could act on "
     "in three months is not worth keeping. Never invent content absent from "
-    "the transcript."
+    "the transcript. Keep the summary short: anything the transcript does not "
+    "show sinks it."
 )
 
 PROMPT_SHA256 = hashlib.sha256(SYNTHESIS_SYSTEM_TEXT.encode()).hexdigest()

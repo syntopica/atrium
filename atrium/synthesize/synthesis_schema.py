@@ -17,10 +17,13 @@ SYNTHESIS_TOOL = {
             },
             "summary": {
                 "type": "string",
+                # Short and fact-bound since 2026-10-16: the 50-200 word summary was
+                # unsupported in 19 of 24 measured episodes, this one in 9 (GPT-6
+                # judge; 12 against 5 for a Claude judge).
                 "description": (
-                    "What happened and what it means, 50-200 words, in the episode's "
-                    "dominant language. Written for someone who was not there: no "
-                    "unexplained codenames, concrete outcomes over narration."
+                    "One to three sentences, at most 60 words, in the episode's dominant "
+                    "language. State only outcomes the transcript shows; never a cause, "
+                    "verdict, fix or result it does not show. Leave detail to facts."
                 ),
             },
             "facts": {

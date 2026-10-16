@@ -236,11 +236,11 @@
       17.8%, summaries 15/23 -- neither beats the current one. The production codex
       lane (`gpt-6.1-sol`, low) 6.7%, summaries 2/24, facts 0/114, but Codex is last
       in the owner's routing order. DeepSeek has no free model on OpenRouter any
-      more. **Waiting on the owner:** adopt the short summary description and system
-      sentence in `atrium/synthesize/synthesis_schema.py` and `synthesis_prompt.py`
-      (`PROMPT_SHA256` and the schema version enter `job_identity`, so every existing
-      record's job key stops matching: decide whether the ~61k records stay as they
-      are or are redone over time).
+      more. **Adopted 2026-10-16 (owner):** the short summary description
+      and system sentence are in `synthesis_schema.py` and `synthesis_prompt.py`. Existing
+      records stay: a pass skips any episode a population already holds
+      (`done_episodes`), whatever its job key. Next: read the first new records' summaries
+      after the next pass, and watch the worker for old-prompt jobs left offered.
 
 ## Promotion pipeline
 

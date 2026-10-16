@@ -252,7 +252,12 @@
       (`evaluations/argon-production-2026-10-16/`): 9 of 261 claims unsupported (3.4%),
       summaries 1/36, facts 3.1%; the 11 that are not security reviews 6.0%. Argon's
       agy quota walled after ~50 jobs (cooldown ~3 h); the script then hands over to
-      the local lane, which the worker's `local_idle_only` holds until the Mac is idle.
+      the local lane, which the worker's `local_idle_only` holds until the Mac is idle. Argon's
+      quota turned out weekly ("Resets in 167h"); the worker now rests a walled model
+      until the reset its message names (worker `6accfe1`, `b0dc0c6`), and `atrium.tasks`
+      falls back to `atrium.agy-flash` (`gemini-3.8-flash-high`, wiki `0f4c18159`), which
+      scored 9.1% unsupported with the short prompt (summaries 3/23). First Flash
+      production records 20:59 on 2026-10-16, summaries 43-49 words.
 
 ## Promotion pipeline
 

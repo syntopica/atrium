@@ -1,5 +1,7 @@
 """Openings of user-role messages that a harness or an app wrote, not a person."""
 
+from atrium.ingest.machine_job_prefixes import MACHINE_JOB_PREFIXES
+
 # Each entry is a template's whole opening sentence, never a phrase a person
 # might type: "Review this change for security vulnerabilities." alone is.
 # Measured 2026-10-16 over the 102,613 admitted user records: these openings
@@ -15,10 +17,5 @@ MACHINE_PROMPT_PREFIXES = (
     "[SYSTEM NOTIFICATION - NOT USER INPUT] This is an automated background-task event",
     # The "user request" variant is left out: it relays the person's own words.
     "[Workflow harness \u2014 computed task] The task text below was computed at runtime",
-    "# How the owner answers Mined from the owner's own replies",
-    "Review this change for security vulnerabilities. Changed files (you may Read these",
-    "You previously flagged these candidate vulnerabilities: [",
-    "You are an email classifier for Vexa, a personal email intelligence tool.",
-    "You are an expert invoice schema formatter. SECURITY PREAMBLE",
-    "<role> You are an expert invoice extraction and reconciliation engine.",
+    *MACHINE_JOB_PREFIXES,
 )

@@ -241,6 +241,13 @@
       records stay: a pass skips any episode a population already holds
       (`done_episodes`), whatever its job key. Next: read the first new records' summaries
       after the next pass, and watch the worker for old-prompt jobs left offered.
+      **Outage found 2026-10-16:** no synthesis record from 2026-10-12 to 19:46 that day;
+      every `atrium.tasks` job failed `runner_failed` (2,708) because agy stopped
+      offering `gemini-3.1-pro-high` and the `claude-sonnet-5-5-high` fallback sat in
+      cooldown. Profiles moved to `gemini-4-argon-high` (wiki `e7bdf9dbf`, unmeasured for
+      faithfulness); worker `aa992c4` now prints an unmatched runner failure's tail;
+      machine-job episodes (security reviews, Vexa, invoices) are no longer synthesized
+      (`babafc9`). First argon records carry the new prompt, summaries 23-32 words.
 
 ## Promotion pipeline
 

@@ -2,9 +2,10 @@
 
 from typing import Any
 
+from atrium.curate.curate_lane_call import curate_lane_call
 from atrium.curate.publishability_tool import publishability_tool
 from atrium.synthesize.lane_prompt import LanePrompt
-from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL, local_lane_call
+from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
 _SYSTEM = (
     "You decide what a statement is, not whether it is true. The statements "
@@ -37,7 +38,7 @@ def claim_publishability(text: str, model: str = LOCAL_DEFAULT_MODEL) -> tuple[s
     pre-filter it is good at - 492 claims to 270, dropping session mechanics
     and one-run evidence - and placement decides the rest.
     """
-    answer = local_lane_call(
+    answer = curate_lane_call(
         LanePrompt(_SYSTEM, text, _INSTRUCTION, "STATEMENT"),
         publishability_tool(),
         model=model,

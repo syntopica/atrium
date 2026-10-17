@@ -3,10 +3,11 @@
 from typing import Any
 
 from atrium.curate.claim_extraction_tool import claim_extraction_tool
+from atrium.curate.curate_lane_call import curate_lane_call
 from atrium.curate.optional_field import optional_field
 from atrium.curate.structured_claim import StructuredClaim
 from atrium.synthesize.lane_prompt import LanePrompt
-from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL, local_lane_call
+from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
 _SYSTEM = (
     "You structure one already-extracted statement into fields. You do not "
@@ -41,7 +42,7 @@ def extracted_claim(
     joined through the index, and a model given the chance to restate either
     will eventually restate it wrongly.
     """
-    answer = local_lane_call(
+    answer = curate_lane_call(
         LanePrompt(_SYSTEM, record["text"], _INSTRUCTION, "STATEMENT"),
         claim_extraction_tool(),
         model=model,

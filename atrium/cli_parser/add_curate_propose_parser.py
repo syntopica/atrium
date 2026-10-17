@@ -10,4 +10,8 @@ def add_curate_propose_parser(subcommands: SubParsers) -> None:
         help="Place each durable claim on a curated page and write proposals for review",
     )
     propose.add_argument("--budget", type=int, default=1000, help="Maximum claims placed")
-    propose.add_argument("--model", default=None, help="Ollama model to place with")
+    propose.add_argument(
+        "--model",
+        default=None,
+        help="Ollama model to place with, or codex[:model] for the Codex CLI",
+    )

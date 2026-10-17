@@ -2,10 +2,11 @@
 
 from typing import Any
 
+from atrium.curate.curate_lane_call import curate_lane_call
 from atrium.curate.numeric_signature import numeric_signature
 from atrium.curate.pair_relation_tool import pair_relation_tool
 from atrium.synthesize.lane_prompt import LanePrompt
-from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL, local_lane_call
+from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
 _SYSTEM = (
     "You compare two statements taken from one operator's engineering sessions "
@@ -41,7 +42,7 @@ def pair_relation(
     statements that cannot both be true. A differing quantity is a reason not
     to merge; it is not evidence of a contradiction.
     """
-    answer = local_lane_call(
+    answer = curate_lane_call(
         LanePrompt(
             _SYSTEM,
             f"STATEMENT A:\n{left}\n\nSTATEMENT B:\n{right}",

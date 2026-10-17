@@ -12,7 +12,10 @@ def test_a_claim_last_seen_before_the_retirement_is_caught() -> None:
 
 
 def test_a_later_claim_and_an_unrelated_one_stay() -> None:
-    later = {"text": "Holded is retired; invoices go through InteliFactu.", "last_seen": "2026-10-01"}
+    later = {
+        "text": "Holded is retired; invoices go through InteliFactu.",
+        "last_seen": "2026-10-01",
+    }
     unrelated = {"text": "Invoices are issued from InteliFactu.", "last_seen": "2026-08-01"}
     assert claim_retirement(later, [HOLDED]) is None
     assert claim_retirement(unrelated, [HOLDED]) is None

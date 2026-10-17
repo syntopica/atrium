@@ -10,4 +10,8 @@ def add_curate_publishable_parser(subcommands: SubParsers) -> None:
         help="Classify each claim as durable knowledge, incident evidence or session mechanics",
     )
     publishable.add_argument("--budget", type=int, default=1000, help="Maximum claims judged")
-    publishable.add_argument("--model", default=None, help="Ollama model to judge with")
+    publishable.add_argument(
+        "--model",
+        default=None,
+        help="Ollama model to judge with, or codex[:model] for the Codex CLI",
+    )

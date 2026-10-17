@@ -271,14 +271,6 @@
       A Codex placement run of the same 270 (`20261017T051312Z`, `--model codex`) agrees
       with that judge on 208/270 (77.0%, the local run 119/270): 68 placed, 202 refused,
       147 of 151 not-wiki claims refused, but 39 of the 95 worth placing refused too.
-- [ ] Spend the new 100-claim holdout once, on the placement's acceptance (stage four),
-      not on extraction. Two failure shapes are already visible and neither is
-      fixed by prompt-fiddling: a sentence carrying two assertions loses one
-      (the Apache 503 claim kept "contains maintenance downtime" and dropped
-      "now reads the title first"), and a claim whose sentence names no file or
-      repository is classified `general` even when it is plainly about one
-      project (`/findings expects to be an array`, in project-after). 64 of 498 came
-      back `general`; that is the number to check by hand.
 - [ ] The claim ledger stores `project` as resolved at extraction time. It is
       derived from the index and cheap to recompute, so if the resolution rule
       changes again, rewrite the field rather than re-calling the model -- the

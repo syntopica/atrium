@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-17 — **Promotion pipeline:** Spend the 100-claim holdout once, on the placement's acceptance.
+  - Result: the 103 holdout candidates ran through debris, extraction, publishability, retirement and placement on Codex (`--model codex`, `b426737`), and a blind GPT-6 judge graded all 102 that passed the debris screen. Placed 19: 15 on the right page, 2 with a better shortlisted page, 2 not wiki material. Refused at placement 37: 25 not wiki material, 7 worth keeping with no page, 5 with a better shortlisted page (the lost recall). Stopped at publishability 44: 42 rightly. Retired 2. 91/102 judged correct; 15 of the 22 claims with a shortlisted home land on it.
+  - Evidence: `evaluations/holdout-2026-10-17/` (`run_holdout.py`, `placements.jsonl`, `build_batches.py`, `labels1-4.json`). The judge and Codex are likely the same model family, so the agreement may read high.
+
 - [-] 2026-10-17 — **Promotion pipeline:** Stage three's publishability verdict is too lenient.
   - Resolution: the discrimination belongs at placement, as `claim_publishability`'s docstring records; with `--model codex` (`b426737`) placement refuses 147 of the 151 claims the GPT-6 judge called not wiki material (run `20261017T051312Z`, scored by `evaluations/placement-2026-10-17/compare_run.py`), so publishability stays the cheap pre-filter.
 

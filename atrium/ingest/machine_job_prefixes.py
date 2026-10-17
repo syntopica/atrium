@@ -10,4 +10,11 @@ MACHINE_JOB_PREFIXES = (
     "You are an email classifier for Vexa, a personal email intelligence tool.",
     "You are an expert invoice schema formatter. SECURITY PREAMBLE",
     "<role> You are an expert invoice extraction and reconciliation engine.",
+    # Atrium's own stages: run through Codex or the local lane, they land in the
+    # archive as conversations of their own (3 of 10 Flash records, 2026-10-17).
+    "You are the synthesis stage of a personal memory system.",
+    "You structure one already-extracted statement into fields.",
+    "You decide what a statement is, not whether it is true.",
+    "You place one fact from an engineering session into a personal knowledge wiki.",
+    "You compare two statements taken from one operator's engineering sessions and say how they relate.",
 )

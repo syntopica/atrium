@@ -123,9 +123,6 @@ def test_the_model_cannot_restate_a_date_or_a_project(monkeypatch: pytest.Monkey
     def fake_call(*_: Any, **__: Any) -> dict[str, Any]:
         return {
             "input": {
-                "subject": "the drip",
-                "predicate": "runs at",
-                "value": "594 records/hour",
                 "conditions": "null",
                 "scope": "project",
                 "scope_name": "invented",

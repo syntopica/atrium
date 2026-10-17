@@ -71,3 +71,13 @@ def test_the_published_status_carries_the_harness_echo_count() -> None:
 
     document = synthesis_status(SynthesisPass("local", 0.0, 1.0, 3, 1, 0, 0, 0, 2), 1.0)
     assert document["lastPass"]["trivial"] == 2
+
+
+def test_a_lone_remote_control_notice_is_trivial() -> None:
+    text = "/remote-control is active · Continue here, on your phone, or at https://claude.ai/code/session_01ABC"
+    assert is_trivial_episode([0], [{"role": "user", "text": text}])
+
+
+def test_a_person_mentioning_remote_control_is_not_trivial() -> None:
+    text = "/remote-control is active but my phone cannot connect; investigate"
+    assert not is_trivial_episode([0], [{"role": "user", "text": text}])

@@ -265,16 +265,6 @@
       said to end without a verdict that ended "fix first"; a refactor said to end
       failing that ended green). 2/9 against qwen's 3/8; too few to call better.
       Report: `~/p/wiki/atrium/evaluations/flash-spotcheck-2026-10-17.md`.
-- [ ] **Synthesis spends calls on episodes it should skip.** Found by the 2026-10-17
-      Flash spot-check (same report): (1) `is_machine_job_episode` skips only when every
-      user message starts with a listed prompt, and Codex conversations always carry an
-      injected `# AGENTS.md instructions` user message, so two invoice-formatting jobs on
-      the skip list were synthesized and indexed; (2) Atrium's own curation and
-      LLM-judge jobs are not on the list (3 of the 10 sampled records); (3) the echo list
-      matches exact strings and misses `/remote-control is active ...` lines, which carry
-      a session id. Smallest step: a failing test per case in
-      `tests/` against `atrium/synthesize/is_machine_job_episode.py`, then the fix.
-
 ## Promotion pipeline
 
 - [ ] The claim ledger stores `project` as resolved at extraction time. It is

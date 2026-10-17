@@ -2,6 +2,7 @@
 
 from typing import Any
 
+from atrium.synthesize.harness_echo_pattern import HARNESS_ECHO_PATTERN
 from atrium.synthesize.harness_echoes import HARNESS_ECHOES
 
 
@@ -13,4 +14,5 @@ def is_trivial_episode(event_indexes: list[int], events: list[dict[str, Any]]) -
     """
     if len(event_indexes) != 1:
         return False
-    return (events[event_indexes[0]].get("text") or "").strip() in HARNESS_ECHOES
+    text = (events[event_indexes[0]].get("text") or "").strip()
+    return text in HARNESS_ECHOES or HARNESS_ECHO_PATTERN.fullmatch(text) is not None

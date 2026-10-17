@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-17 — **Synthesis:** Stop spending synthesis calls on Codex machine jobs, Atrium's own stages and the remote-control notice.
+  - Result: `is_machine_job_episode` now ignores harness injections (`# AGENTS.md instructions`, a bare `<environment_context>` block) instead of requiring every user message to open a job, so Codex jobs on the skip list are skipped; Atrium's synthesis and four curation system prompts joined `MACHINE_JOB_PREFIXES` (which ingest also uses, so their user records stay out of the index); a lone `/remote-control is active ... session_<id>` notice is trivial, matched in full. Codex review caught two false positives in the first cut (text after the environment block, a person's message starting with the notice), both fixed with tests. Not covered: the ad-hoc LLM-judge prompts of evaluation scripts, which vary per run.
+  - Evidence: `uv run pytest -q` 663 passed, ruff and mypy clean; pattern matched 3 real notices from the archive.
+
 - [x] 2026-10-17 — **Promotion pipeline:** Review the 93 judged placements of run `20260918T031838Z` and apply the accepted ones.
   - Result: Codex (`codex exec -s read-only`, 5 batches) and Claude reviewed all 93 independently against the pages and live repos: Codex accepted 23, Claude 11, both 6; of 22 split verdicts 4 were accepted after checking code, the bot PM spec and Supabase's backup docs. Ten claims applied, the three Vertica ones to `projects/vertica.md` rather than the near-empty `verticagtm.md`; most rejections were already on a page or stale. The review also corrected Contratica's stack (Drizzle since `024ef31f`) and Supabase PITR (a paid add-on, not part of Pro).
   - Evidence: wiki `c350091d0`; `~/p/wiki/atrium/evaluations/review-2026-10-17/decisions.json`; every line of `review-judged.md` marked `[x]` or `[-]`.

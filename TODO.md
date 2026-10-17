@@ -258,19 +258,25 @@
       falls back to `atrium.agy-flash` (`gemini-3.8-flash-high`, wiki `0f4c18159`), which
       scored 9.1% unsupported with the short prompt (summaries 3/23). First Flash
       production records 20:59 on 2026-10-16, summaries 43-49 words.
+      Spot-check 2026-10-17 of 10 random single-chunk Flash records (registry
+      `model_resolved = agy-gemini-3.8-flash-high`, shown as `worker-atrium.agy` in
+      `atrium status`) against the archive: 1 harness echo, 7 faithful, 2 with a false
+      claim, both about the episode's outcome on the two longest transcripts (a review
+      said to end without a verdict that ended "fix first"; a refactor said to end
+      failing that ended green). 2/9 against qwen's 3/8; too few to call better.
+      Report: `~/p/wiki/atrium/evaluations/flash-spotcheck-2026-10-17.md`.
+- [ ] **Synthesis spends calls on episodes it should skip.** Found by the 2026-10-17
+      Flash spot-check (same report): (1) `is_machine_job_episode` skips only when every
+      user message starts with a listed prompt, and Codex conversations always carry an
+      injected `# AGENTS.md instructions` user message, so two invoice-formatting jobs on
+      the skip list were synthesized and indexed; (2) Atrium's own curation and
+      LLM-judge jobs are not on the list (3 of the 10 sampled records); (3) the echo list
+      matches exact strings and misses `/remote-control is active ...` lines, which carry
+      a session id. Smallest step: a failing test per case in
+      `tests/` against `atrium/synthesize/is_machine_job_episode.py`, then the fix.
 
 ## Promotion pipeline
 
-- [!] **The pipeline is built and its output is unreviewed.** Stages one to four exist
-      (2026-09-17/18). A GPT-6 judge read all 270 rows of the last run
-      (`20260918T031838Z`) on 2026-10-17 (`evaluations/placement-2026-10-17/`): of 200
-      placed, 57 on the right page, 30 with a better page in the shortlist, 18 with no
-      fitting page, 95 not wiki material; of 70 refused, 56 rightly. The 93 worth placing
-      are in `review-judged.md` beside the run, in five batches of 20. **Waiting on the
-      owner:** mark accept/reject per line; a session then applies only the accepted ones.
-      A Codex placement run of the same 270 (`20261017T051312Z`, `--model codex`) agrees
-      with that judge on 208/270 (77.0%, the local run 119/270): 68 placed, 202 refused,
-      147 of 151 not-wiki claims refused, but 39 of the 95 worth placing refused too.
 - [ ] The claim ledger stores `project` as resolved at extraction time. It is
       derived from the index and cheap to recompute, so if the resolution rule
       changes again, rewrite the field rather than re-calling the model -- the

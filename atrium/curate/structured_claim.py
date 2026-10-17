@@ -15,9 +15,6 @@ class StructuredClaim:
 
     candidate_id: str
     text: str
-    subject: str
-    predicate: str
-    value: str
     conditions: str | None
     scope: str
     scope_name: str | None

@@ -11,25 +11,16 @@ def claim_extraction_tool() -> dict[str, Any]:
 
     The observation dates are deliberately absent: the ledger already knows
     when every episode stated the claim, and asking a model for a date it
-    cannot read off the sentence is an invitation to invent one.
+    cannot read off the sentence is an invitation to invent one. No
+    subject/predicate/value triple either (dropped 2026-10-17): the merge and
+    the placement both read the sentence, and splitting it lost an assertion
+    from a quarter of the sample.
     """
     return {
         "name": "record_claim",
         "input_schema": {
             "type": "object",
             "properties": {
-                "subject": {
-                    "type": "string",
-                    "description": "What the claim is about: a file, a command, a service, a person, a setting.",
-                },
-                "predicate": {
-                    "type": "string",
-                    "description": "What is asserted about the subject, as a short verb phrase.",
-                },
-                "value": {
-                    "type": "string",
-                    "description": "The asserted outcome, number, path or name. Empty string if the predicate carries it alone.",
-                },
                 "conditions": {
                     "type": ["string", "null"],
                     "description": "Version, platform or precondition the claim depends on, quoted from the sentence. Null when the sentence states none.",
@@ -50,9 +41,6 @@ def claim_extraction_tool() -> dict[str, Any]:
                 },
             },
             "required": [
-                "subject",
-                "predicate",
-                "value",
                 "conditions",
                 "scope",
                 "scope_name",

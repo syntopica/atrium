@@ -12,8 +12,8 @@ _SYSTEM = (
     "You structure one already-extracted statement into fields. You do not "
     "judge whether it is worth keeping, you do not add anything it does not "
     "say, and you do not correct it. Quote its own words wherever a field "
-    "allows it. If the statement names no condition, no scope name or no "
-    "value, use null or an empty string rather than guessing one.\n"
+    "allows it. If the statement names no condition or no scope name, use "
+    "null rather than guessing one.\n"
     "Scope, which decides where the claim can ever be reused:\n"
     "- project: it is about one codebase -- its files, functions, tests, "
     "migrations, configuration or incidents. Any statement quoting a source "
@@ -50,9 +50,6 @@ def extracted_claim(
     return StructuredClaim(
         candidate_id=record["candidate_id"],
         text=record["text"],
-        subject=str(fields["subject"]),
-        predicate=str(fields["predicate"]),
-        value=str(fields["value"]),
         conditions=optional_field(fields["conditions"]),
         scope=str(fields["scope"]),
         scope_name=optional_field(fields["scope_name"]),

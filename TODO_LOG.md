@@ -8,6 +8,14 @@
 
 ### 2026-10
 
+- [x] 2026-10-17 — **Promotion pipeline:** `curate-propose` ignored retirements.
+  - Result: a claim that names a retired term and was last seen before its date is refused before any model call, with the retirement as its reason (`803ec33`).
+  - Evidence: `tests/test_claim_retirement.py`; on the live ledger 3 of 270 durable claims are caught (Holded, cPanel, MemPalace).
+
+- [x] 2026-10-17 — **Promotion pipeline:** Drop the subject/predicate/value triple from extraction.
+  - Result: removed from `claim_extraction_tool`, `StructuredClaim` and `extracted_claim` (`f79c702`); ledger rows already written keep their fields.
+  - Evidence: `codeality-py gate` passed; `tests/test_curate_extraction.py` 20 passed.
+
 - [x] 2026-10-17 — **Synthesis:** The local synthesis lane finishes nothing and holds ~38 GB doing it.
   - Result: dotfiles `06bc6f7` fixed the cooling line, the job was bootstrapped again on 2026-10-16, and the lane's passes deliver through the worker's `atrium.synthesis` ladder (agy Flash medium, OpenRouter, local) while the Mac is idle. `exit 124` is the pass's 3300 s time box, not a failure.
   - Evidence: records since 2026-10-16 20:34 requested as `ollama-qwen3.6-35b`: 179 served by OpenRouter nemotron-3-super and 106 by agy `gemini-3.8-flash-medium`; `ollama ps` empty while the owner was active.

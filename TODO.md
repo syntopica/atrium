@@ -262,21 +262,16 @@
 ## Promotion pipeline
 
 - [!] **The pipeline is built and its output is unreviewed.** Stages one to four exist
-      (`curate-screen`, `curate-extract`, `curate-cluster`/`curate-neighbours`,
-      `curate-publishable`, `curate-propose`; 2026-09-17/18). The last run,
-      `$SYNTOPICA_DATA/atrium/curation/proposals/20260918T031838Z/review.md`, places 200
-      claims on 80 pages and refuses 70; nobody has read it, and it is four weeks old.
-      **Waiting on the owner:** how proposals should reach the wiki (see the 2026-10-16
-      recommendation in the session record: regenerate, review ~20 per sitting, a session
-      applies only the accepted ones).
-- [ ] `curate-propose` does not read the retirements notes declare (`retired:`
-      frontmatter, 2026-10-14), so it can propose a claim that presents a retired tool
-      as current -- the entity lifecycle question stage three was meant to answer. Smallest
-      step: drop or mark candidates that `names_retirement` matches, before placement.
-- [ ] Drop the subject/predicate/value triple from the extraction schema at the next
-      extraction run. Its condition is met: the merge adjudicates sentences
-      (`pair_relation_tool`) and placement reads the sentence (`claim_destination`);
-      nothing downstream reads the triple, which degrades a quarter of the sample.
+      (2026-09-17/18). A GPT-6 judge read all 270 rows of the last run
+      (`20260918T031838Z`) on 2026-10-17 (`evaluations/placement-2026-10-17/`): of 200
+      placed, 57 on the right page, 30 with a better page in the shortlist, 18 with no
+      fitting page, 95 not wiki material; of 70 refused, 56 rightly. The 93 worth placing
+      are in `review-judged.md` beside the run, in five batches of 20. **Waiting on the
+      owner:** mark accept/reject per line; a session then applies only the accepted ones.
+- [ ] Stage three's publishability verdict is too lenient: 95 of the 200 placed
+      "durable" claims are not wiki material by the same judge (file-level details,
+      one-run states). Smallest step: give `publishability_tool` those two shapes as
+      explicit `situational` examples and re-measure on the same 270 before the next run.
 - [ ] Spend the new 100-claim holdout once, on the placement's acceptance (stage four),
       not on extraction. Two failure shapes are already visible and neither is
       fixed by prompt-fiddling: a sentence carrying two assertions loses one

@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-17 — **Promotion pipeline:** Review the 93 judged placements of run `20260918T031838Z` and apply the accepted ones.
+  - Result: Codex (`codex exec -s read-only`, 5 batches) and Claude reviewed all 93 independently against the pages and live repos: Codex accepted 23, Claude 11, both 6; of 22 split verdicts 4 were accepted after checking code, the bot PM spec and Supabase's backup docs. Ten claims applied, the three Vertica ones to `projects/vertica.md` rather than the near-empty `verticagtm.md`; most rejections were already on a page or stale. The review also corrected Contratica's stack (Drizzle since `024ef31f`) and Supabase PITR (a paid add-on, not part of Pro).
+  - Evidence: wiki `c350091d0`; `~/p/wiki/atrium/evaluations/review-2026-10-17/decisions.json`; every line of `review-judged.md` marked `[x]` or `[-]`.
+
 - [x] 2026-10-17 — **Promotion pipeline:** Spend the 100-claim holdout once, on the placement's acceptance.
   - Result: the 103 holdout candidates ran through debris, extraction, publishability, retirement and placement on Codex (`--model codex`, `b426737`), and a blind GPT-6 judge graded all 102 that passed the debris screen. Placed 19: 15 on the right page, 2 with a better shortlisted page, 2 not wiki material. Refused at placement 37: 25 not wiki material, 7 worth keeping with no page, 5 with a better shortlisted page (the lost recall). Stopped at publishability 44: 42 rightly. Retired 2. 91/102 judged correct; 15 of the 22 claims with a shortlisted home land on it.
   - Evidence: `evaluations/holdout-2026-10-17/` (`run_holdout.py`, `placements.jsonl`, `build_batches.py`, `labels1-4.json`). The judge and Codex are likely the same model family, so the agreement may read high.

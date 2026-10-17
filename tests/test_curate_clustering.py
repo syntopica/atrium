@@ -69,7 +69,7 @@ def test_the_signature_blocks_the_merge_without_calling_it_a_contradiction(
             "usage": {},
         }
 
-    monkeypatch.setattr(pair_relation_module, "local_lane_call", fake_call)
+    monkeypatch.setattr(pair_relation_module, "curate_lane_call", fake_call)
     relation, fields = pair_relation("Node v26.5.1 was used", "Node v26.5.0 was used")
     assert relation == "equivalent"
     assert fields["merge_blocked"] == "numeric_signature"
@@ -83,7 +83,7 @@ def test_the_signature_leaves_a_true_paraphrase_alone(monkeypatch: pytest.Monkey
             "usage": {},
         }
 
-    monkeypatch.setattr(pair_relation_module, "local_lane_call", fake_call)
+    monkeypatch.setattr(pair_relation_module, "curate_lane_call", fake_call)
     relation, fields = pair_relation("38 orphans held 7.4 GB", "7.4 GB were held by 38 orphans")
     assert relation == "equivalent"
     assert "merge_blocked" not in fields
@@ -160,7 +160,7 @@ def test_the_publishability_verdict_is_passed_through(monkeypatch: pytest.Monkey
             "usage": {},
         }
 
-    monkeypatch.setattr(claim_publishability_module, "local_lane_call", fake_call)
+    monkeypatch.setattr(claim_publishability_module, "curate_lane_call", fake_call)
     verdict, fields = claim_publishability("Session working directory: /somewhere")
     assert verdict == "session_mechanics"
     assert fields["asserted"] == ""

@@ -12,4 +12,8 @@ def add_curate_cluster_parser(subcommands: SubParsers) -> None:
     cluster.add_argument("--threshold", type=float, default=0.75, help="Cosine floor for a pair")
     cluster.add_argument("--neighbours", type=int, default=5, help="Neighbours kept per claim")
     cluster.add_argument("--budget", type=int, default=1000, help="Maximum pairs adjudicated")
-    cluster.add_argument("--model", default=None, help="Ollama model to adjudicate with")
+    cluster.add_argument(
+        "--model",
+        default=None,
+        help="Ollama model to adjudicate with, or codex[:model] for the Codex CLI",
+    )

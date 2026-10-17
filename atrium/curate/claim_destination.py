@@ -1,11 +1,12 @@
 """Choose the curated page a claim belongs to, or refuse to place it."""
 
+from atrium.curate.curate_lane_call import curate_lane_call
 from atrium.curate.destination_tool import NO_DESTINATION, destination_tool
 from atrium.curate.page_descriptor import page_descriptor
 from atrium.curate.page_library import PageLibrary
 from atrium.curate.page_shortlist import page_shortlist
 from atrium.synthesize.lane_prompt import LanePrompt
-from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL, local_lane_call
+from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 
 _SYSTEM = (
     "You place one fact from an engineering session into a personal knowledge wiki. "
@@ -40,7 +41,7 @@ def claim_destination(
     if not shortlist:
         return None, "no candidate page", []
     listing = "\n".join(f"- {path}: {page_descriptor(library.root, path)}" for path in shortlist)
-    answer = local_lane_call(
+    answer = curate_lane_call(
         LanePrompt(_SYSTEM, f"FACT:\n{claim}\n\nCANDIDATE PAGES:\n{listing}", _INSTRUCTION, "FACT"),
         destination_tool(shortlist),
         model=model,

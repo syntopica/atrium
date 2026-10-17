@@ -15,7 +15,10 @@ def is_machine_job_episode(event_indexes: list[int], events: list[dict[str, Any]
     answer spent quota on a security review or a mail classification that no
     one asked to remember. An episode where a person also speaks is kept.
     """
-    prompts = [events[i].get("text") or "" for i in event_indexes if events[i].get("role") == "user"]
+    prompts = [
+        events[i].get("text") or "" for i in event_indexes if events[i].get("role") == "user"
+    ]
     return bool(prompts) and all(
-        _WHITESPACE.sub(" ", text[:240]).strip().startswith(MACHINE_JOB_PREFIXES) for text in prompts
+        _WHITESPACE.sub(" ", text[:240]).strip().startswith(MACHINE_JOB_PREFIXES)
+        for text in prompts
     )

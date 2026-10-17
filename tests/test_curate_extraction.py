@@ -133,7 +133,7 @@ def test_the_model_cannot_restate_a_date_or_a_project(monkeypatch: pytest.Monkey
             "usage": {},
         }
 
-    monkeypatch.setattr(extracted_claim_module, "local_lane_call", fake_call)
+    monkeypatch.setattr(extracted_claim_module, "curate_lane_call", fake_call)
     claim = extracted_claim(_candidate(7), project="atrium")
     assert claim.first_seen == "2026-09-01"
     assert claim.last_seen == "2026-09-02"

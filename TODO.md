@@ -268,10 +268,9 @@
       fitting page, 95 not wiki material; of 70 refused, 56 rightly. The 93 worth placing
       are in `review-judged.md` beside the run, in five batches of 20. **Waiting on the
       owner:** mark accept/reject per line; a session then applies only the accepted ones.
-- [ ] Stage three's publishability verdict is too lenient: 95 of the 200 placed
-      "durable" claims are not wiki material by the same judge (file-level details,
-      one-run states). Smallest step: give `publishability_tool` those two shapes as
-      explicit `situational` examples and re-measure on the same 270 before the next run.
+      A Codex placement run of the same 270 (`20261017T051312Z`, `--model codex`) agrees
+      with that judge on 208/270 (77.0%, the local run 119/270): 68 placed, 202 refused,
+      147 of 151 not-wiki claims refused, but 39 of the 95 worth placing refused too.
 - [ ] Spend the new 100-claim holdout once, on the placement's acceptance (stage four),
       not on extraction. Two failure shapes are already visible and neither is
       fixed by prompt-fiddling: a sentence carrying two assertions loses one

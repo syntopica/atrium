@@ -8,6 +8,9 @@
 
 ### 2026-10
 
+- [-] 2026-10-17 — **Promotion pipeline:** Stage three's publishability verdict is too lenient.
+  - Resolution: the discrimination belongs at placement, as `claim_publishability`'s docstring records; with `--model codex` (`b426737`) placement refuses 147 of the 151 claims the GPT-6 judge called not wiki material (run `20261017T051312Z`, scored by `evaluations/placement-2026-10-17/compare_run.py`), so publishability stays the cheap pre-filter.
+
 - [x] 2026-10-17 — **Promotion pipeline:** `curate-propose` ignored retirements.
   - Result: a claim that names a retired term and was last seen before its date is refused before any model call, with the retirement as its reason (`803ec33`).
   - Evidence: `tests/test_claim_retirement.py`; on the live ledger 3 of 270 durable claims are caught (Holded, cPanel, MemPalace).

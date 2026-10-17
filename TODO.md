@@ -365,25 +365,3 @@
       identity itself. It re-keys every archived event, so it lands with the v2
       stage 3 cutover.
 
-- [!] **The local synthesis lane finishes nothing and holds ~38 GB doing it.**
-      `synthesis.log` on 2026-10-12: every local pass from 11:36 to 18:23
-      ended `exit 124` (the 3300 s time box) or 143, with no `synthesized`
-      line, and the 18:38 pass had printed only "13 conversations were left
-      half done; walking them next" after 20 min. Each pass keeps qwen3.6:35b
-      loaded in Ollama (24 GB) and a 14 GB driver process, then the next tick
-      starts 15 min later. Next step: find why the half-done walk never
-      completes a conversation (worker transport, `ATRIUM_LOCAL_TRANSPORT=worker`
-      queue, or the model). The job was booted out on 2026-10-12 19:00
-      (`launchctl bootout gui/$(id -u)/com.cristian.atrium-synthesis`); bring
-      it back with `launchctl bootstrap gui/$(id -u)
-      ~/Library/LaunchAgents/com.cristian.atrium-synthesis.plist` once fixed.
-      **Findings 2026-10-16, `[~]`:** the 14 GB driver is fixed (see `TODO_LOG.md`); the
-      task lane never ran after 2026-10-08 because `tasks-cooling-until` holds its value
-      twice and the script's `[ -ge ]` errors out on every tick (filed in
-      `~/p/dotfiles/TODO.md`, "Routed from atrium (2026-10-16)"), so every pass went to the
-      local lane alone; and since worker `e00ac0b` (2026-10-12) the local lane leases only
-      while the Mac is idle, so a daytime pass waits its whole 3300 s box by design. Why the
-      walk of 13 half-done conversations finished none before that is still unproven, and
-      proving it means running the local model, which the owner's rule forbids while the
-      Mac is in use. **Waiting on the owner:** fix the dotfiles line, then decide whether
-      to bootstrap the job again (a recurring automation) and watch one idle-window pass.

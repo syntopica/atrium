@@ -4,7 +4,9 @@ import json
 import time
 from typing import Any
 
+from atrium.context.read_retirements import read_retirements
 from atrium.curate.claim_destination import claim_destination
+from atrium.curate.claim_retirement import claim_retirement
 from atrium.curate.claims_ledger_path import claims_ledger_path
 from atrium.curate.curation_directory import curation_directory
 from atrium.curate.jsonl_rows import jsonl_rows
@@ -50,13 +52,19 @@ def run_curate_propose_cli(budget: int, model: str = LOCAL_DEFAULT_MODEL) -> int
         return 1
     # The index lives in the instance's derived state, not beside its pages:
     # `data` is the wiki root the page paths resolve against.
-    library = load_page_library(
-        open_store(state_directory() / "index.sqlite3", read_only=True), Embedder(), data
-    )
+    index = open_store(state_directory() / "index.sqlite3", read_only=True)
+    retirements = read_retirements(index)
+    library = load_page_library(index, Embedder(), data)
     placed: dict[str, list[dict[str, Any]]] = {}
     refused: list[dict[str, Any]] = []
     started = time.monotonic()
     for done, claim in enumerate(claims[:budget], start=1):
+        retired = claim_retirement(claim, retirements)
+        if retired is not None:
+            # Refused before any model call, and kept visible in the review sheet.
+            why = f"names {retired.terms[0]}, retired {retired.since}; see {retired.note}"
+            refused.append({**claim, "why": why, "shortlist": [], "destination": None})
+            continue
         project = claim.get("project")
         page = f"brain/projects/{str(project).lower()}.md" if project else None
         chosen, why, shortlist = claim_destination(library, claim["text"], page, model=model)

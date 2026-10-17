@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-17 — **Synthesis:** The local synthesis lane finishes nothing and holds ~38 GB doing it.
+  - Result: dotfiles `06bc6f7` fixed the cooling line, the job was bootstrapped again on 2026-10-16, and the lane's passes deliver through the worker's `atrium.synthesis` ladder (agy Flash medium, OpenRouter, local) while the Mac is idle. `exit 124` is the pass's 3300 s time box, not a failure.
+  - Evidence: records since 2026-10-16 20:34 requested as `ollama-qwen3.6-35b`: 179 served by OpenRouter nemotron-3-super and 106 by agy `gemini-3.8-flash-medium`; `ollama ps` empty while the owner was active.
+
 - [-] 2026-10-16 — **Promotion pipeline:** "Stage three: semantic merge and page proposal" as a pending design.
   - Resolution: already built on 2026-09-17/18: near pairs adjudicated into clusters and contradictions (`21df872`), a quantity difference blocking a merge (`9a2a3d8`), placement of a durable claim on a curated page writing a manifest and `review.md` only (`eebe8e1`). What it left open is tracked in TODO.md: the unreviewed run, retirements unread by `curate-propose`, the unused triple.
 

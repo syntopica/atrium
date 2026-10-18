@@ -70,6 +70,7 @@ def atrium_context(
         "max_chars": max_chars,
         "lane": lane,
         "state": str(state),
+        "timeout_s": _SERVICE_TIMEOUT_S,
     }
     try:
         served = request_context_service(context_socket_path(state), request, _SERVICE_TIMEOUT_S)

@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any
 
 from atrium.context.context_from_index import context_from_index
 from atrium.context.read_dense_generation import read_dense_generation
+from atrium.serve.deadline_reranker import DeadlineReranker
+from atrium.serve.request_deadline import request_deadline
 from atrium.store.open_store import open_store
 
 if TYPE_CHECKING:
@@ -26,7 +28,11 @@ def serve_context_request(
     The client names the index it would have opened itself. Answering for a
     different one would be a confident answer from the wrong memory, so a
     mismatch is an error the client resolves by retrieving in-process.
+    The deadline is taken first, so opening the store counts against it.
     """
+    deadline = request_deadline(request)
+    if deadline is not None and reranker is not None:
+        reranker = DeadlineReranker(reranker, deadline)
     if Path(request["index"]).resolve() != index.resolve():
         return {"error": "index_mismatch"}
     try:

@@ -44,6 +44,7 @@ def run_context_cli(  # noqa: PLR0913, PLR0917 -- parser wiring
         "max_chars": max_chars,
         "lane": lane,
         "state": str(state),
+        "timeout_s": _SERVICE_TIMEOUT_S,
     }
     served_by = "service"
     try:

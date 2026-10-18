@@ -55,13 +55,17 @@
     here `a8a5877` makes a generation's full ingest sweep a provider it no longer holds.
     Rehearsal on a copy of the live archive (scribe plan, `d129b51`): v1 to v2 record
     parity exact with scribe `d839d84`; the drill passed on a one-in-five subset. Left
-    before the first real seeding pass: the full-size drill and this index parity check.
+    before the first real seeding pass: the full-size drill (running on an external disk;
+    the internal one ran out at 88 GB).
   - Done 2026-10-16: `atrium --index <live> parity <test>` compares, read-only on both,
     records by id and text digest per provider (raw, notes, synthesis), the ranked probe
     of both FTS lanes on each side, and vector identities; exits 1 on any record
-    difference. Live against itself: `equal`, 53 s, 494 MB peak. Remaining: run it on a
-    test index rebuilt from the first live `export-materialized`, which is the
-    workstream 4 parity check itself.
+    difference. Live against itself: `equal`, 53 s, 494 MB peak. Done 2026-10-18 on the
+    rehearsal copy: an index from the v1 archive against one from scribe `d839d84`'s
+    `export-materialized` of its migration, no vectors: `equal`, 386,240 records in
+    both FTS lanes, 0 changed or missing in every provider (claude-code 287,556, codex
+    29,572, cursor 66,558, opencode 2,454, pi 63, openclaw 37); ingest 5 min each,
+    parity 10 s. Repeat on the first live export at cutover.
 
 
 - [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured

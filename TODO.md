@@ -300,8 +300,12 @@
       checked between batches only, and one batch of 4 took ~4 s at that load (rerank
       step 7,054 ms on a 7 s deadline). Measured at load ~13, 16 pairs: batch 1 total
       2.1-2.3 s, max batch 0.18-0.25 s; batch 4 total 1.9-2.0 s, max 0.52 s. Batch 1
-      bounds the overshoot for ~10-15% more CPU on a rerank that completes. Smallest
-      step: measure batch 1 vs 4 at load above 50 before choosing. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
+      bounds the overshoot for ~10-15% more CPU on a rerank that completes. Measured at
+      load 44-81 on 2026-10-19: batch 4 max 7.1-7.4 s, batch 1 max 2.6 s; `39b2111` set
+      batch 1. Live under synthetic load 47-64: 3 of 4 calls served (4.0-6.9 s), one
+      `service_timeout`; idle 2 of 2 (4.4-6.2 s). What is left is the retrieval passes
+      before the rerank (history 1.0-1.6 s, curated 0.8-1.3 s at load ~15). Smallest
+      step: capture `steps` of a timed-out call under load. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
       28 of 29 context calls returned `service_timeout` at the client's 7 s, while the
       service still ran retrieval and the rerank to the end: `ContextRequestHandler`
       only notices the peer is gone when it writes the result. In-process at load ~23:

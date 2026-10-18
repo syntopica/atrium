@@ -49,9 +49,13 @@
     2026-10-18: `scribe erase` (`9165eed`), `relativePath` as an array (`1136f5b`, fixtures
     re-vendored here `f1bdcdd`), redaction replacement (`829abe0`), `segments-receive` and
     `segments-seed-generation` (`3d4f2fb`), the freeze sentinel with exit 75 (`a3b8a34`) and
-    `scribe recovery-drill` (`7a33cdb`). Left before the first real seeding pass: the dotfiles
-    side (freeze checks in every trigger, `conversation-writers`, segment modes of
-    `sync-conversations` and the refresh), then the drill on a copy and this parity check.
+    `scribe recovery-drill` (`7a33cdb`). The dotfiles side landed the same day (`58d7cfc`
+    freeze gates and `conversation-writers`, `a36fe4a`, `cd71ade` segment modes of
+    `sync-conversations` and the refresh, off until a host's `segment-mode` file exists);
+    here `a8a5877` makes a generation's full ingest sweep a provider it no longer holds.
+    Rehearsal on a copy of the live archive (scribe plan, `d129b51`): v1 to v2 record
+    parity exact with scribe `d839d84`; the drill passed on a one-in-five subset. Left
+    before the first real seeding pass: the full-size drill and this index parity check.
   - Done 2026-10-16: `atrium --index <live> parity <test>` compares, read-only on both,
     records by id and text digest per provider (raw, notes, synthesis), the ranked probe
     of both FTS lanes on each side, and vector identities; exits 1 on any record

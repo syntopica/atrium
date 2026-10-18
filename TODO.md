@@ -290,6 +290,29 @@
 
 ## Observability
 
+- [ ] **The prompt hook gets nothing under load, and the service keeps working for
+      clients that left (2026-10-18).** After the 19:06 restart (`09c354d`, `7758b81`),
+      28 of 29 context calls returned `service_timeout` at the client's 7 s, while the
+      service still ran retrieval and the rerank to the end: `ContextRequestHandler`
+      only notices the peer is gone when it writes the result. In-process at load ~23:
+      warm request 4.2 s, of which rerank 3.08 s (5 batches of 4, 0.6 s each) that
+      exhausted the 3 s budget and was discarded (`rerank_unavailable_fused_order`);
+      cold first request 14.3 s. Codex analysis (read-only, same day): pass the
+      client's deadline to the server and check it, and peer closure, before retrieval
+      and between rerank batches; keep the 3 s rerank budget (owner, 2026-10-18: no
+      "skip if it will not fit" heuristic). CPU saving is small (under ~6 CPU-min/day);
+      the point is a hook that answers. ORT defaults are already `ORT_ENABLE_ALL`,
+      and `intra_op_num_threads=2` measured slower (3.39 s vs 2.38 s for 16 pairs), so
+      neither is an easy win. Smallest step: a test where the client disconnects at
+      7 s and the server stops at the next batch boundary.
+- [ ] **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
+      bounded: roughly 19 passes a day of export ~6 min, import ~5 min, ingest ~1 min,
+      doctor ~2 min, at most ~310 core-min/day if each held one core. Export and import
+      dominate, and segment mode removes both (see the stage 3 entry above). Owner,
+      2026-10-18: the refresh stays hourly. Smallest step: record user+system CPU per
+      stage in `~/p/dotfiles/bin/atrium/atrium-refresh` so the cutover saving can be
+      measured instead of estimated.
+
 - [ ] **Cause of the 2026-10-15 orphan posting is unknown.** `words` held a posting
       for rowid 19395878, in neither `records` nor `words_docsize`, so every ranked
       query touching it raised "database disk image is malformed" and the context

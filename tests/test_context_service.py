@@ -12,9 +12,11 @@ import pytest
 from context_corpus import corpus as corpus  # noqa: PLC0414 -- explicit pytest fixture export
 from load_test_sql import load_test_sql
 
+from atrium.context.finish_margin_s import FINISH_MARGIN_S
 from atrium.context.read_dense_generation import read_dense_generation
 from atrium.context.retrieve_context import retrieve_context
 from atrium.serve.context_server import ContextServer
+from atrium.serve.deadline_reranker import DeadlineReranker
 from atrium.serve.dense_matrix_holder import DenseMatrixHolder
 from atrium.serve.request_context_service import request_context_service
 
@@ -125,3 +127,78 @@ def test_a_stale_matrix_is_reported_and_rebuilt(served):
     assert holder.matrix.generation == live
     reply = request_context_service(path, _request(index, project, state), timeout=10)
     assert "dense_matrix_stale_rebuilding" not in reply["warnings"]
+
+
+class _NeverFinishes:
+    """A reranker as slow as a loaded machine: it works until its deadline."""
+
+    def __init__(self):
+        self.deadlines = []
+
+    def score(self, query, texts, deadline):
+        self.deadlines.append(deadline)
+        while time.monotonic() <= deadline:
+            time.sleep(0.05)
+        raise TimeoutError("rerank deadline passed")
+
+
+class _Instant:
+    def __init__(self):
+        self.deadlines = []
+
+    def score(self, query, texts, deadline):
+        self.deadlines.append((deadline, time.monotonic()))
+        return [0.0 for _ in texts]
+
+
+def _serve_with(index, holder, reranker):
+    short = Path(tempfile.mkdtemp(prefix="atr", dir="/tmp"))
+    server = ContextServer(short / "context.sock", index, holder, FakeEmbedder(), reranker)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    return server, short
+
+
+def test_a_slow_rerank_stops_in_time_for_the_client_that_waits(served):
+    _, project, state, index, _, holder = served
+    reranker = _NeverFinishes()
+    server, short = _serve_with(index, holder, reranker)
+    request = {**_request(index, project, state), "timeout_s": 1.5}
+    started = time.monotonic()
+    try:
+        reply = request_context_service(short / "context.sock", request, timeout=1.5)
+        elapsed = time.monotonic() - started
+    finally:
+        server.shutdown()
+        server.server_close()
+        shutil.rmtree(short)
+    # Without the client's deadline the rerank would spend its whole 3 s budget
+    # and the client, waiting 1.5 s, would get nothing.
+    assert elapsed < 1.5
+    assert "rerank_unavailable_fused_order" in reply["warnings"]
+    assert reply["evidence"]
+    assert reranker.deadlines
+
+
+def test_a_request_without_a_deadline_keeps_the_whole_rerank_budget(served):
+    _, project, state, index, _, holder = served
+    reranker = _Instant()
+    server, short = _serve_with(index, holder, reranker)
+    try:
+        reply = request_context_service(
+            short / "context.sock", _request(index, project, state), timeout=10
+        )
+    finally:
+        server.shutdown()
+        server.server_close()
+        shutil.rmtree(short)
+    assert "rerank_unavailable_fused_order" not in reply["warnings"]
+    deadline, called = reranker.deadlines[0]
+    assert 2.5 < deadline - called <= 3.0
+
+
+def test_the_client_deadline_only_ever_shortens_the_rerank():
+    inner = _Instant()
+    wrapped = DeadlineReranker(inner, client_deadline=100.0)
+    wrapped.score("q", ["a"], deadline=50.0)
+    wrapped.score("q", ["a"], deadline=200.0)
+    assert [deadline for deadline, _ in inner.deadlines] == [50.0, 100.0 - FINISH_MARGIN_S]

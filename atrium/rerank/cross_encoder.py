@@ -19,7 +19,11 @@ _ONNX_FILE = "model_quantized.onnx"
 # 256 kept the measured gain and halved the time against 512 (1.8 s vs 4.0 s
 # median for 64 pairs on this Mac under load).
 _MAX_LEN = 256
-_BATCH_SIZE = 16
+# The deadline is checked between batches only, and a population is 16
+# candidates: at 16 one batch ran 6-7 s past a 3 s budget at load 100+ and the
+# client's 7 s wait gave up (2026-10-18). At 4 the overshoot is a quarter of
+# that for the same throughput (4.8 s vs 6.2 s for 16 pairs, same run).
+_BATCH_SIZE = 4
 
 
 class CrossEncoder:

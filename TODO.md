@@ -290,8 +290,18 @@
 
 ## Observability
 
-- [ ] **The prompt hook gets nothing under load, and the service keeps working for
-      clients that left (2026-10-18).** After the 19:06 restart (`09c354d`, `7758b81`),
+- [~] **The prompt hook gets nothing under load, and the service keeps working for
+      clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients
+      send `timeout_s`, and the service's `DeadlineReranker` ends every rerank at the
+      client's deadline less `FINISH_MARGIN_S` (0.5 s), the 3 s budget still the upper
+      bound (test `test_a_slow_rerank_stops_in_time_for_the_client_that_waits`, red
+      without the change). Live at load 13-19 after the restart: 2 of 4 CLI calls served
+      (4.8-4.9 s), 2 still `service_timeout`. What is left is the batch: the deadline is
+      checked between batches only, and one batch of 4 took ~4 s at that load (rerank
+      step 7,054 ms on a 7 s deadline). Measured at load ~13, 16 pairs: batch 1 total
+      2.1-2.3 s, max batch 0.18-0.25 s; batch 4 total 1.9-2.0 s, max 0.52 s. Batch 1
+      bounds the overshoot for ~10-15% more CPU on a rerank that completes. Smallest
+      step: measure batch 1 vs 4 at load above 50 before choosing. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
       28 of 29 context calls returned `service_timeout` at the client's 7 s, while the
       service still ran retrieval and the rerank to the end: `ContextRequestHandler`
       only notices the peer is gone when it writes the result. In-process at load ~23:

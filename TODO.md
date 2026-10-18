@@ -45,9 +45,13 @@
     (dotfiles) runs `scribe segments-inventory` and passes its output to `doctor`; Atrium
     does not run scribe itself. The `--state` location is decided (scribe TODO, owner
     2026-10-11: `~/.local/state/rocket-agents/conversations/`); what blocks the refresh
-    wiring is that nothing live writes segments yet. Scribe still owes redaction
-    replacement, `scribe erase`, `segments-receive`, the freeze-sentinel refusal and the
-    recovery drill, then dotfiles freeze support, before the first real seeding pass.
+    wiring is that nothing live writes segments yet. Scribe's side of stage 3 landed
+    2026-10-18: `scribe erase` (`9165eed`), `relativePath` as an array (`1136f5b`, fixtures
+    re-vendored here `f1bdcdd`), redaction replacement (`829abe0`), `segments-receive` and
+    `segments-seed-generation` (`3d4f2fb`), the freeze sentinel with exit 75 (`a3b8a34`) and
+    `scribe recovery-drill` (`7a33cdb`). Left before the first real seeding pass: the dotfiles
+    side (freeze checks in every trigger, `conversation-writers`, segment modes of
+    `sync-conversations` and the refresh), then the drill on a copy and this parity check.
   - Done 2026-10-16: `atrium --index <live> parity <test>` compares, read-only on both,
     records by id and text digest per provider (raw, notes, synthesis), the ranked probe
     of both FTS lanes on each side, and vector identities; exits 1 on any record

@@ -8,6 +8,7 @@ from atrium.forget.forgotten_ids import forgotten_ids
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.archive_conversations import archive_conversations
 from atrium.ingest.canonical_workspace import canonical_workspace
+from atrium.ingest.generation_sweep_providers import generation_sweep_providers
 from atrium.ingest.is_excluded_automation import is_excluded_automation
 from atrium.ingest.rows_sha256 import rows_sha256
 from atrium.ingest.to_records import to_records
@@ -97,6 +98,8 @@ def run_ingest(index: Path, archive: Path, *, sweep: bool = True) -> int:
                 unchanged += written == UNCHANGED
                 total += max(written, 0)
             if sweep:
+                for provider in generation_sweep_providers(connection, manifest):
+                    seen_by_provider.setdefault(provider, set())
                 for provider, seen in seen_by_provider.items():
                     removed += delete_absent_conversations(connection, provider, seen)
                     delete_absent_revisions(connection, provider, seen)

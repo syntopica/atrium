@@ -43,7 +43,11 @@
     JSON and warns `archive_generation_stale` or `archive_deliveries_pending`
     (`tests/test_archive_generation_and_parity.py`). Remaining at cutover: the refresh
     (dotfiles) runs `scribe segments-inventory` and passes its output to `doctor`; Atrium
-    does not run scribe itself, because the `--state` path is not fixed yet.
+    does not run scribe itself. The `--state` location is decided (scribe TODO, owner
+    2026-10-11: `~/.local/state/rocket-agents/conversations/`); what blocks the refresh
+    wiring is that nothing live writes segments yet. Scribe still owes redaction
+    replacement, `scribe erase`, `segments-receive`, the freeze-sentinel refusal and the
+    recovery drill, then dotfiles freeze support, before the first real seeding pass.
   - Done 2026-10-16: `atrium --index <live> parity <test>` compares, read-only on both,
     records by id and text digest per provider (raw, notes, synthesis), the ranked probe
     of both FTS lanes on each side, and vector identities; exits 1 on any record

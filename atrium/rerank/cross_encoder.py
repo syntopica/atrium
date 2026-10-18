@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 
 import numpy as np
 
+from atrium.rerank.cap_query_tokens import cap_query_tokens
 from atrium.rerank.reranker_repo import RERANKER_REPO
 
 if TYPE_CHECKING:
@@ -13,7 +14,8 @@ if TYPE_CHECKING:
     from tokenizers import Tokenizer
 
 _ONNX_FILE = "model_quantized.onnx"
-# Pairs are cut on the text side only, so the whole question always survives.
+# Pairs are cut on the text side only, so a question of up to half the length
+# survives whole; a longer one keeps its head (see cap_query_tokens).
 # 256 kept the measured gain and halved the time against 512 (1.8 s vs 4.0 s
 # median for 64 pairs on this Mac under load).
 _MAX_LEN = 256
@@ -41,6 +43,7 @@ class CrossEncoder:
         self._type_ids = False
         self._session: "onnxruntime.InferenceSession | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._tokenizer: "Tokenizer | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
+        self._query_tokenizer: "Tokenizer | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._load_lock = threading.Lock()
 
     def score(self, query: str, texts: list[str], deadline: float) -> list[float]:
@@ -61,7 +64,9 @@ class CrossEncoder:
 
     def _forward(self, query: str, texts: list[str]) -> list[float]:
         assert self._tokenizer is not None
+        assert self._query_tokenizer is not None
         assert self._session is not None
+        query = cap_query_tokens(self._query_tokenizer, query, self._max_len // 2)
         encodings = self._tokenizer.encode_batch([(query, text) for text in texts])
         input_ids = np.asarray([e.ids for e in encodings], dtype=np.int64)
         attention_mask = np.asarray([e.attention_mask for e in encodings], dtype=np.int64)
@@ -83,10 +88,17 @@ class CrossEncoder:
             from atrium.embed.cached_model_file import cached_model_file
 
             model_path = cached_model_file(self._repo, self._onnx_file, subfolder="onnx")
-            tokenizer = Tokenizer.from_file(cached_model_file(self._repo, "tokenizer.json"))
+            tokenizer_path = cached_model_file(self._repo, "tokenizer.json")
+            tokenizer = Tokenizer.from_file(tokenizer_path)
             tokenizer.enable_padding()
             tokenizer.enable_truncation(max_length=self._max_len, strategy="only_second")
             session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
             self._type_ids = any(one.name == "token_type_ids" for one in session.get_inputs())
             self._tokenizer = tokenizer
+            # Unpadded and untruncated: a pair-only truncation refuses a lone
+            # query, and the file's own padding would count pad tokens.
+            query_tokenizer = Tokenizer.from_file(tokenizer_path)
+            query_tokenizer.no_padding()
+            query_tokenizer.no_truncation()
+            self._query_tokenizer = query_tokenizer
             self._session = session

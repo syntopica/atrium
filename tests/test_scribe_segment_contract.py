@@ -1,7 +1,7 @@
 """Ingest a scribe pending slice and propagate a scribe erasure plan.
 
 The fixtures are verbatim copies of scribe's ``fixtures/archive-contract/v2/``
-(scribe ``293a740``): ``pending-slice.jsonl`` holds only the Claude Code
+(scribe ``1136f5b``): ``pending-slice.jsonl`` holds only the Claude Code
 conversation of ``export.jsonl``; ``erasure-plan.json`` is an applied plan that
 erases that same conversation; ``materialized-after-erasure.jsonl`` is the
 export scribe materializes once that plan is cut over, stamped with the plan's

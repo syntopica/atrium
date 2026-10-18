@@ -23,7 +23,12 @@ _MAX_LEN = 256
 # candidates: at 16 one batch ran 6-7 s past a 3 s budget at load 100+ and the
 # client's 7 s wait gave up (2026-10-18). At 4 the overshoot is a quarter of
 # that for the same throughput (4.8 s vs 6.2 s for 16 pairs, same run).
-_BATCH_SIZE = 4
+# At load 44-81 (2026-10-19) one batch of 4 still took 7.1-7.4 s, past the
+# whole 7 s wait on its own; one pair took 2.6 s at worst. One pair costs more
+# CPU for a rerank that completes (21 vs 16 CPU-s for 16 pairs under that load,
+# 2.1-2.3 vs 1.9-2.0 s wall at load 13, both inside the 3 s budget), but under
+# load the rerank never completes, and then the larger batch is the waste.
+_BATCH_SIZE = 1
 
 
 class CrossEncoder:

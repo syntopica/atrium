@@ -373,6 +373,18 @@
   the next time embed goes quiet the log will name the step, and that is the evidence this
   item has been missing.
 
+- [ ] **`atrium embed` progress lines carry no timestamps, so a slow pass cannot
+  be split into embedding time and waiting time.** On 2026-10-18 a pass over
+  1,932 records ran 16:50:12 -> 22:44:59 (~6 h, ~5 records/min) against ~40/min
+  for 279 records at 12:58 the same day. The same run's export took 1 h 51 min
+  (14:08 -> 15:59) and its import 41 min, and `pmset -g log` shows no sleep, so
+  machine-wide contention is the likely cause, but the log cannot prove it:
+  `embedded 256/1932` lines have no time. Smallest step: prefix each
+  `embedded N/M` line with a timestamp (and the batch's seconds), so the next
+  slow pass names whether one batch stalled or all ran slow. The CPU impact
+  itself is handled in dotfiles: `atrium-refresh` renices itself to 10 since
+  2026-10-19, because the SessionEnd hook started it at nice 0.
+
 > Filed 2026-08-31, from the memstore retirement. Every defect that session
 > found had been running silently for days, and none of them were subtle --
 > they were invisible because nothing reported the right number.

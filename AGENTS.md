@@ -73,7 +73,7 @@ These are settled by measurement, not preference. Re-measure before changing the
   (status counts, doctor and ingest batches, `LIMIT 1` probes) are carried in
   `.codeality-db-baseline.json`.
 
-<!-- tadu:rule v2 -->
+<!-- tadu:rule v3 -->
 
 ## Continuous TODO, Work Log, and History Coverage
 
@@ -110,7 +110,12 @@ parsing unchanged conversations more than once.
   - Resolution: Why it no longer applies, or what replaced it.
 ```
 
-Check the files with `tadu doctor .` when tadu is installed. Format: tadu spec
-v1, https://github.com/syntopica/tadu/blob/main/spec/todo-format-v1.md. The
+Close an item with `tadu close --match "<text>" --evidence "<proof>" --write`
+(`--resolution` for `[-]`, `--result` for the Result line); it moves the item
+and writes the entry in this shape. Run `tadu doctor .` after changing these
+files and before committing. If `tadu` is not on PATH, install it with
+`uv tool install git+https://github.com/syntopica/tadu`, or report that it is
+missing. Format: tadu spec v1,
+https://github.com/syntopica/tadu/blob/main/spec/todo-format-v1.md. The
 tadu-create and tadu-work skills automate these workflows and are optional.
 <!-- /tadu:rule -->

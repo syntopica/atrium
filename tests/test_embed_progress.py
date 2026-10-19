@@ -8,6 +8,8 @@ occurrence legible, so their presence and their order around the load is the
 thing under test.
 """
 
+import re
+
 import numpy as np
 
 from atrium.cli import main
@@ -77,7 +79,10 @@ def test_every_blocking_step_is_announced_in_order(tmp_path, monkeypatch, capsys
     # The stated batch size is the one the loop uses, or the line misdescribes
     # the wait it exists to explain.
     assert any("embedder loaded; embedding in batches of 256" in line for line in lines)
-    assert any("embedded 1/1" in line for line in lines[loading:])
+    progress = next(line for line in lines[loading:] if "embedded 1/1" in line)
+    # A progress line names when it landed and how long its batch took, or a
+    # slow pass cannot be split into one stalled batch and a slow machine.
+    assert re.search(r"embedded 1/1 at \d{2}:\d{2}:\d{2} \(batch of 1 in \d+\.\ds\)", progress)
 
 
 def test_an_uncached_model_says_it_is_downloading(tmp_path, monkeypatch, capsys):

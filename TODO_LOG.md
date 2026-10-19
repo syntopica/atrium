@@ -258,6 +258,8 @@
   0.25). That gap is for synthesis coverage, not 358k extra vectors. Not measured: fusion
   with the lexical lanes. Vectors kept in
   `~/p/wiki/atrium/evaluations/acceptance-2026-10-11/`.
+  - Evidence: the R@10 / MRR scores above from `raw_dense.py score` on the 85-question
+    acceptance set, with the vectors in `~/p/wiki/atrium/evaluations/acceptance-2026-10-11/`.
 
 - [x] 2026-10-11 — **Scribe archives harness-only `<tag>` text as role `system`.** Scribe
   `72c0e7d`: an event whose whole text is harness tags (system-reminder, command-*,

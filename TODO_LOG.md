@@ -8,6 +8,20 @@
 
 ### 2026-10
 
+- [x] 2026-10-19 — **Observability:** **`atrium embed` progress lines carry no timestamps, so a slow pass cannot
+  be split into embedding time and waiting time.** On 2026-10-18 a pass over
+  1,932 records ran 16:50:12 -> 22:44:59 (~6 h, ~5 records/min) against ~40/min
+  for 279 records at 12:58 the same day. The same run's export took 1 h 51 min
+  (14:08 -> 15:59) and its import 41 min, and `pmset -g log` shows no sleep, so
+  machine-wide contention is the likely cause, but the log cannot prove it:
+  `embedded 256/1932` lines have no time. Smallest step: prefix each
+  `embedded N/M` line with a timestamp (and the batch's seconds), so the next
+  slow pass names whether one batch stalled or all ran slow. The CPU impact
+  itself is handled in dotfiles: `atrium-refresh` renices itself to 10 since
+  2026-10-19, because the SessionEnd hook started it at nice 0.
+  - Result: Each 'embedded N/M' line now ends 'at HH:MM:SS (batch of K in X.Xs)'.
+  - Evidence: tests/test_embed_progress.py asserts the format; uv run codeality-py gate passed (669 tests)
+
 - [x] 2026-10-17 — **Synthesis:** Stop spending synthesis calls on Codex machine jobs, Atrium's own stages and the remote-control notice.
   - Result: `is_machine_job_episode` now ignores harness injections (`# AGENTS.md instructions`, a bare `<environment_context>` block) instead of requiring every user message to open a job, so Codex jobs on the skip list are skipped; Atrium's synthesis and four curation system prompts joined `MACHINE_JOB_PREFIXES` (which ingest also uses, so their user records stay out of the index); a lone `/remote-control is active ... session_<id>` notice is trivial, matched in full. Codex review caught two false positives in the first cut (text after the environment block, a person's message starting with the notice), both fixed with tests. Not covered: the ad-hoc LLM-judge prompts of evaluation scripts, which vary per run.
   - Evidence: `uv run pytest -q` 663 passed, ruff and mypy clean; pattern matched 3 real notices from the archive.

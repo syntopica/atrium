@@ -13,6 +13,7 @@ def run_embed(index: Path) -> int:
     from the missing ones.
     """
     import json
+    import time
     from functools import partial
 
     from atrium.embed.embedder import Embedder
@@ -48,6 +49,11 @@ def run_embed(index: Path) -> int:
     processed = 0
     try:
         for start in range(0, len(pending), batch_size):
+            # Each progress line carries its clock time and the batch's own
+            # duration: on 2026-10-18 a 1,932-record pass took six hours, and
+            # untimed lines could not say whether one batch stalled or every
+            # batch ran slow under a loaded machine.
+            began = time.monotonic()
             batch = pending[start : start + batch_size]
             matrix = embedder.embed([text for _, _, text in batch])
             rows = [(rid, sha) for rid, sha, _ in batch]
@@ -55,7 +61,11 @@ def run_embed(index: Path) -> int:
                 connection, partial(write_vectors, connection, rows, matrix)
             )
             processed += len(batch)
-            print(f"  embedded {written}/{len(pending)}", flush=True)
+            print(
+                f"  embedded {written}/{len(pending)} at {time.strftime('%H:%M:%S')}"
+                f" (batch of {len(batch)} in {time.monotonic() - began:.1f}s)",
+                flush=True,
+            )
     finally:
         connection.close()
     if written < processed:

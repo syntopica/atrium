@@ -13,6 +13,7 @@ from atrium.adapters.served_index import INDEX
 from atrium.context.context_from_index import context_from_index
 from atrium.context.lazy_embedder import LazyEmbedder
 from atrium.context.require_workspace import require_workspace
+from atrium.context.sanitize_context_response import sanitize_context_response
 from atrium.context.stamp_serving import stamp_serving
 from atrium.context.validate_request import validate_request
 from atrium.retrieve.lane import Lane
@@ -78,13 +79,13 @@ def atrium_context(
         timed_out = service_timeout_response(query, project_path, limit, max_chars, lane, state)
         answered = stamp_serving(timed_out, "service_timeout", started)
         append_query_event(state, answered, "mcp.context")
-        return answered
+        return sanitize_context_response(answered)
     except (OSError, ValueError):
         served = None
     if served is not None and "error" not in served:
         answered = stamp_serving(served, "service", started)
         append_query_event(state, answered, "mcp.context")
-        return answered
+        return sanitize_context_response(answered)
     try:
         local = context_from_index(
             INDEX,
@@ -101,4 +102,4 @@ def atrium_context(
         raise ToolError(str(error)) from error
     answered = stamp_serving(local, "in_process", started)
     append_query_event(state, answered, "mcp.context")
-    return answered
+    return sanitize_context_response(answered)

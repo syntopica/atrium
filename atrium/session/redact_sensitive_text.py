@@ -3,6 +3,7 @@
 import re
 
 from atrium.session.redact_assigned_secrets import redact_assigned_secrets
+from atrium.session.redact_markdown_table_secrets import redact_markdown_table_secrets
 from atrium.session.redact_private_key_blocks import redact_private_key_blocks
 
 _TOKEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
@@ -26,6 +27,7 @@ def redact_sensitive_text(text: str) -> str:
     and index a credential verbatim. Same patterns, same order, same markers.
     """
     text = redact_private_key_blocks(text)
+    text = redact_markdown_table_secrets(text)
     text = redact_assigned_secrets(text)
     for pattern, replacement in _TOKEN_PATTERNS:
         text = pattern.sub(replacement, text)

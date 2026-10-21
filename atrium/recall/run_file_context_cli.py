@@ -8,6 +8,7 @@ from atrium.recall.file_episodes import file_episodes
 from atrium.recall.file_phrase import file_phrase
 from atrium.recall.project_workspace import project_workspace
 from atrium.recall.repository_root import repository_root
+from atrium.session.redact_sensitive_text import redact_sensitive_text
 from atrium.store.open_store import open_store
 
 
@@ -38,7 +39,7 @@ def run_file_context_cli(index: Path, path: Path, limit: int) -> int:
                     "record_id": hit.record_id,
                     "conversation_id": hit.conversation_id,
                     "authored_at": hit.authored_at,
-                    "text": hit.text,
+                    "text": redact_sensitive_text(hit.text),
                     "superseded_by": marks[hit.record_id].superseded_by
                     if hit.record_id in marks
                     else None,

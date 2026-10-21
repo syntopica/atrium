@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 
 from atrium.context.context_from_index import context_from_index
+from atrium.context.sanitize_context_response import sanitize_context_response
 from atrium.context.stamp_serving import stamp_serving
 from atrium.rerank.cross_encoder import CrossEncoder
 from atrium.serve.context_socket_path import context_socket_path
@@ -66,6 +67,7 @@ def run_context_cli(  # noqa: PLR0913, PLR0917 -- parser wiring
             reranker=CrossEncoder(),
         )
         served_by = "in_process"
+    result = sanitize_context_response(result)
     stamp_serving(result, served_by, started)
     append_query_event(state, result, "cli.context")
     print(json.dumps(result, ensure_ascii=False, allow_nan=False))

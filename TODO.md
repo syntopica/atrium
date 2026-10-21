@@ -290,6 +290,17 @@
 
 ## Observability
 
+- [!] **Dependency audit blocks the Python gate (2026-10-21).**
+  `uv run pip-audit` reports certifi 2026.7.22, PYSEC-2026-4320, fixed in
+  2026.10.19. This predates the Codex plugin changes. Smallest next step:
+  update the locked certifi dependency and rerun the Python gate.
+- [!] **Database baseline blocks the SQL gate (2026-10-21).**
+  `pnpm dlx @syntopica/db-quality@0.6.0 gate` reports BDB406 for
+  `atrium/sql/store/read_archive_revision_providers.sql`: a covering-index scan
+  over 75,310 conversation revisions. No SQL changed in the Codex plugin work.
+  Smallest next step: review whether this intentional provider inventory scan
+  belongs in the measured baseline, then rerun the SQL gate.
+
 - [~] **The prompt hook gets nothing under load, and the service keeps working for
       clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients
       send `timeout_s`, and the service's `DeadlineReranker` ends every rerank at the

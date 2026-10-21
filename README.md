@@ -174,9 +174,56 @@ skipped).
 
 ### Codex
 
+Install the Codex package from a checkout with the Atrium CLI, Python 3.11 or
+later, Bash and GNU `timeout` on `PATH`:
+
+```sh
+codex plugin marketplace add /path/to/atrium --json
+codex plugin add atrium-context@atrium --json
+```
+
+Restart Codex and review the six packaged hooks with `/hooks`. The package is
+`plugins/atrium-codex`; `.agents/plugins/marketplace.json` exposes it to Codex,
+while `.claude-plugin/marketplace.json` continues to expose the Claude Code mod.
+Codex copies the package into its plugin cache. Re-run `codex plugin add
+atrium-context@atrium --json` after changing the package to refresh that copy.
+
+The package recalls the project on session start, retrieves evidence per prompt,
+points subagents at memory, and reports observed Brain use at the end of a turn.
+It also adds up to three historical episodes after the first supported access
+to each file in a session. File history recognizes explicit `Read`, `Edit`,
+`Write`, `apply_patch`, and simple shell reads; compound shell commands and
+computed paths are not traced. Each lookup has a three-second deadline and a
+one-second termination grace period for its process group, with
+at most two files per tool call. Failed lookups remain retryable.
+
+The CLI must already resolve the intended private instance. `SYNTOPICA_DATA`
+can select it explicitly. To recognize notes read from the shell, the usage
+hook also accepts the existing `mcp_servers.atrium.env.SYNTOPICA_DATA` setting
+in Codex's user configuration. Keep the existing Atrium MCP registration if
+you use its tools; the package adds no second server.
+
+Remove the five legacy Atrium registrations below from `~/.codex/hooks.json`
+after backing up that file, or keep the legacy setup and leave the plugin
+disabled. Running both retrieves and counts twice. Other hooks must stay.
+Legacy script paths remain compatible wrappers around the packaged scripts,
+including the prompt renderer used by Claude Code's shell hook.
+
+Codex does not expose the Claude mod's `ui.render` interface in the documented
+hook API. The package uses hook progress labels and warning messages for failures;
+it cannot reproduce the clickable green footer or details band. A successful
+prompt retrieval adds context without displaying a warning. Retrieved records
+marked `role: source` are excluded from prompt injection.
+
+Verify the relocated package and legacy entry points with:
+
+```sh
+uv run pytest tests/test_codex_plugin.py tests/test_codex_brain_use_hook.py tests/test_prompt_context_hook.py -q
+```
+
 Codex reads the same hook protocol as Claude Code (`hookSpecificOutput.additionalContext`,
 `systemMessage`, `cwd` on stdin; see the [Codex hooks reference](https://learn.chatgpt.com/docs/hooks)),
-so the recall and per-prompt hooks are the same scripts. Codex has no footer,
+so the recall and per-prompt hooks share their implementation. Codex has no plugin footer,
 so the brain account is one line at the end of a turn, from
 `hooks/codex/brain-use.sh`, and only when the turn used the brain; Codex draws
 every `systemMessage` as a warning, so "no note cited" is not said there. In

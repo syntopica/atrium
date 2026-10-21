@@ -1,0 +1,19 @@
+{
+  "name": "atrium-context",
+  "version": "0.1.0",
+  "description": "Project memory for Codex: recall, prompt context, file history and observed Brain use.",
+  "author": { "name": "Syntopica" },
+  "repository": "https://github.com/syntopica/atrium",
+  "license": "MIT",
+  "extensions": {
+    "com.openai": {
+      "hooks": "./hooks/hooks.json",
+      "interface": {
+        "displayName": "Atrium Context",
+        "shortDescription": "Recall project decisions and track cited notes",
+        "developerName": "Syntopica",
+        "category": "Productivity"
+      }
+    }
+  }
+}

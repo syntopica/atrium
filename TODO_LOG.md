@@ -8,6 +8,13 @@
 
 ### 2026-10
 
+- [x] 2026-10-21 — **Observability:** **Installable Codex memory plugin.** Package recall, per-prompt retrieval,
+  first-file history and observed Brain usage; preserve legacy hook entry points
+  and migrate the local registrations without duplicate retrieval. Verify the
+  relocated package and a fresh Codex session before closing.
+  - Result: Added the Codex marketplace and self-contained hooks package, shared legacy entry points, bounded per-file history and source-role exclusion. Installed and trusted the local package; backed up hooks.json and removed only the five duplicate Atrium registrations. Documented the UI limits and the existing dependency and SQL gate blockers.
+  - Evidence: uv run pytest -q: 678 passed, 2 skipped; relocated and legacy hook suite: 25 passed; fresh codex exec confirmed recall and prompt context; /hooks showed all six packaged hooks active; installed package matched source byte for byte.
+
 - [x] 2026-10-19 — **Observability:** **`atrium embed` progress lines carry no timestamps, so a slow pass cannot
   be split into embedding time and waiting time.** On 2026-10-18 a pass over
   1,932 records ran 16:50:12 -> 22:44:59 (~6 h, ~5 records/min) against ~40/min

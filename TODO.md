@@ -392,6 +392,14 @@
 
 ## Integrations
 
+- [ ] Add Codex plugin installation and cache-update verification to the owning
+  machine-convergence workflow. On 2026-10-21 the Mac mini had Atrium checkout
+  `e582eb6` and its MCP, but no plugin or legacy Atrium hooks. Installed and
+  verified six enabled, trusted hooks in a fresh Codex process; ongoing update
+  convergence remains unverified. Next: inspect the workflow owner's current
+  configuration and add an idempotent package refresh with changed-hook review.
+  Evidence: `docs/evaluations/mac-mini-codex-check-2026-10-21.md`.
+
 - [!] Windsurf and Trae remain unindexable at layer 1, and not for an exporter
   bug: agents' `TODO_LOG.md` (2026-08-31) found Trae's dialogue store encrypted at
   rest and Windsurf's Cascade history server-side only; the bogus Trae records

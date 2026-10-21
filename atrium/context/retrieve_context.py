@@ -19,7 +19,7 @@ from atrium.context.ordered_candidates import ordered_candidates
 from atrium.context.read_retirements import read_retirements
 from atrium.context.rerank_populations import rerank_populations
 from atrium.context.retired_mentions import retired_mentions
-from atrium.context.select_evidence import select_evidence
+from atrium.context.select_evidence import select_evidence as select
 from atrium.context.timed import timed
 from atrium.context.validate_request import validate_request
 from atrium.context.vector_presence import vector_presence
@@ -157,7 +157,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         candidates = ordered_candidates(history, notes, links, reranked)
         retirements = read_retirements(connection)
         mentions = retired_mentions(candidates, retirements)
-        select_evidence(current_first(connection, candidates, mentions, query), response)
+        select(current_first(connection, candidates, mentions, query), response, connection)
         annotate_superseded(connection, response)
         annotate_retired(
             response, mentions, retirements, lambda: forgotten_by_term(forget_ledger_file())

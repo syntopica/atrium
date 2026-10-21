@@ -5,6 +5,7 @@ from collections.abc import Iterable
 
 from atrium.record import Record
 from atrium.sql.load_sql import load_sql
+from atrium.store.write_record_hosts import write_record_hosts
 
 # A conversation reduced to no records writes zero rows, exactly as an
 # unchanged one does. Callers count the two differently -- one is work not done,
@@ -18,8 +19,9 @@ def write_conversation(
 ) -> int:
     """Replace every record of ``conversation_id`` with ``records``.
 
-    Returns the number of records written, or ``UNCHANGED`` when the stored rows
-    already equal ``records``.
+    Returns the number of text records written, or ``UNCHANGED`` when those rows
+    already match. Observing-host metadata still reconciles independently; a
+    host-only change never invalidates embeddings of unchanged text.
 
     Replace rather than upsert, because the archive is canonical and this index
     is not allowed to disagree with it. An UPSERT-only path leaves superseded
@@ -40,6 +42,7 @@ def write_conversation(
     re-embed again. Measured on this index: 19,198 vectors, hours of CPU, on
     every hourly refresh.
     """
+    records = list(records)
     rows = [
         (
             record.record_id,
@@ -60,8 +63,10 @@ def write_conversation(
         load_sql("store/stored_conversation"), (conversation_id,)
     ).fetchall()
     if stored == sorted(rows):
+        write_record_hosts(connection, records)
         return UNCHANGED
     connection.execute(load_sql("store/delete_conversation"), (conversation_id,))
     if rows:
         connection.executemany(load_sql("store/insert_record"), rows)
+        write_record_hosts(connection, records)
     return len(rows)

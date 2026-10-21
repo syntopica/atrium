@@ -1,14 +1,18 @@
 """Deduplicate and budget evidence shared by all retrieval passes."""
 
+import sqlite3
 import unicodedata
 from typing import Any
 
+from atrium.context.annotate_hosts import annotate_hosts
 from atrium.context.render_evidence import render_evidence
 from atrium.retrieve.hit import Hit
 
 
 def select_evidence(
-    candidates: list[tuple[Hit, str, str | None]], response: dict[str, Any]
+    candidates: list[tuple[Hit, str, str | None]],
+    response: dict[str, Any],
+    connection: sqlite3.Connection | None = None,
 ) -> None:
     """Allocate a fair text share while respecting the total evidence count."""
     unique = []
@@ -35,6 +39,8 @@ def select_evidence(
         response["evidence"].append(item)
         remaining -= len(item["text"])
     response["text_chars"] = response["max_chars"] - remaining
+    if connection is not None:
+        annotate_hosts(connection, response["evidence"])
     response["truncated"] = len(selected) < len(unique) or any(
         item["truncated"] for item in response["evidence"]
     )

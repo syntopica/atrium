@@ -47,7 +47,8 @@ def atrium_search(
     try:
         embedder = resident_embedder() if lane in ("auto", "dense") else None
         return rendered_hits(
-            search(connection, query, limit, lane, embedder=embedder, workspace=workspace)
+            search(connection, query, limit, lane, embedder=embedder, workspace=workspace),
+            connection=connection,
         )
     finally:
         connection.close()

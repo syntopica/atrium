@@ -3,6 +3,7 @@
 from pathlib import Path
 
 from atrium.store.open_store import open_store
+from atrium.store.read_record_hosts import read_record_hosts
 
 
 def run_search(index: Path, query: str, limit: int, lane: str, project: Path | None = None) -> int:
@@ -19,6 +20,7 @@ def run_search(index: Path, query: str, limit: int, lane: str, project: Path | N
     connection = open_store(index, read_only=True)
     exhausted: set[str] = set()
     hits = search(connection, query, limit, lane, workspace=workspace, exhausted=exhausted)
+    hosts = read_record_hosts(connection, (hit.record_id for hit in hits))
     connection.close()
     if exhausted:
         # "No matches" and "ran out of time" are the same empty list, and only
@@ -36,4 +38,6 @@ def run_search(index: Path, query: str, limit: int, lane: str, project: Path | N
         )
         print(f"      {hit.text[:200].strip()}")
         print(f"      source: {hit.source_sha256[:12]} conversation: {hit.conversation_id[:12]}")
+        if hit.record_id in hosts:
+            print(f"      observed hosts: {hosts[hit.record_id]!r}")
     return 0

@@ -58,6 +58,12 @@ These are settled by measurement, not preference. Re-measure before changing the
   FTS returned nine `wall...` false positives for `WAL`, with the first exact hit ranked
   seventh.
 
+## Sensitive retrieval diagnostics
+
+- Never print raw retrieval evidence while investigating credential exposure. Inspect metadata and redacted summaries only; use synthetic sentinel values for reproduction and regression tests.
+- Treat output redaction as a separate boundary from archive redaction. Review MCP text content, structured content, CLI serialization and injected context; Markdown tables and curated notes can contain secrets even when archive ingestion is sanitized.
+- Record the affected source path and field names without copying credential values. Preserve canonical evidence; source edits and credential rotation require separate authorization.
+
 ## Conventions
 
 - Python, snake_case, ruff-formatted, double quotes. Tests are `tests/test_*.py`.

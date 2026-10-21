@@ -390,6 +390,8 @@
 
 ## Measurement
 
+- [!] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence.
+
 ## Integrations
 
 - [ ] Add Codex plugin installation and cache-update verification to the owning

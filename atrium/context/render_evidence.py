@@ -14,7 +14,7 @@ def render_evidence(
 ) -> dict[str, Any]:
     """Keep indexed provenance separate from present-day verification."""
     result = render_hit(hit)
-    text, start, end = matched_excerpt(hit.text, query, budget)
+    text, start, end = matched_excerpt(result["text"], query, budget)
     date_status = "unknown"
     if hit.authored_at:
         try:
@@ -30,7 +30,8 @@ def render_evidence(
             "revision_kind": "indexed_note_revision"
             if hit.role == "note"
             else "indexed_source_revision",
-            "truncated": start != 0 or end != len(hit.text),
+            "truncated": start != 0 or end != len(result["text"]),
+            "excerpt_basis": "redacted_text",
             "excerpt_start": start,
             "excerpt_end": end,
             "via": via,

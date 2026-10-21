@@ -21,13 +21,16 @@ def rerank_populations(
     """Return the reordered history and notes, and the rerank step to report.
 
     Each population is reordered within itself, so neither crowds the other
-    out of the interleaving that follows.
+    out of the interleaving that follows. If either rerank fails, both
+    populations retain their original fused order.
     """
     history, notes = populations
     started = time.monotonic()
     history, history_ok = rerank_hits(reranker, query, history, budget_s)
     remaining = budget_s - (time.monotonic() - started)
     notes, notes_ok = rerank_hits(reranker, query, notes, remaining)
+    if not history_ok or not notes_ok:
+        history, notes = populations
     step = {
         "pass": "rerank",
         "candidates": len(history) + len(notes),

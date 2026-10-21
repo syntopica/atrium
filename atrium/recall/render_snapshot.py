@@ -1,6 +1,7 @@
 """Render recalled episodes into the block a session start injects."""
 
 from atrium.retrieve.hit import Hit
+from atrium.session.redact_sensitive_text import redact_sensitive_text
 
 # Roughly 900 tokens. The budget is the point of the whole mechanism: an
 # injection large enough to be noticed is large enough to crowd out the work,
@@ -22,7 +23,7 @@ def render_snapshot(project: str, hits: list[Hit]) -> str:
     used = 0
     for hit in hits:
         stamp = (hit.authored_at or "")[:10]
-        title = hit.text.splitlines()[0].strip()
+        title = redact_sensitive_text(hit.text).splitlines()[0].strip()
         line = f"- {stamp} {title}"
         if used + len(line) > _BUDGET_CHARACTERS:
             break

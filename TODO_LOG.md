@@ -8,6 +8,24 @@
 
 ### 2026-10
 
+- [x] 2026-10-21 — **Retrieval output hardening:** Redact labeled table credentials before ingestion chunking and output excerpting.
+  - Result: Added key/value and header-column table redaction, applied full-text sanitization to shared hits, context/MCP/CLI and injected recall, and withheld legacy truncated resident excerpts without pre-excerpt sanitization provenance. Excerpt offsets explicitly refer to redacted text. Canonical inputs and hashes are preserved; existing derived records, credential exposure remediation and runtime reload remain open.
+  - Evidence: Seven boundary regressions reproduced before the fix. The focused security suite passed 70 tests, independent parent review and a further combined 38-test run passed, and `uv run codeality-py gate --json` passed every required stage. `pnpm dlx @syntopica/db-quality@0.6.0 gate` still reports the pre-existing BDB406 provider-revision scan. No real secret, index, archive or service was changed.
+
+- [x] 2026-10-21 — **Test reliability:** Separate CPU-budget and wall-cap behavior from host scheduling.
+  - Result: Replaced one millisecond-sleep assertion with isolated module-local clocks covering waiting within the wall cap, CPU exhaustion and wall-cap exhaustion. Runtime budget code is unchanged.
+  - Evidence: The previous test failed in two full gates and the lexical module on the saturated host. `uv run pytest tests/test_lexical_lanes.py tests/test_rerank_populations.py tests/test_rerank_hits.py -q` passed 31 tests; the subsequent complete Python gate passed. Independent review returned no findings.
+
+- [x] 2026-10-21 — **Measurement:** Restore both fused populations when either rerank fails.
+  `rerank_populations` can keep successfully reranked history when notes time out,
+  but marks the combined step `applied=false`; `ordered_candidates` then
+  interleaves those lists and reports `rerank_unavailable_fused_order`. The
+  benchmark must not interpret that warning as equivalence to no reranking.
+  Smallest next step: add a regression where the second population times out
+  and choose whether to restore both fused lists or expose partial application.
+  - Result: An unavailable history or notes rerank now returns both original fused lists, preserving original scores and lanes consistently with applied=false. Fully successful reranking remains unchanged. No resident service reload, index mutation or archive change was performed.
+  - Evidence: uv run pytest tests/test_rerank_populations.py tests/test_rerank_hits.py -q passed 10 tests after two partial-failure regressions failed before the fix. The wider context subset passed 40 tests; uv run codeality-py gate --json passed all required stages after replacing an unrelated scheduling-dependent test with deterministic CPU/wall clock cases. Independent review returned no findings. The SQL gate retains its recorded BDB406 finding.
+
 - [x] 2026-10-21 — **Provenance:** Preserve canonical observing-host labels in structured retrieval.
   - Result: Added a forward-only provenance side table, independent metadata reconciliation that preserves vectors, and shared annotation for context/search/recall. Unknown legacy hosts remain absent. Updated the vulnerable certifi leaf to 2026.10.19. Live index migration and resident reload were not performed.
   - Evidence: `uv run codeality-py gate --json` passed every required stage, including coverage; host/dense-matrix regressions passed 17 tests; the database gate passed against a fresh temporary index using Homebrew SQLite; `uv lock --check` passed.

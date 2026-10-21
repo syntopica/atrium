@@ -1,7 +1,9 @@
 """The two lexical lanes answer different questions and must not be merged."""
 
 import time
+from types import SimpleNamespace
 
+import pytest
 from load_test_sql import load_test_sql
 
 from atrium.record import Record
@@ -249,24 +251,34 @@ def test_an_exhausted_budget_keeps_what_it_read_and_says_so(tmp_path):
     assert connection.execute(load_test_sql("count_records")).fetchone() == (400,)
 
 
-def test_waiting_for_the_cpu_does_not_spend_the_budget(tmp_path):
-    """The budget was wall-clock, so on a saturated machine a query spent it
-    waiting for a core and returned nothing: on 2026-10-05, at load 68, "despido
-    favish" came back empty although it finds eight blocks in 2 s otherwise.
-    Waiting is not work; only a read past several budgets of wall time stops."""
+@pytest.mark.parametrize(
+    ("cpu_step", "wall_step", "should_exhaust"),
+    [(0.0, 0.001, False), (0.002, 0.0, True), (0.0, 0.004, True)],
+    ids=["waiting-within-wall-cap", "cpu-budget", "wall-cap"],
+)
+def test_waiting_for_the_cpu_does_not_spend_the_budget(
+    tmp_path, monkeypatch, cpu_step, wall_step, should_exhaust
+):
+    """Waiting consumes only the wall cap, independently of host scheduling."""
     from atrium.retrieve.ranked_hits import ranked_hits
 
     connection = _store(tmp_path, [_record(f"r-{number}", "a stop hook") for number in range(20)])
     statement = load_test_sql("lexical_lanes/rank_words")
     exhausted: set[str] = set()
+    clock = {"cpu": 0.0, "wall": 0.0}
+    monkeypatch.setattr(
+        "atrium.retrieve.ranked_hits.time",
+        SimpleNamespace(thread_time=lambda: clock["cpu"], monotonic=lambda: clock["wall"]),
+    )
 
     def accept(hit):
-        time.sleep(0.001)
+        clock["cpu"] += cpu_step
+        clock["wall"] += wall_step
         return True
 
     hits = ranked_hits(connection, statement, ('"hook"',), 20, 10, accept, exhausted)
-    assert exhausted == set()
-    assert len(hits) == 20
+    assert exhausted == ({"lexical_budget_exhausted"} if should_exhaust else set())
+    assert 0 < len(hits) < 20 if should_exhaust else len(hits) == 20
 
 
 def test_a_broken_index_is_not_reported_as_a_spent_budget(tmp_path):

@@ -2,6 +2,7 @@
 
 from pathlib import Path
 
+from atrium.session.redact_sensitive_text import redact_sensitive_text
 from atrium.store.open_store import open_store
 from atrium.store.read_record_hosts import read_record_hosts
 
@@ -36,7 +37,7 @@ def run_search(index: Path, query: str, limit: int, lane: str, project: Path | N
             f"\n  [{position}] {hit.provider} {stamp}  "
             f"score={hit.score:.3f} lane={hit.lane}{origin}"
         )
-        print(f"      {hit.text[:200].strip()}")
+        print(f"      {redact_sensitive_text(hit.text)[:200].strip()}")
         print(f"      source: {hit.source_sha256[:12]} conversation: {hit.conversation_id[:12]}")
         if hit.record_id in hosts:
             print(f"      observed hosts: {hosts[hit.record_id]!r}")

@@ -8,6 +8,7 @@ from atrium.ingest.record_identity import record_identity
 from atrium.ingest.split_on_headings import split_on_headings
 from atrium.ingest.split_to_size import split_to_size
 from atrium.record import Record
+from atrium.session.redact_sensitive_text import redact_sensitive_text
 
 
 def to_note_records(
@@ -27,7 +28,7 @@ def to_note_records(
     embedded, never fused into semantic answers, and never injected at session
     start. It remains word- and substring-searchable when the user asks.
     """
-    text = note["text"]
+    text = redact_sensitive_text(note["text"])
     title = first_heading(text) or note["path"]
     chunks = [
         piece

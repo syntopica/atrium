@@ -40,7 +40,8 @@ convention = "google"
 testpaths = ["tests"]
 
 [tool.deptry]
-known_first_party = ["atrium"]
+# The cached Codex package runs these sibling modules as standalone hooks.
+known_first_party = ["atrium", "brain_use", "file_history", "instance_data", "touched_paths"]
 
 [tool.deptry.per_rule_ignores]
 DEP002 = []

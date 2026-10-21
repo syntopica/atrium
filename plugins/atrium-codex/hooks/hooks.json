@@ -1,0 +1,35 @@
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{
+      "type": "command",
+      "command": "bash \"${PLUGIN_ROOT}/hooks/session-start-recall.sh\"",
+      "timeout": 25,
+      "statusMessage": "Atrium: recalling project history"
+    }] }],
+    "UserPromptSubmit": [{ "hooks": [{
+      "type": "command",
+      "command": "python3 \"${PLUGIN_ROOT}/hooks/user_prompt_context.py\"",
+      "timeout": 15,
+      "statusMessage": "Atrium: retrieving context"
+    }] }],
+    "SubagentStart": [{ "hooks": [{
+      "type": "command",
+      "command": "sh \"${PLUGIN_ROOT}/hooks/subagent-start.sh\"",
+      "timeout": 10
+    }] }],
+    "PostToolUse": [{ "hooks": [{
+      "type": "command",
+      "command": "python3 \"${PLUGIN_ROOT}/hooks/brain_use.py\"",
+      "timeout": 10
+    }, {
+      "type": "command",
+      "command": "python3 \"${PLUGIN_ROOT}/hooks/file_context.py\"",
+      "timeout": 10
+    }] }],
+    "Stop": [{ "hooks": [{
+      "type": "command",
+      "command": "python3 \"${PLUGIN_ROOT}/hooks/brain_use.py\"",
+      "timeout": 10
+    }] }]
+  }
+}

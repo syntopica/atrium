@@ -32,3 +32,5 @@ class Record:
     workspace: str | None
     title: str | None
     event_index: int
+    # Machines that observed the canonical conversation, never inferred origin.
+    hosts: tuple[str, ...] | None = None

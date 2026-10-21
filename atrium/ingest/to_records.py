@@ -6,6 +6,7 @@ from typing import Any
 
 from atrium.ingest.admission_tally import AdmissionTally
 from atrium.ingest.canonical_workspace import canonical_workspace
+from atrium.ingest.conversation_hosts import conversation_hosts
 from atrium.ingest.is_machine_prompt import is_machine_prompt
 from atrium.ingest.record_identity import record_identity
 from atrium.ingest.tool_round import ToolRound
@@ -61,6 +62,7 @@ def to_records(
         conversation.get("workspace"), aliases=aliases, started_at=conversation.get("startedAt")
     )
     title = conversation.get("title")
+    hosts = conversation_hosts(conversation)
     tool_round = ToolRound()
     # Counting into a throwaway tally when the caller passed none keeps one code
     # path for every rule; nothing reads it.
@@ -105,4 +107,5 @@ def to_records(
             workspace=workspace,
             title=title,
             event_index=index,
+            hosts=hosts,
         )

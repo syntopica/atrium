@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-21 — **Provenance:** Preserve canonical observing-host labels in structured retrieval.
+  - Result: Added a forward-only provenance side table, independent metadata reconciliation that preserves vectors, and shared annotation for context/search/recall. Unknown legacy hosts remain absent. Updated the vulnerable certifi leaf to 2026.10.19. Live index migration and resident reload were not performed.
+  - Evidence: `uv run codeality-py gate --json` passed every required stage, including coverage; host/dense-matrix regressions passed 17 tests; the database gate passed against a fresh temporary index using Homebrew SQLite; `uv lock --check` passed.
+
 - [x] 2026-10-21 — **Observability:** **Installable Codex memory plugin.** Package recall, per-prompt retrieval,
   first-file history and observed Brain usage; preserve legacy hook entry points
   and migrate the local registrations without duplicate retrieval. Verify the

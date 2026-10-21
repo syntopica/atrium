@@ -32,6 +32,6 @@ def atrium_recall(cwd: str, limit: int = 12) -> list[dict[str, Any]]:
         return []
     connection = open_store(INDEX, read_only=True)
     try:
-        return rendered_hits(recent_episodes(connection, workspace, limit))
+        return rendered_hits(recent_episodes(connection, workspace, limit), connection=connection)
     finally:
         connection.close()

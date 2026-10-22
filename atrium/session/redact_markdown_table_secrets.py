@@ -4,6 +4,7 @@ import re
 
 from atrium.session.is_secret_table_label import is_secret_table_label
 from atrium.session.markdown_table_cells import markdown_table_cells
+from atrium.session.secret_table_columns import secret_table_columns
 
 
 def redact_markdown_table_secrets(text: str) -> str:
@@ -25,9 +26,7 @@ def redact_markdown_table_secrets(text: str) -> str:
             not cell.strip() or re.fullmatch(r":?-{3,}:?", cell.strip()) for cell in following
         )
         if header:
-            columns = {
-                position for position, cell in enumerate(cells) if is_secret_table_label(cell)
-            }
+            columns = secret_table_columns(cells)
         elif not separator:
             targets = columns | {
                 position + 1

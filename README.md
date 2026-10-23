@@ -423,6 +423,11 @@ blind: fusing a blind lexical lane measurably buries the dense signal.
 
 ## Development
 
+The checkout pins Python 3.14 in `.python-version`, which `uv run` also uses
+for CLI and MCP startup. Keep that pin in deployed release checkouts: an
+unconstrained system Python upgrade can select an interpreter for which ONNX
+Runtime has no wheel and prevent required MCP servers from initializing.
+
 ```bash
 uv run --with pytest pytest tests/ -q
 uv run --with ruff ruff check . && uv run --with ruff ruff format --check .

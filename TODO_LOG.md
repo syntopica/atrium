@@ -8,6 +8,10 @@
 
 ### 2026-10
 
+- [x] 2026-10-23 — **Runtime configuration:** Pin the default Python runtime for CLI and required MCP startup.
+  - Result: Added the project Python 3.14 pin and documented its runtime purpose. Preserved both Python 3.15 virtual environments and recreated the project and installed release environments with Python 3.14.9. The required Atrium registration and all other user configuration remain unchanged.
+  - Evidence: uv sync --locked --extra mcp --group quality selected Python 3.14.9; uv run python imported onnxruntime 1.31.0; installed CLI recall and exact configured MCP initialize/tools-call passed. Fresh codex app-server thread/start passed with the complete unmodified MCP configuration and required_atrium=true, without inference. uv run codeality-py gate --json passed all seven required stages. The SQL gate reports only the previously recorded BDB406 provider-revision scan.
+
 - [x] 2026-10-22 — **Measurement:** **Redact adjacent credential value columns in Markdown tables.** Cover Secret/Value and decorated English/Spanish value headers without changing unrelated columns.
   - Result: Added explicit adjacent value-column admission and one imported label normalizer per responsibility. Six new table regression cases cover plain, previously redacted and decorated headers. No runtime reload, canonical-source mutation, index rebuild or credential action occurred.
   - Evidence: codeality-py gate --project . --json (executed with the equivalent absolute isolated-project path: HEAD a888068 plus four source/test paths) passed all seven required stages: 709 tests, two existing skips, 84.76% coverage against the original 80% threshold. Focused pytest passed 23 tests; Ruff lint/format passed. Independent synthetic review verified decorated Value/Valor, idempotence and preservation of Owner/nonsecret columns. Four final source hashes and all 80 installed distribution identities retained parity. The initial missing-Git scratch failure is retained; the accepted rerun used a Git fixture and synthetic HOME. The pre-existing SQL BDB406 finding and resident/index remediation remain separate.

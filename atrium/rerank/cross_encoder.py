@@ -95,13 +95,16 @@ class CrossEncoder:
             from tokenizers import Tokenizer
 
             from atrium.embed.cached_model_file import cached_model_file
+            from atrium.embed.cpu_session_options import cpu_session_options
 
             model_path = cached_model_file(self._repo, self._onnx_file, subfolder="onnx")
             tokenizer_path = cached_model_file(self._repo, "tokenizer.json")
             tokenizer = Tokenizer.from_file(tokenizer_path)
             tokenizer.enable_padding()
             tokenizer.enable_truncation(max_length=self._max_len, strategy="only_second")
-            session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+            session = onnxruntime.InferenceSession(
+                model_path, cpu_session_options(), providers=["CPUExecutionProvider"]
+            )
             self._type_ids = any(one.name == "token_type_ids" for one in session.get_inputs())
             self._tokenizer = tokenizer
             # Unpadded and untruncated: a pair-only truncation refuses a lone

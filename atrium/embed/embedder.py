@@ -90,12 +90,15 @@ class Embedder:
             from tokenizers import Tokenizer
 
             from atrium.embed.cached_model_file import cached_model_file
+            from atrium.embed.cpu_session_options import cpu_session_options
 
             model_path = cached_model_file(MODEL_REPO, _ONNX_FILE, subfolder="onnx")
             cached_model_file(MODEL_REPO, _ONNX_FILE + "_data", subfolder="onnx")
             tokenizer_path = cached_model_file(MODEL_REPO, "tokenizer.json")
 
-            session = onnxruntime.InferenceSession(model_path, providers=["CPUExecutionProvider"])
+            session = onnxruntime.InferenceSession(
+                model_path, cpu_session_options(), providers=["CPUExecutionProvider"]
+            )
             output_names = [output.name for output in session.get_outputs()]
             self._output_index = (
                 output_names.index("sentence_embedding")

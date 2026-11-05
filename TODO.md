@@ -311,7 +311,11 @@
       before the rerank (history 1.0-1.6 s, curated 0.8-1.3 s at load ~15). Smallest
       step: capture `steps` of a timed-out call under load. 2026-11-05 at load 66: 1 of 4 CLI
       calls `service_timeout` at 7.0 s, the other 3 served in 3.5-6.7 s, every one
-      `rerank_unavailable_fused_order`. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
+      `rerank_unavailable_fused_order`. Same day at load 112: 3 of 3 served (3.5-5.8 s); history
+      0.2-0.3 s, curated 0.15-1.9 s, and the rerank spent its whole 3 s on 64 candidates and
+      was discarded every time. Proposal for the owner: keep the scores of the prefix that
+      finished inside the budget instead of discarding them (needs a decision, since
+      `test_reranking_is_atomic_across_populations` makes atomicity deliberate). Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
       28 of 29 context calls returned `service_timeout` at the client's 7 s, while the
       service still ran retrieval and the rerank to the end: `ContextRequestHandler`
       only notices the peer is gone when it writes the result. In-process at load ~23:
@@ -325,21 +329,13 @@
       and `intra_op_num_threads=2` measured slower (3.39 s vs 2.38 s for 16 pairs), so
       neither is an easy win. Smallest step: a test where the client disconnects at
       7 s and the server stops at the next batch boundary.
-- [ ] **`atrium-mcp` runs the editable working checkout (2026-11-05).** Every
-      session's MCP server is `uv run --extra mcp --directory ~/p/atrium atrium-mcp`, so
-      it imports whatever is on disk when the session starts, including another session's
-      unreviewed edits -- the hazard `atrium-release` exists to prevent for the refresh and,
-      since dotfiles `47b5ec0`, the synthesis tick. Smallest step: find the generator of the
-      MCP server entry and point `--directory` at the release checkout.
-
 - [ ] **Synthesis now runs on Claude Haiku under the Favish profile (2026-11-05).** Owner:
       no synthesis model on the owner's computers. Ollama is stopped on the MacBook and the
       Mac mini (`brew services stop ollama`), the MacBook worker node stays unloaded, and the
       tick runs `--producer claude` (atrium `06cebc0`, dotfiles `733766f`). Watch: the
-      Favish weekly limit is shared with Favish work; `worker status` still lists 14 queued
-      `atrium.synthesis` jobs absent from `worker-submissions.jsonl` (likely shadows); the
-      MacBook still runs `worker.tasks`, `worker.remote` and `worker.serve` for other
-      producers. Smallest step: after a day, compare `synthesis.log` episodes against the
+      Favish weekly limit is shared with Favish work. The worker side (14 `_shadow`
+      jobs and a 4.5-day `atrium.tasks` job cancelled, MacBook processes measured) is
+      tracked in the instance's `worker/TODO.md`. Smallest step: after a day, compare `synthesis.log` episodes against the
       Favish usage page and decide the worker count.
 
 - [ ] **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
@@ -402,7 +398,7 @@
 
 ## Measurement
 
-- [~] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence. Source hardening now passes synthetic MCP/CLI/ingestion and excerpt regressions plus the full Python gate; legacy unverified truncated excerpts are withheld by the updated adapter. The resident runtime was not reloaded, and pre-existing chunks that lost their labels remain unclassified. A 2026-10-22 live MCP response additionally returned an unrelated curated database/SMTP table with redacted secret labels but unredacted value cells in both text content and structured content. No values are copied, tested or used. This confirms that the current resident output boundary remains unsafe for raw evidence, irrespective of source-only gate success; inspect metadata only until a synthetic runtime acceptance proves otherwise. The adjacent Secret/Value source defect is separately corrected with decorated English/Spanish header regressions; the isolated Python gate passes all seven required stages, 709 tests and the original 80% coverage threshold. This source result does not qualify the resident process or unlabelled legacy records. Next: verify fresh runtime boundaries using synthetic sentinels, then separately plan derived-record remediation and owner-authorized rotation. **2026-11-05:** a live probe of the resident service (release `487a220`) still returned three key/value rows unredacted, labelled `MySQL password`, `HMAC secret` and `API token` (shapes inspected masked, values never printed): `is_secret_table_label` matched exact labels only. Fixed in `4c79229` (qualified English suffix / Spanish prefix labels, `tests/test_is_secret_table_label.py`), release moved and `com.cristian.atrium-context` restarted; the same probe over five credential questions then found 41 labelled rows, 27 redacted, 0 suspicious. Left: (1) the running `atrium-mcp` processes import the editable checkout at start and keep the old redactor until their sessions restart; (2) the derived index still stores the values, output redaction only hides them; (3) owner-authorized rotation of every credential that reached tool output (the access-map mailbox password, the MySQL password, HMAC secret and API token rows of records `009ec41f...` and `cbb6bbf1...`).
+- [~] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence. Source hardening now passes synthetic MCP/CLI/ingestion and excerpt regressions plus the full Python gate; legacy unverified truncated excerpts are withheld by the updated adapter. The resident runtime was not reloaded, and pre-existing chunks that lost their labels remain unclassified. A 2026-10-22 live MCP response additionally returned an unrelated curated database/SMTP table with redacted secret labels but unredacted value cells in both text content and structured content. No values are copied, tested or used. This confirms that the current resident output boundary remains unsafe for raw evidence, irrespective of source-only gate success; inspect metadata only until a synthetic runtime acceptance proves otherwise. The adjacent Secret/Value source defect is separately corrected with decorated English/Spanish header regressions; the isolated Python gate passes all seven required stages, 709 tests and the original 80% coverage threshold. This source result does not qualify the resident process or unlabelled legacy records. Next: verify fresh runtime boundaries using synthetic sentinels, then separately plan derived-record remediation and owner-authorized rotation. **2026-11-05:** a live probe of the resident service (release `487a220`) still returned three key/value rows unredacted, labelled `MySQL password`, `HMAC secret` and `API token` (shapes inspected masked, values never printed): `is_secret_table_label` matched exact labels only. Fixed in `4c79229` (qualified English suffix / Spanish prefix labels, `tests/test_is_secret_table_label.py`), release moved and `com.cristian.atrium-context` restarted; the same probe over five credential questions then found 41 labelled rows, 27 redacted, 0 suspicious. Left: (1) `atrium-mcp` processes started before 2026-11-05 19:35 keep the old redactor until their sessions restart; new ones run the release (dotfiles `31f0b81`, both profiles on both Macs) and delegate to the service anyway; (2) synthesis records were not redacted at indexing: fixed in `8470981`, applied by the next `ingest-synthesis`; notes re-chunk under the new redactor on the next `ingest-notes`; the registry files and archive keep the canonical text by design; (3) owner-authorized rotation of every credential that reached tool output (the access-map mailbox password, the MySQL password, HMAC secret and API token rows of records `009ec41f...` and `cbb6bbf1...`).
 
 ## Integrations
 

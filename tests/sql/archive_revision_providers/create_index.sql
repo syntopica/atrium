@@ -1,0 +1,1 @@
+CREATE INDEX conversation_revisions_provider ON conversation_revisions (provider)

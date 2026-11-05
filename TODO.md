@@ -331,8 +331,10 @@
       7 s and the server stops at the next batch boundary.
 - [ ] **Synthesis now runs on Claude Haiku under the Favish profile (2026-11-05).** Owner:
       no synthesis model on the owner's computers. Ollama is stopped on the MacBook and the
-      Mac mini (`brew services stop ollama`), the MacBook worker node stays unloaded, and the
-      tick runs `--producer claude` (atrium `06cebc0`, dotfiles `733766f`). Watch: the
+      Mac mini (services disabled), the MacBook worker node is disabled, nova's night target
+      and its Ollama are disabled too, and the tick runs `--producer claude` (atrium
+      `06cebc0`, dotfiles `733766f`). Worker queues end in the same model through the
+      engine's new `claude` runner (worker `548e76b`, `7f30e0f`). Watch: the
       Favish weekly limit is shared with Favish work. The worker side (14 `_shadow`
       jobs and a 4.5-day `atrium.tasks` job cancelled, MacBook processes measured) is
       tracked in the instance's `worker/TODO.md`. Smallest step: after a day, compare `synthesis.log` episodes against the

@@ -5,6 +5,7 @@ import pytest
 from atrium.synthesis_pass.select_producer_lane import select_producer_lane
 from atrium.synthesize.agy_lane_call import AGY_MODEL_ID
 from atrium.synthesize.agy_lane_model_id import agy_lane_model_id
+from atrium.synthesize.claude_cli_default_model import CLAUDE_CLI_DEFAULT_MODEL
 from atrium.synthesize.codex_lane_model_id import codex_lane_model_id
 from atrium.synthesize.local_lane_call import LOCAL_DEFAULT_MODEL
 from atrium.synthesize.local_lane_model_id import local_lane_model_id
@@ -54,3 +55,10 @@ def test_task_lane_uses_the_task_queue_and_profile() -> None:
     assert lane.model_id == worker_task_lane_model_id(WORKER_TASK_DEFAULT_PROFILE)
     assert lane.worker_queue == WORKER_TASK_QUEUE
     assert lane.journaled_call is not None
+
+
+def test_claude_keys_on_the_model_and_defaults_to_haiku() -> None:
+    lane = select_producer_lane("claude", None, None)
+    assert lane.model_id == CLAUDE_CLI_DEFAULT_MODEL
+    assert lane.worker_queue is None
+    assert select_producer_lane("claude", "claude-sonnet-5-5", None).model_id == "claude-sonnet-5-5"

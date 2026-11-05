@@ -16,10 +16,11 @@ def add_synthesize_parser(subcommands: SubParsers) -> None:
     synthesize.add_argument("--dry-run", action="store_true")
     synthesize.add_argument(
         "--producer",
-        choices=("agy", "codex", "local", "max", "task"),
+        choices=("agy", "claude", "codex", "local", "max", "task"),
         default="agy",
         help="agy: Gemini bulk quota via the Antigravity CLI (default -- the "
-        "standing routing rule for whole-corpus passes); codex: the Codex "
+        "standing routing rule for whole-corpus passes); claude: the Claude Code "
+        "CLI under the CLAUDE_CONFIG_DIR account, Haiku unless --model pins one; codex: the Codex "
         "CLI's quota; local: a model served by Ollama on this machine, off every "
         "quota; max: the Claude Max OAuth lane; task: agy through the worker's "
         "atrium.tasks queue, --model names the worker profile",
@@ -28,7 +29,7 @@ def add_synthesize_parser(subcommands: SubParsers) -> None:
     synthesize.add_argument(
         "--model",
         default=None,
-        help="Codex, agy and local lanes: pin the model instead of the lane default. "
+        help="Claude, Codex, agy and local lanes: pin the model instead of the lane default. "
         "It enters the job key, so a different model is a different population",
     )
     synthesize.add_argument(

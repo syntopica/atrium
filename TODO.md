@@ -294,13 +294,6 @@
   `uv run pip-audit` reports certifi 2026.7.22, PYSEC-2026-4320, fixed in
   2026.10.19. This predates the Codex plugin changes. Smallest next step:
   update the locked certifi dependency and rerun the Python gate.
-- [!] **Database baseline blocks the SQL gate (2026-10-21).**
-  `pnpm dlx @syntopica/db-quality@0.6.0 gate` reports BDB406 for
-  `atrium/sql/store/read_archive_revision_providers.sql`: a covering-index scan
-  over 75,310 conversation revisions. No SQL changed in the Codex plugin work.
-  Smallest next step: review whether this intentional provider inventory scan
-  belongs in the measured baseline, then rerun the SQL gate.
-
 - [~] **The prompt hook gets nothing under load, and the service keeps working for
       clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients
       send `timeout_s`, and the service's `DeadlineReranker` ends every rerank at the
@@ -316,7 +309,9 @@
       batch 1. Live under synthetic load 47-64: 3 of 4 calls served (4.0-6.9 s), one
       `service_timeout`; idle 2 of 2 (4.4-6.2 s). What is left is the retrieval passes
       before the rerank (history 1.0-1.6 s, curated 0.8-1.3 s at load ~15). Smallest
-      step: capture `steps` of a timed-out call under load. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
+      step: capture `steps` of a timed-out call under load. 2026-11-05 at load 66: 1 of 4 CLI
+      calls `service_timeout` at 7.0 s, the other 3 served in 3.5-6.7 s, every one
+      `rerank_unavailable_fused_order`. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
       28 of 29 context calls returned `service_timeout` at the client's 7 s, while the
       service still ran retrieval and the rerank to the end: `ContextRequestHandler`
       only notices the peer is gone when it writes the result. In-process at load ~23:
@@ -330,6 +325,23 @@
       and `intra_op_num_threads=2` measured slower (3.39 s vs 2.38 s for 16 pairs), so
       neither is an easy win. Smallest step: a test where the client disconnects at
       7 s and the server stops at the next batch boundary.
+- [ ] **`atrium-mcp` runs the editable working checkout (2026-11-05).** Every
+      session's MCP server is `uv run --extra mcp --directory ~/p/atrium atrium-mcp`, so
+      it imports whatever is on disk when the session starts, including another session's
+      unreviewed edits -- the hazard `atrium-release` exists to prevent for the refresh and,
+      since dotfiles `47b5ec0`, the synthesis tick. Smallest step: find the generator of the
+      MCP server entry and point `--directory` at the release checkout.
+
+- [ ] **Synthesis now runs on Claude Haiku under the Favish profile (2026-11-05).** Owner:
+      no synthesis model on the owner's computers. Ollama is stopped on the MacBook and the
+      Mac mini (`brew services stop ollama`), the MacBook worker node stays unloaded, and the
+      tick runs `--producer claude` (atrium `06cebc0`, dotfiles `733766f`). Watch: the
+      Favish weekly limit is shared with Favish work; `worker status` still lists 14 queued
+      `atrium.synthesis` jobs absent from `worker-submissions.jsonl` (likely shadows); the
+      MacBook still runs `worker.tasks`, `worker.remote` and `worker.serve` for other
+      producers. Smallest step: after a day, compare `synthesis.log` episodes against the
+      Favish usage page and decide the worker count.
+
 - [ ] **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
       bounded: roughly 19 passes a day of export ~6 min, import ~5 min, ingest ~1 min,
       doctor ~2 min, at most ~310 core-min/day if each held one core. Export and import
@@ -390,7 +402,7 @@
 
 ## Measurement
 
-- [!] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence. Source hardening now passes synthetic MCP/CLI/ingestion and excerpt regressions plus the full Python gate; legacy unverified truncated excerpts are withheld by the updated adapter. The resident runtime was not reloaded, and pre-existing chunks that lost their labels remain unclassified. A 2026-10-22 live MCP response additionally returned an unrelated curated database/SMTP table with redacted secret labels but unredacted value cells in both text content and structured content. No values are copied, tested or used. This confirms that the current resident output boundary remains unsafe for raw evidence, irrespective of source-only gate success; inspect metadata only until a synthetic runtime acceptance proves otherwise. The adjacent Secret/Value source defect is separately corrected with decorated English/Spanish header regressions; the isolated Python gate passes all seven required stages, 709 tests and the original 80% coverage threshold. This source result does not qualify the resident process or unlabelled legacy records. Next: verify fresh runtime boundaries using synthetic sentinels, then separately plan derived-record remediation and owner-authorized rotation.
+- [~] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence. Source hardening now passes synthetic MCP/CLI/ingestion and excerpt regressions plus the full Python gate; legacy unverified truncated excerpts are withheld by the updated adapter. The resident runtime was not reloaded, and pre-existing chunks that lost their labels remain unclassified. A 2026-10-22 live MCP response additionally returned an unrelated curated database/SMTP table with redacted secret labels but unredacted value cells in both text content and structured content. No values are copied, tested or used. This confirms that the current resident output boundary remains unsafe for raw evidence, irrespective of source-only gate success; inspect metadata only until a synthetic runtime acceptance proves otherwise. The adjacent Secret/Value source defect is separately corrected with decorated English/Spanish header regressions; the isolated Python gate passes all seven required stages, 709 tests and the original 80% coverage threshold. This source result does not qualify the resident process or unlabelled legacy records. Next: verify fresh runtime boundaries using synthetic sentinels, then separately plan derived-record remediation and owner-authorized rotation. **2026-11-05:** a live probe of the resident service (release `487a220`) still returned three key/value rows unredacted, labelled `MySQL password`, `HMAC secret` and `API token` (shapes inspected masked, values never printed): `is_secret_table_label` matched exact labels only. Fixed in `4c79229` (qualified English suffix / Spanish prefix labels, `tests/test_is_secret_table_label.py`), release moved and `com.cristian.atrium-context` restarted; the same probe over five credential questions then found 41 labelled rows, 27 redacted, 0 suspicious. Left: (1) the running `atrium-mcp` processes import the editable checkout at start and keep the old redactor until their sessions restart; (2) the derived index still stores the values, output redaction only hides them; (3) owner-authorized rotation of every credential that reached tool output (the access-map mailbox password, the MySQL password, HMAC secret and API token rows of records `009ec41f...` and `cbb6bbf1...`).
 
 ## Integrations
 

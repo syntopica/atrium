@@ -6,6 +6,20 @@
 
 ## 2026
 
+### 2026-11
+
+- [x] 2026-11-05 — **Synthesis:** Synthesis had produced nothing since 2026-10-24.
+  - Result: 476 local-lane passes ended at the 55-minute timeout (exit 124) waiting on worker jobs: agy models cooling 28-41 h, OpenRouter over its 850/day cap, and the local `qwen3.6:35b` on nova's CPU at about one 70-100k-token job an hour. Added `--producer claude` (headless `claude -p`, no tools, settings or session file, structured output, quota wall on 429/usage limit) and moved the tick to Haiku under the Favish profile and to the release checkout; cancelled the queued local jobs and stopped Ollama on the MacBook and the Mac mini.
+  - Evidence: atrium `06cebc0`; dotfiles `733766f`, `47b5ec0`; `tests/test_claude_cli_lane_call.py`; manual tick `--limit 10` synthesized the four conversations stuck since the morning, then the scheduled pass wrote 15 episodes in its first 5 minutes with 0 FAILED lines; `codeality-py gate` passed.
+
+- [x] 2026-11-05 — **Observability:** **Database baseline blocks the SQL gate (2026-10-21).** BDB406 on `store/read_archive_revision_providers.sql`.
+  - Result: Rewrote the DISTINCT read as a recursive MIN loose index scan instead of baselining it: same provider set, 0.30 s to 0.01 s on the live index.
+  - Evidence: atrium `aca396d`; `pnpm dlx @syntopica/db-quality@0.6.0 gate` baseline-check passed; `tests/test_read_archive_revision_providers.py`.
+
+- [x] 2026-11-05 — **Security:** Qualified credential labels leaked through key/value tables.
+  - Result: `is_secret_table_label` now accepts short labels ending in a credential noun (English) or starting with one (Spanish); bare "key" excluded. Release moved and the context service restarted.
+  - Evidence: atrium `4c79229`; `tests/test_is_secret_table_label.py` (red before the change); live probe after restart: 41 labelled rows, 27 redacted, 0 suspicious.
+
 ### 2026-10
 
 - [x] 2026-10-23 — **Runtime configuration:** Pin the default Python runtime for CLI and required MCP startup.

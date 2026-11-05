@@ -5,6 +5,7 @@ from typing import Any
 
 from atrium.ingest.record_identity import record_identity
 from atrium.record import Record
+from atrium.session.redact_sensitive_text import redact_sensitive_text
 
 
 def to_synthesis_records(record: dict[str, Any], workspace: str | None) -> Iterator[Record]:
@@ -22,12 +23,16 @@ def to_synthesis_records(record: dict[str, Any], workspace: str | None) -> Itera
     project-scoped recall -- the shape every session-start injection asks for --
     and that was the original bug here. Passing ``None`` must be a decision a
     caller writes down, not one it can fall into.
+
+    The text is redacted like a note's: model output paraphrases what the
+    transcript held, and 80 served records still carried credential values on
+    2026-11-05 although every output surface redacts too.
     """
     output = record.get("output") or {}
     parts = [output.get("title") or "", output.get("summary") or ""]
     parts += output.get("facts") or []
     parts += output.get("open_ends") or []
-    text = "\n".join(part for part in parts if part).strip()
+    text = redact_sensitive_text("\n".join(part for part in parts if part).strip())
     if not text:
         return
     conversation_id = f"synthesis/{record['conversation_id']}"
@@ -41,6 +46,6 @@ def to_synthesis_records(record: dict[str, Any], workspace: str | None) -> Itera
         text=text,
         authored_at=record.get("authored_at"),
         workspace=workspace,
-        title=output.get("title"),
+        title=redact_sensitive_text(output["title"]) if output.get("title") else None,
         event_index=0,
     )

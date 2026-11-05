@@ -16,13 +16,23 @@ _REQUIRED = dict.fromkeys(_SCHEMA["required"], "x")
 
 
 def _stub(
-    returncode: int, result: dict[str, Any], seen: list[Any] | None = None
+    returncode: int,
+    result: dict[str, Any],
+    seen: list[Any] | None = None,
+    windows: dict[str, float] | None = None,
 ) -> Callable[..., subprocess.CompletedProcess[str]]:
+    events: list[dict[str, Any]] = [{"type": "system", "subtype": "init"}]
+    if windows is not None:
+        unified = {name: {"utilization": value} for name, value in windows.items()}
+        events.append({"type": "rate_limit_event", "rate_limit_info": {"unifiedWindows": unified}})
+    events.append({"type": "result", **result})
+    stdout = "\n".join(json.dumps(event) for event in events) + "\n"
+
     def run(argv: list[str], **kwargs: Any) -> subprocess.CompletedProcess[str]:
         if seen is not None:
             seen.append((argv, kwargs))
         return subprocess.CompletedProcess(
-            args=argv, returncode=returncode, stdout=json.dumps(result), stderr=""
+            args=argv, returncode=returncode, stdout=stdout, stderr=""
         )
 
     return run
@@ -42,12 +52,14 @@ def test_the_structured_output_is_the_record(monkeypatch: pytest.MonkeyPatch) ->
         "input": _REQUIRED,
         "model": "claude-haiku-5-5",
         "usage": {"output_tokens": 3},
+        "utilization": None,
     }
     argv, kwargs = seen[0]
     assert argv[argv.index("--model") + 1] == "claude-haiku-5-5"
     assert "--no-session-persistence" in argv
     assert argv[argv.index("--tools") + 1] == ""
     assert argv[argv.index("--setting-sources") + 1] == ""
+    assert argv[argv.index("--output-format") + 1] == "stream-json"
     assert "transcript" in kwargs["input"]
 
 
@@ -78,3 +90,11 @@ def test_an_answer_missing_a_required_key_is_not_a_record(
     monkeypatch.setattr(subprocess, "run", _stub(0, {"structured_output": {}}))
     with pytest.raises(RuntimeError, match="missing required keys"):
         claude_cli_lane_call("system", "user", SYNTHESIS_TOOL, "m")
+
+
+def test_the_fullest_usage_window_is_reported(monkeypatch: pytest.MonkeyPatch) -> None:
+    result = {"is_error": False, "structured_output": _REQUIRED}
+    windows = {"five_hour": 0.31, "seven_day": 0.62}
+    monkeypatch.setattr(subprocess, "run", _stub(0, result, windows=windows))
+    answer = claude_cli_lane_call("system", "transcript", SYNTHESIS_TOOL, "m")
+    assert answer["utilization"] == 0.62

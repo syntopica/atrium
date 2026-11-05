@@ -1,21 +1,23 @@
 """One structured synthesis call through the Claude Code CLI's subscription."""
 
-import json
 import subprocess
 import tempfile
 from typing import Any
 
 from atrium.synthesize.claude_cli_command import claude_cli_command
 from atrium.synthesize.claude_cli_failure import claude_cli_failure
+from atrium.synthesize.claude_stream_result import claude_stream_result
+from atrium.synthesize.claude_stream_utilization import claude_stream_utilization
 
 
 def claude_cli_lane_call(
     system_text: str, user_text: str, tool: dict[str, Any], model: str
 ) -> dict[str, Any]:
-    """Return {"input": ..., "model": ..., "usage": ...} from one `claude -p` run.
+    """Return {"input", "model", "usage", "utilization"} from one `claude -p` run.
 
     The transcript goes over stdin and the answer is read from the result's
-    ``structured_output``, never scraped from free text. The CLI runs in an empty
+    ``structured_output``, never scraped from free text. ``utilization`` is the
+    fullest usage window the run reported, or ``None``. The CLI runs in an empty
     scratch directory so no project instructions are discovered.
     """
     prompt = (
@@ -31,10 +33,7 @@ def claude_cli_lane_call(
             timeout=1200,
             cwd=scratch,
         )
-    try:
-        result = json.loads(completed.stdout)
-    except json.JSONDecodeError:
-        result = {}
+    result = claude_stream_result(completed.stdout)
     output = result.get("structured_output")
     if completed.returncode != 0 or result.get("is_error") or not isinstance(output, dict):
         streams = f"{completed.stderr}\n{result.get('result') or completed.stdout}"
@@ -43,4 +42,9 @@ def claude_cli_lane_call(
     if missing:
         raise RuntimeError(f"claude output missing required keys: {missing}")
     resolved = next(iter(result.get("modelUsage") or {}), model)
-    return {"input": output, "model": resolved, "usage": result.get("usage") or {}}
+    return {
+        "input": output,
+        "model": resolved,
+        "usage": result.get("usage") or {},
+        "utilization": claude_stream_utilization(completed.stdout),
+    }

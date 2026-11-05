@@ -31,9 +31,25 @@ def run_doctor(
     downstream number, so those are answered before anything reads four
     gigabytes to compare identifier sets. The entry points come first of all:
     an index nobody can reach makes every number under it academic.
-    ``inventory`` (`scribe segments-inventory` output) adds the generation check.
+    ``inventory`` (`scribe segments-inventory` output) means segment mode: the
+    generation check replaces the checks that read the frozen v1 file.
     """
     findings = [entry_point_health(), archive_freshness(archive), refresh_health(stamp)]
+    if inventory is not None:
+        # Segment mode. The v1 file stopped being written at the cutover, so
+        # every check that streams it would compare the index against a frozen
+        # world and report the conversations captured since as drift. What the
+        # index must hold is what scribe delivered: the generation it was built
+        # from and no pending deliveries, which ack-pending clears only for the
+        # records an ingest carried exactly.
+        connection = open_store(index, read_only=True)
+        try:
+            findings.append(record_total_coherence(connection))
+            findings.append(fts_consistency(connection))
+            findings.append(archive_generation_freshness(connection, inventory))
+        finally:
+            connection.close()
+        return findings
     if not archive.exists():
         return findings
     findings.append(archive_schema_coherence(archive))
@@ -44,8 +60,6 @@ def run_doctor(
         findings.append(index_coverage(connection, admissions))
         findings.append(record_total_coherence(connection))
         findings.append(fts_consistency(connection))
-        if inventory is not None:
-            findings.append(archive_generation_freshness(connection, inventory))
     finally:
         connection.close()
     findings.append(synthesis_coherence(registry, admissions.all_ids))

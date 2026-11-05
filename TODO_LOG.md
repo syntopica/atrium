@@ -8,6 +8,10 @@
 
 ### 2026-11
 
+- [x] 2026-11-05 — **Integrations:** **`atrium-mcp` ran the editable working checkout.**
+  - Result: Every Claude profile on the MacBook and the Mac mini now starts the MCP server from the release checkout with its own venv (`UV_PROJECT_ENVIRONMENT=~/.local/share/atrium/mcp-venv`), so the refresh's exact `uv run` venv is untouched. The Mac mini release and context service moved from `487a220` to `6c8037a`.
+  - Evidence: dotfiles `31f0b81`; `claude mcp add-json` in both profiles on both Macs with the server lists unchanged; a JSON-RPC probe of the new command listed the four tools and answered `atrium_context` with `served_by: service` and 8 evidence items.
+
 - [x] 2026-11-05 — **Synthesis:** Synthesis had produced nothing since 2026-10-24.
   - Result: 476 local-lane passes ended at the 55-minute timeout (exit 124) waiting on worker jobs: agy models cooling 28-41 h, OpenRouter over its 850/day cap, and the local `qwen3.6:35b` on nova's CPU at about one 70-100k-token job an hour. Added `--producer claude` (headless `claude -p`, no tools, settings or session file, structured output, quota wall on 429/usage limit) and moved the tick to Haiku under the Favish profile and to the release checkout; cancelled the queued local jobs and stopped Ollama on the MacBook and the Mac mini.
   - Evidence: atrium `06cebc0`; dotfiles `733766f`, `47b5ec0`; `tests/test_claude_cli_lane_call.py`; manual tick `--limit 10` synthesized the four conversations stuck since the morning, then the scheduled pass wrote 15 episodes in its first 5 minutes with 0 FAILED lines; `codeality-py gate` passed.

@@ -433,3 +433,25 @@
       identity itself. It re-keys every archived event, so it lands with the v2
       stage 3 cutover.
 
+- [ ] **Trials from the November 2026 study of other memory projects**
+      (`docs/studies/memory-projects-2026-11.md`). Each is measured before it ships:
+      (1) partial rerank, OpenViking-style (scored head by cross-encoder, unscored
+      tail in fused order), and fewer candidates first (16-24 of 64), on the holdout
+      and acceptance sets and under synthetic load; (2) skip prompt-time retrieval for
+      prompts under ~15 characters; (3) `atrium compact` (bounded FTS5 `merge`, then
+      `optimize`, then `VACUUM`, under `refresh.lock`), sized on a copy, plus a
+      `detail=none` trigram table against a `words` prefilter with `instr()`; (4) a
+      quota guard and tool-output truncation for the Haiku synthesis tick; (5) facts
+      that cite message indices, a deterministic citation check, a summary written
+      from surviving facts and an outcome enum, judged on the 24 episodes of
+      2026-10-16; (6) a gitleaks-derived regression corpus for `redact_sensitive_text`.
+- [ ] **The atrium-context mod was silently disabled from 2026-10-18 to 2026-11-06.**
+      The dotfiles auto-sync `d554437` (and `9831be7` on the Mac mini) committed a
+      settings file whose `enabledPlugins` lacked `atrium-context@atrium`, so Claude
+      Code ran with no per-prompt retrieval and no footer for 19 days, and nothing
+      reported it. Re-installed on the MacBook 2026-11-06 (claude-config `78e7848`).
+      Left: install it on the Mac mini (`claude plugin install atrium-context@atrium`
+      after the config sync), find what rewrote `enabledPlugins` on 2026-10-18 (the same
+      diff also dropped `ponytail` and `taste-skill`), and add a `doctor` check that
+      warns when no prompt-time retrieval path is enabled in either profile.
+

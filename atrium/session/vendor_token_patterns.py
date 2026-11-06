@@ -11,14 +11,6 @@ bare hex or base64 run is as often a hash or an id as a secret.
 import re
 
 VENDOR_TOKEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    # private-key, written inline with literal "\n" escapes (JSON) or on one line
-    (
-        re.compile(
-            r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?-----END [A-Z0-9 ]*PRIVATE KEY-----",
-            re.DOTALL,
-        ),
-        "[REDACTED:private-key]",
-    ),
     # a PEM block base64-encoded once more: "-----BEGIN" is "LS0tLS1CRUdJT"
     (re.compile(r"\bLS0tLS1CRUdJT[A-Za-z0-9+/=]{40,}"), "[REDACTED:private-key]"),
     # stripe-access-token

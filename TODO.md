@@ -433,25 +433,30 @@
       identity itself. It re-keys every archived event, so it lands with the v2
       stage 3 cutover.
 
-- [ ] **Trials from the November 2026 study of other memory projects**
-      (`docs/studies/memory-projects-2026-11.md`). Each is measured before it ships:
-      (1) partial rerank, OpenViking-style (scored head by cross-encoder, unscored
-      tail in fused order), and fewer candidates first (16-24 of 64), on the holdout
-      and acceptance sets and under synthetic load; (2) skip prompt-time retrieval for
-      prompts under ~15 characters; (3) `atrium compact` (bounded FTS5 `merge`, then
-      `optimize`, then `VACUUM`, under `refresh.lock`), sized on a copy, plus a
-      `detail=none` trigram table against a `words` prefilter with `instr()`; (4) a
-      quota guard and tool-output truncation for the Haiku synthesis tick; (5) facts
-      that cite message indices, a deterministic citation check, a summary written
-      from surviving facts and an outcome enum, judged on the 24 episodes of
-      2026-10-16; (6) a gitleaks-derived regression corpus for `redact_sensitive_text`.
-- [ ] **The atrium-context mod was silently disabled from 2026-10-18 to 2026-11-06.**
+- [~] **Trials from the November 2026 study of other memory projects**
+      (`docs/studies/memory-projects-2026-11.md`), run 2026-11-06. Done: partial
+      rerank `845562c` (holdout Hit@8 0.511 full vs 0.443 fused vs 0.511 at 24
+      scored; acceptance 0.412 / 0.224 / 0.365; `wiki/atrium/evaluations/partial-rerank-2026-11-06/`),
+      but no live partial cut has been observed yet; quota guard at 80% `4f257ac`;
+      `atrium compact` `d16be2f` (clone 23,331 to 3,915 MiB in ~17 min); gitleaks
+      corpus and vendor patterns `9b6e30c` (curated-note findings 32 to 6). Short-prompt
+      skip already existed (`should-skip.js`, 24 characters). Faithfulness A/B
+      (`wiki/atrium/evaluations/faithfulness-cite-2026-11-06/`, GPT-6 blind, 445
+      claims): quoted citations cut unsupported facts 13.5% to 2.5%, but open ends
+      rose 15.7% to 23.9% and output tokens +38%; the verbatim check dropped only
+      supported facts. Not adopted as is; next: cite facts only, keep the old
+      open-end prompt, re-judge. **Owner decisions:** the trigram lane (keep at
+      3.9 GB, drop at 1.9 GB, or `detail=none` at 2.2 GB losing bm25 and phrase
+      MATCH); whether partial rerank stays in place of the atomic contract.
+      Left: port `VENDOR_TOKEN_PATTERNS` and labelled-inline redaction to scribe's
+      `redactSensitiveText`; tool-output truncation for the Haiku tick; one
+      unreproduced flaky test in 3 full runs (5 reruns clean).
+- [~] **The atrium-context mod was silently disabled from 2026-10-18 to 2026-11-06.**
       The dotfiles auto-sync `d554437` (and `9831be7` on the Mac mini) committed a
       settings file whose `enabledPlugins` lacked `atrium-context@atrium`, so Claude
       Code ran with no per-prompt retrieval and no footer for 19 days, and nothing
-      reported it. Re-installed on the MacBook 2026-11-06 (claude-config `78e7848`).
-      Left: install it on the Mac mini (`claude plugin install atrium-context@atrium`
-      after the config sync), find what rewrote `enabledPlugins` on 2026-10-18 (the same
-      diff also dropped `ponytail` and `taste-skill`), and add a `doctor` check that
-      warns when no prompt-time retrieval path is enabled in either profile.
+      reported it. Re-installed on both Macs 2026-11-06 (claude-config `78e7848`);
+      `atrium doctor` warns since `14d85ac`. Left: find what rewrote `enabledPlugins`
+      on 2026-10-18 (the same diff dropped `ponytail` and `taste-skill`; suspect the
+      settings ping-pong fixed in `9656692`), and whether to restore those two.
 

@@ -1,5 +1,7 @@
 """Drop every PEM private key block from a text, as the exporter does."""
 
+from atrium.session.closes_private_key_on_same_line import closes_private_key_on_same_line
+
 
 def redact_private_key_blocks(text: str) -> str:
     """Replace each ``-----BEGIN ... PRIVATE KEY-----`` block with one marker.
@@ -11,7 +13,11 @@ def redact_private_key_blocks(text: str) -> str:
     output: list[str] = []
     inside = False
     for line in text.split("\n"):
-        if line.startswith("-----BEGIN ") and "PRIVATE KEY-----" in line:
+        opens = line.startswith("-----BEGIN ") and "PRIVATE KEY-----" in line
+        if opens and not inside and closes_private_key_on_same_line(line):
+            output.append(line)
+            continue
+        if opens:
             if not inside:
                 output.append("[REDACTED:private-key]")
             inside = True

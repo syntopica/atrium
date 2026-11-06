@@ -96,6 +96,9 @@ def test_a_credential_variable_or_label_is_still_redacted(line: str) -> None:
     "line",
     [
         "Clave de liquidación: " + "A0123456" + "78901234",
+        "SECRETS=" + "/Users/someone/p/project-123/",
+        "BETTER_AUTH_SECRET=" + "<run openssl1>",
+        "SECRET_KEY=" + "{env.keys[0]}",
         "clave_liquidacion: " + "A0123456" + "78901234",
         "export SCANNED_TOKEN_PATTERN=" + "gh[ops]_[a-z0-9]{36}",
         "OAUTH_TOKEN_URI=" + "https://oauth2.example.com/token2",
@@ -108,3 +111,9 @@ def test_a_credential_variable_or_label_is_still_redacted(line: str) -> None:
 )
 def test_references_descriptions_and_digests_stay(line: str) -> None:
     assert redact_sensitive_text(line) == line
+
+
+def test_an_assignment_value_ends_at_an_escaped_newline() -> None:
+    value = _ALNUM[:32]
+    redacted = redact_sensitive_text(f"KEY={value}\\nSTART=$(date)")
+    assert redacted == "KEY=[REDACTED:secret]\\nSTART=$(date)"

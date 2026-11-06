@@ -4,8 +4,11 @@ import re
 
 from atrium.session.is_secret_variable_name import is_secret_variable_name
 
+# The value ends at a backslash, which in captured text is usually an escaped
+# newline, and cannot start like a path, a shell expansion or a placeholder:
+# the archive held `SECRETS=/Users/...` and `KEY=$(date ...` on 2026-11-06.
 _ASSIGNMENT = re.compile(
-    r"\b(?P<name>[A-Z][A-Z0-9_]*) ?= ?(?P<quote>[\"']?)(?P<value>(?!\[REDACTED:)[^\s\"'`]{8,})"
+    r"\b(?P<name>[A-Z][A-Z0-9_]*) ?= ?(?P<quote>[\"']?)(?P<value>(?!\[REDACTED:)(?![$/~.<{(])[^\s\"'`\\]{8,})"
 )
 
 

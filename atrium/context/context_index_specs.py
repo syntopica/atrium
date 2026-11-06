@@ -6,4 +6,12 @@ def context_index_specs() -> dict[str, tuple[str, ...]]:
     return {
         "records_context_role_workspace": ("role", "workspace"),
         "records_context_workspace_role": ("workspace", "role"),
+        # Session-start recall picks its newest few from this index alone.
+        "records_recall_role_workspace_time": (
+            "role",
+            "workspace",
+            "authored_at",
+            "conversation_id",
+            "record_id",
+        ),
     }

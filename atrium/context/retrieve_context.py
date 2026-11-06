@@ -18,6 +18,7 @@ from atrium.context.linked_hits import linked_hits
 from atrium.context.ordered_candidates import ordered_candidates
 from atrium.context.read_retirements import read_retirements
 from atrium.context.rerank_populations import rerank_populations
+from atrium.context.rerank_warnings import rerank_warnings
 from atrium.context.retired_mentions import retired_mentions
 from atrium.context.select_evidence import select_evidence as select
 from atrium.context.timed import timed
@@ -140,8 +141,7 @@ def retrieve_context(  # noqa: PLR0913 -- single shared public adapter contract
         reranked = None
         if reranker is not None:
             history, notes, reranked = rerank_populations(reranker, query, (history, notes), depth)
-            if not reranked["applied"]:
-                response["warnings"].append("rerank_unavailable_fused_order")
+            response["warnings"].extend(rerank_warnings(reranked))
         (links, warnings), links_ms = timed(lambda: linked_hits(connection, notes[:limit], depth))
         response["warnings"].extend(sorted(exhausted) + warnings)
         response["steps"] = context_steps(

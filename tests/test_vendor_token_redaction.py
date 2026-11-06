@@ -265,3 +265,14 @@ def test_an_encrypted_key_with_its_rfc_1421_headers_goes_whole() -> None:
     assert body not in redacted
     assert "DEK-Info" not in redacted
     assert redacted.endswith("after")
+
+
+def test_an_escaped_encrypted_key_goes_with_its_headers() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = (
+        '"key": "-----BEGIN RSA ' + "PRIVATE KEY-----\\nProc-Type: 4,ENCRYPTED\\n"
+        "DEK-Info: AES-128-CBC," + _HEX[:32] + "\\n\\n" + body + '\\n" and after'
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert redacted.endswith('" and after')

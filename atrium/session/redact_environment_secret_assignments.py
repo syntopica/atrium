@@ -16,14 +16,21 @@ def redact_environment_secret_assignments(text: str) -> str:
     """Replace a token-shaped value whose variable name says it is a credential.
 
     `export RESEND_API_KEY=...` is a key; `STOP_KEY = "Escape"` is a key binding
-    and stays, and a URL is where a credential goes, not one. Same rule as
+    and stays, a URL is where a credential goes, not one, and a value with a
+    parenthesis is code that makes one. Same rule as
     scribe's `redactEnvironmentSecretAssignments`.
     """
 
     def replace(match: re.Match[str]) -> str:
         value = match.group("value")
         has_shape = re.search(r"\d", value) and re.search(r"[A-Za-z]", value)
-        if not has_shape or "://" in value or not is_secret_variable_name(match.group("name")):
+        code = "(" in value or ")" in value
+        if (
+            not has_shape
+            or code
+            or "://" in value
+            or not is_secret_variable_name(match.group("name"))
+        ):
             return match.group(0)
         return match.group(0)[: -len(value)] + "[REDACTED:secret]"
 

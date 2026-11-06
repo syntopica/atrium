@@ -29,3 +29,18 @@ def test_another_index_does_not_inherit_selected_instances_freshness(corpus, tmp
     result = context_from_index(other, "Server-a", state=state, lane="words")
     assert result["freshness"]["status"] == "unknown"
     assert "index_state_mismatch" in result["warnings"]
+
+
+def test_an_index_linked_from_the_state_directory_keeps_its_freshness(corpus, tmp_path):
+    from atrium.context.context_from_index import context_from_index
+
+    connection, _, state, _ = corpus
+    connection.close()
+    elsewhere = tmp_path / "cache"
+    elsewhere.mkdir()
+    (state / "index.sqlite3").rename(elsewhere / "index.sqlite3")
+    (state / "index.sqlite3").symlink_to(elsewhere / "index.sqlite3")
+    result = context_from_index(state / "index.sqlite3", "Server-a", state=state, lane="words")
+    assert result["index_status"] != "unavailable"
+    assert "index_state_mismatch" not in result["warnings"]
+    assert result["freshness"]["status"] != "unknown"

@@ -114,6 +114,21 @@ def test_references_descriptions_and_digests_stay(line: str) -> None:
     assert redact_sensitive_text(line) == line
 
 
+def test_the_lines_after_a_one_line_escaped_private_key_stay() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = (
+        "-----BEGIN "
+        + "PRIVATE KEY-----\\n"
+        + body
+        + '\\n-----END PRIVATE KEY-----\\n", "client_email": "bot@example.com"\n'
+        + "Run pnpm install from package.json next."
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert '"client_email": "bot@example.com"' in redacted
+    assert redacted.endswith("Run pnpm install from package.json next.")
+
+
 def test_an_assignment_value_ends_at_an_escaped_newline() -> None:
     value = _ALNUM[:32]
     redacted = redact_sensitive_text(f"KEY={value}\\nSTART=$(date)")

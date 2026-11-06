@@ -298,3 +298,40 @@ def test_an_inline_key_after_a_placeholder_marker_still_goes() -> None:
     redacted = redact_sensitive_text(text)
     assert body not in redacted
     assert redacted.endswith("done")
+
+
+def test_a_truncated_inline_key_goes_and_the_text_after_its_end_stays() -> None:
+    body = "b3B" + _ALNUM[:60]
+    text = (
+        "[[-----BEGIN OPENSSH "
+        + "PRIVATE KEY-----"
+        + body
+        + "...-----END OPENSSH PRIVATE KEY-----]] notes.md"
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert redacted.endswith("-----]] notes.md")
+
+
+def test_an_inline_key_with_no_end_marker_loses_its_body() -> None:
+    body = "b3B" + _ALNUM[:60]
+    redacted = redact_sensitive_text(
+        "key -----BEGIN OPENSSH " + "PRIVATE KEY-----" + body + " (cut)"
+    )
+    assert body not in redacted
+    assert redacted.endswith(" (cut)")
+
+
+def test_a_key_written_as_a_json_list_of_lines_loses_every_line() -> None:
+    line = "MII" + _ALNUM[:61]
+    text = (
+        '["-----BEGIN RSA '
+        + 'PRIVATE KEY-----", "'
+        + line
+        + '", "'
+        + line[::-1]
+        + '", "-----END RSA PRIVATE KEY-----"]'
+    )
+    redacted = redact_sensitive_text(text)
+    assert line not in redacted
+    assert line[::-1] not in redacted

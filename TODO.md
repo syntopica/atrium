@@ -445,9 +445,11 @@
       claims): quoted citations cut unsupported facts 13.5% to 2.5%, but open ends
       rose 15.7% to 23.9% and output tokens +38%; the verbatim check dropped only
       supported facts. Not adopted as is; next: cite facts only, keep the old
-      open-end prompt, re-judge. **Owner decisions:** the trigram lane (keep at
-      3.9 GB, drop at 1.9 GB, or `detail=none` at 2.2 GB losing bm25 and phrase
-      MATCH); whether partial rerank stays in place of the atomic contract.
+      open-end prompt, re-judge. Decided 2026-11-06: partial rerank stays (owner
+      left it to the measurements); the trigram lane is kept and compacted (3.9 GB),
+      since dropping it (1.9 GB) or `detail=none` (2.2 GB, no bm25 or phrase MATCH)
+      changes retrieval unmeasured; the owner declined rotating the credentials
+      that `atrium_context` served unredacted before `9b6e30c`.
       Left: port `VENDOR_TOKEN_PATTERNS` and labelled-inline redaction to scribe's
       `redactSensitiveText`; tool-output truncation for the Haiku tick; one
       unreproduced flaky test in 3 full runs (5 reruns clean).
@@ -458,5 +460,8 @@
       reported it. Re-installed on both Macs 2026-11-06 (claude-config `78e7848`);
       `atrium doctor` warns since `14d85ac`. Left: find what rewrote `enabledPlugins`
       on 2026-10-18 (the same diff dropped `ponytail` and `taste-skill`; suspect the
-      settings ping-pong fixed in `9656692`), and whether to restore those two.
+      settings ping-pong fixed in `9656692`). `ponytail` and `taste-skill` were
+      re-enabled on both Macs (claude-config `d21be96`); the Mac mini's config repo
+      had sat in an unresolved auto-sync merge since 2026-11-05 20:00, over
+      `.skillkit.json` timestamps only, resolved in `b059867`.
 

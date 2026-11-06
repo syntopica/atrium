@@ -13,12 +13,23 @@ def ordered_candidates(
     links: list[tuple[Hit, str]],
     reranked: dict[str, Any] | None,
 ) -> list[tuple[Hit, str, str | None]]:
-    """Merge by logit when both populations were reranked, else alternate them.
+    """Merge the reranked hits by logit, then alternate the ones left in fused order.
 
     Fused scores are rank fractions of two separate fusions and say nothing
-    about which side is stronger, so without a reranker the alternation that
-    keeps notes from being starved stays.
+    about which side is stronger, so unscored hits keep the alternation that
+    keeps notes from being starved. With no reranker, or none scored, that
+    alternation is the whole order.
     """
-    if reranked is not None and reranked["applied"]:
-        return merge_by_score(history, notes, links)
-    return interleave_candidates(history, notes, links)
+    if reranked is None or not reranked.get("scored"):
+        return interleave_candidates(history, notes, links)
+    head = merge_by_score(
+        [hit for hit in history if hit.lane == "reranked"],
+        [hit for hit in notes if hit.lane == "reranked"],
+        links,
+    )
+    tail = interleave_candidates(
+        [hit for hit in history if hit.lane != "reranked"],
+        [hit for hit in notes if hit.lane != "reranked"],
+        links,
+    )
+    return head + tail

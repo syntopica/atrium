@@ -10,22 +10,25 @@ def redact_private_key_blocks(text: str) -> str:
     """Replace each ``-----BEGIN ... PRIVATE KEY-----`` block with one marker.
 
     Same rule as scribe's `redactPrivateKeyBlocks.ts`: a key escaped onto one
-    line is replaced within that line, END marker or not; a block opens only on
-    a bare BEGIN marker line and everything up to its END line goes, failing
-    closed.
+    line is replaced within that line, END marker or not; otherwise a block opens
+    where `opens_private_key_block` says, the text before the marker stays, and
+    every line up to the END line goes, failing closed.
     """
+    lines = text.split("\n")
     output: list[str] = []
     inside = False
-    for line in text.split("\n"):
+    for index, line in enumerate(lines):
         if inside:
             inside = not is_private_key_marker_line(line, "END")
             continue
         if holds_escaped_private_key(line):
             output.append(ESCAPED_PRIVATE_KEY_PATTERN.sub("[REDACTED:private-key]", line))
             continue
-        if not opens_private_key_block(line):
+        following = lines[index + 1] if index + 1 < len(lines) else None
+        opening = opens_private_key_block(line, following)
+        if opening is None:
             output.append(line)
             continue
-        output.append("[REDACTED:private-key]")
+        output.append(line[:opening] + "[REDACTED:private-key]")
         inside = True
     return "\n".join(output)

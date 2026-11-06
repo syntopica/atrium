@@ -181,3 +181,18 @@ def test_a_key_printed_with_line_numbers_still_goes_whole() -> None:
     redacted = redact_sensitive_text(text)
     assert body not in redacted
     assert redacted.endswith("after")
+
+
+def test_a_quoted_begin_marker_with_its_key_below_and_no_end_still_goes() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = "\n".join(
+        [
+            "key = '-----BEGIN RSA " + "PRIVATE KEY-----',",
+            body,
+            body,
+            "... (output truncated)",
+        ]
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert redacted.startswith("key = '[REDACTED:private-key]")

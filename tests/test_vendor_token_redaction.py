@@ -165,3 +165,19 @@ def test_a_pem_begin_marker_quoted_in_prose_takes_no_text_after_it() -> None:
     redacted = redact_sensitive_text(text)
     assert "then run pnpm install from package.json." in redacted
     assert redacted.endswith("Done.")
+
+
+def test_a_key_printed_with_line_numbers_still_goes_whole() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = "\n".join(
+        [
+            "-----BEGIN RSA " + "PRIVATE KEY-----",
+            "   12\t" + body,
+            "> " + body,
+            "-----END RSA PRIVATE KEY-----",
+            "after",
+        ]
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert redacted.endswith("after")

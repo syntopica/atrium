@@ -423,6 +423,13 @@
 
 ## Self-improvement
 
+- [ ] **A citation split across two note chunks reads as an unresolved link.**
+      `brain/topics/agent-harnesses.md` chunk 26 ends in `[[S60]]` and chunk 27
+      starts with `(#sources)`, so `link_targets` (`55a64ee`) sees a bare wikilink and
+      warns `unresolved_indexed_link` (routine, so retrieval is not degraded). The
+      other 23 unresolved links after 2026-11-06 are syntax examples or quotations.
+      Smallest next step: keep a `[[...]](...)` together when chunking notes.
+
 ## Cross-project
 
 - [ ] Scribe (formerly `rocket-agents`), tracked in `~/p/scribe/TODO.md`: canonical event IDs are conversation-local in practice —

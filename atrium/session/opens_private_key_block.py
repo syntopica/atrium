@@ -1,19 +1,22 @@
-"""Tell the opening line of a PEM private key block."""
+"""Tell where a PEM private key block opens on a line."""
 
 import re
 
-from atrium.session.is_private_key_marker_line import is_private_key_marker_line
+from atrium.session.looks_like_pem_body_line import looks_like_pem_body_line
+
+_BEGIN = re.compile(r"-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----")
 
 
-def opens_private_key_block(line: str) -> bool:
-    """Whether the line is a bare ``-----BEGIN ... PRIVATE KEY-----`` marker.
+def opens_private_key_block(line: str, following: str | None) -> int | None:
+    """Return where a block opens on ``line``, or None when it opens none.
 
-    A BEGIN marker followed by other text is prose about a key, and opening a
-    block on it took the 141 lines after it (2026-11-06). The decision is made on
-    this line alone: an open block runs to its END line whatever its body lines
-    look like, so a key printed with line numbers still goes whole.
+    Same rule as scribe's `opensPrivateKeyBlock`: a BEGIN marker anywhere in the
+    line opens a block when nothing follows it, or when the next line reads as
+    key body. A marker followed by text and then prose is prose about a key.
     """
-    return (
-        is_private_key_marker_line(line, "BEGIN")
-        and re.search(r"PRIVATE KEY-----\s*$", line) is not None
-    )
+    marker = _BEGIN.search(line)
+    if marker is None:
+        return None
+    if not line[marker.end() :].strip() or looks_like_pem_body_line(following):
+        return marker.start()
+    return None

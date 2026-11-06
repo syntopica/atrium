@@ -3,6 +3,9 @@
 import re
 
 from atrium.session.redact_assigned_secrets import redact_assigned_secrets
+from atrium.session.redact_environment_secret_assignments import (
+    redact_environment_secret_assignments,
+)
 from atrium.session.redact_labelled_inline_secrets import redact_labelled_inline_secrets
 from atrium.session.redact_markdown_table_secrets import redact_markdown_table_secrets
 from atrium.session.redact_private_key_blocks import redact_private_key_blocks
@@ -33,6 +36,7 @@ def redact_sensitive_text(text: str) -> str:
     text = redact_markdown_table_secrets(text)
     text = redact_assigned_secrets(text)
     text = redact_labelled_inline_secrets(text)
+    text = redact_environment_secret_assignments(text)
     for pattern, replacement in [*_TOKEN_PATTERNS, *VENDOR_TOKEN_PATTERNS]:
         text = pattern.sub(replacement, text)
     return text

@@ -5,6 +5,7 @@ import re
 from atrium.session.credential_label_max_words import CREDENTIAL_LABEL_MAX_WORDS
 from atrium.session.credential_label_prefixes import CREDENTIAL_LABEL_PREFIXES
 from atrium.session.credential_label_suffixes import CREDENTIAL_LABEL_SUFFIXES
+from atrium.session.is_tax_reference_label import is_tax_reference_label
 
 
 def is_secret_table_label(cell: str) -> bool:
@@ -21,4 +22,4 @@ def is_secret_table_label(cell: str) -> bool:
     joined = " ".join(words)
     if any(joined == s or joined.endswith(f" {s}") for s in CREDENTIAL_LABEL_SUFFIXES):
         return True
-    return words[0] in CREDENTIAL_LABEL_PREFIXES
+    return words[0] in CREDENTIAL_LABEL_PREFIXES and not is_tax_reference_label(words)

@@ -129,7 +129,7 @@ def test_a_project_with_no_episodes_injects_nothing():
 
 
 def test_recall_seeks_the_project_instead_of_scanning_every_episode(tmp_path):
-    """A provider scan fetched 79k rows and timed out recall on a cold cache."""
+    """A provider scan fetched 79k rows, and sorting 74k rows timed out recall; seek in the index."""
     connection = open_store(tmp_path / "index.sqlite3")
     plan = " ".join(
         row[3]
@@ -139,7 +139,10 @@ def test_recall_seeks_the_project_instead_of_scanning_every_episode(tmp_path):
         )
     )
     connection.close()
-    assert "records_context_role_workspace (role=? AND workspace>? AND workspace<?)" in plan
+    assert (
+        "COVERING INDEX records_recall_role_workspace_time (role=? AND workspace>? AND workspace<?)"
+        in plan
+    )
 
 
 def test_a_path_is_a_path_not_a_like_pattern(tmp_path):

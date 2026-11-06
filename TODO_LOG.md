@@ -8,6 +8,9 @@
 
 ### 2026-11
 
+- [-] 2026-11-06 — **Security:** **Rotate the credentials that reached tool output (owner decision, 2026-11-05).** The access-map mailbox password, and the MySQL password, HMAC secret and API token rows of records `009ec41f...` and `cbb6bbf1...`, were returned unredacted by `atrium_context` before the 2026-11-05 fixes. Removing them from the index does not invalidate them. The owner decides later whether and when to rotate; nothing is to be rotated, tested or used until then. Smallest unblock: the owner's decision, then rotate at each service and update `~/p/wiki/brain/business/access-map.md`.
+  - Resolution: Owner declined rotation on 2026-11-06; the values were removed from the index and are redacted at every output surface since 9b6e30c. Reopen if the owner decides to rotate.
+
 - [x] 2026-11-06 — **Self-improvement:** **A citation split across two note chunks reads as an unresolved link.**
       `brain/topics/agent-harnesses.md` chunk 26 ends in `[[S60]]` and chunk 27
       starts with `(#sources)`, so `link_targets` (`55a64ee`) sees a bare wikilink and

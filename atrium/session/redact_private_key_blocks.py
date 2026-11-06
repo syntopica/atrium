@@ -2,6 +2,7 @@
 
 from atrium.session.escaped_private_key_pattern import ESCAPED_PRIVATE_KEY_PATTERN
 from atrium.session.holds_escaped_private_key import holds_escaped_private_key
+from atrium.session.is_pem_body_line import is_pem_body_line
 from atrium.session.is_private_key_marker_line import is_private_key_marker_line
 from atrium.session.opens_private_key_block import opens_private_key_block
 
@@ -12,15 +13,19 @@ def redact_private_key_blocks(text: str) -> str:
     Same rule as scribe's `redactPrivateKeyBlocks.ts`: a key escaped onto one
     line is replaced within that line, END marker or not; otherwise a block opens
     where `opens_private_key_block` says, the text before the marker stays, and
-    every line up to the END line goes, failing closed.
+    its body lines (`is_pem_body_line`) go up to the END line; the first line
+    that cannot be part of a key ends the block and stays.
     """
     lines = text.split("\n")
     output: list[str] = []
     inside = False
     for index, line in enumerate(lines):
-        if inside:
-            inside = not is_private_key_marker_line(line, "END")
+        if inside and is_private_key_marker_line(line, "END"):
+            inside = False
             continue
+        if inside and is_pem_body_line(line):
+            continue
+        inside = False
         if holds_escaped_private_key(line):
             output.append(ESCAPED_PRIVATE_KEY_PATTERN.sub("[REDACTED:private-key]", line))
             continue

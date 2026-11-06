@@ -4,6 +4,7 @@ import re
 
 from atrium.session.is_file_path_value import is_file_path_value
 from atrium.session.is_inline_secret_label import is_inline_secret_label
+from atrium.session.is_non_secret_value import is_non_secret_value
 
 # A label of up to five words, a colon, then a token-shaped value, optionally
 # quoted or backticked. The label starts after a line start or a delimiter.
@@ -32,6 +33,7 @@ def redact_labelled_inline_secrets(text: str) -> str:
             not has_shape
             or url_rest
             or is_file_path_value(value)
+            or is_non_secret_value(value)
             or not is_inline_secret_label(label)
         ):
             return match.group(0)

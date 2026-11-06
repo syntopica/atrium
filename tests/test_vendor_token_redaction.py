@@ -77,3 +77,34 @@ def test_an_inline_labelled_credential_is_redacted(line: str) -> None:
 )
 def test_ids_hashes_public_keys_and_prose_stay(line: str) -> None:
     assert redact_sensitive_text(line) == line
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "export CF_API_TOKENS={v}",
+        "ATOKEN={v}",
+        "Primary API key: {v}",
+    ],
+)
+def test_a_credential_variable_or_label_is_still_redacted(line: str) -> None:
+    value = _ALNUM[:32]
+    assert value not in redact_sensitive_text(line.format(v=value))
+
+
+@pytest.mark.parametrize(
+    "line",
+    [
+        "Clave de liquidación: " + "A0123456" + "78901234",
+        "clave_liquidacion: " + "A0123456" + "78901234",
+        "export SCANNED_TOKEN_PATTERN=" + "gh[ops]_[a-z0-9]{36}",
+        "OAUTH_TOKEN_URI=" + "https://oauth2.example.com/token2",
+        "MAX_TOKENS=" + "abc12345",
+        "export TOKENIZER=" + "cl100k_base",
+        "CONTACT_FORM_STORAGE_KEY=" + "contact-form-v2",
+        "Sec-WebSocket-Key: " + "dGhlIHNhbXBsZSBub25j" + "ZQ1x",
+        "Cache restored from key: " + "linux-node-" + "abc123def456ghi789",
+    ],
+)
+def test_references_descriptions_and_digests_stay(line: str) -> None:
+    assert redact_sensitive_text(line) == line

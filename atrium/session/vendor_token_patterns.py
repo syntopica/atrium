@@ -1,8 +1,8 @@
 """Credential shapes a vendor stamps with a fixed prefix, taken from gitleaks' rules.
 
 The exporter's original six patterns let Stripe live keys, Google API keys,
-Airtable tokens, an age secret key, JSON-escaped and base64 private keys and
-`export NAME_KEY=value` lines reach context output from curated notes
+Airtable tokens, an age secret key and JSON-escaped and base64 private keys
+reach context output from curated notes
 (gitleaks 8.30.1 over the served index, 2026-11-06). Each regex below follows
 the gitleaks rule named beside it; only prefixed shapes are kept, because a
 bare hex or base64 run is as often a hash or an id as a secret.
@@ -62,13 +62,4 @@ VENDOR_TOKEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bPMAK-[a-f0-9]{24}-[a-f0-9]{34}\b"), "[REDACTED:token]"),
     # telegram-bot-api-token
     (re.compile(r"\b[0-9]{5,16}:AA[A-Za-z0-9_-]{33}\b"), "[REDACTED:token]"),
-    # an environment assignment whose name says what it holds, with a token-shaped
-    # value (letters and digits): `STOP_KEY = "Escape"` is a key binding, not a key
-    (
-        re.compile(
-            r"(\b[A-Z][A-Z0-9_]*(?:KEY|SECRET|TOKEN|PASSWORD|PASSWD)[A-Z0-9_]*\s*=\s*)"
-            r"[\"']?(?!\[REDACTED:)(?=[^\s\"'`]*\d)(?=[^\s\"'`]*[A-Za-z])[^\s\"'`]{8,}"
-        ),
-        r"\g<1>[REDACTED:secret]",
-    ),
 ]

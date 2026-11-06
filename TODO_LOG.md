@@ -8,6 +8,15 @@
 
 ### 2026-11
 
+- [x] 2026-11-06 — **Self-improvement:** **A citation split across two note chunks reads as an unresolved link.**
+      `brain/topics/agent-harnesses.md` chunk 26 ends in `[[S60]]` and chunk 27
+      starts with `(#sources)`, so `link_targets` (`55a64ee`) sees a bare wikilink and
+      warns `unresolved_indexed_link` (routine, so retrieval is not degraded). The
+      other 23 unresolved links after 2026-11-06 are syntax examples or quotations.
+      Smallest next step: keep a `[[...]](...)` together when chunking notes.
+  - Result: hard_split moves a positional cut back to the start of a link it would split (6029c21)
+  - Evidence: Refresh 2026-11-06 04:10 rewrote 12 notes; agent-harnesses has 108 chunks, none ending in a bare citation; index scan 24 to 23 unresolved, all intentional; 5 live queries degraded false; 798 tests pass
+
 - [x] 2026-11-05 — **Integrations:** **`atrium-mcp` ran the editable working checkout.**
   - Result: Every Claude profile on the MacBook and the Mac mini now starts the MCP server from the release checkout with its own venv (`UV_PROJECT_ENVIRONMENT=~/.local/share/atrium/mcp-venv`), so the refresh's exact `uv run` venv is untouched. The Mac mini release and context service moved from `487a220` to `6c8037a`.
   - Evidence: dotfiles `31f0b81`; `claude mcp add-json` in both profiles on both Macs with the server lists unchanged; a JSON-RPC probe of the new command listed the four tools and answered `atrium_context` with `served_by: service` and 8 evidence items.

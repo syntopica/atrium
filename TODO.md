@@ -128,6 +128,9 @@
 
 ## Synthesis
 
+- [ ] 2026-11-06 — **Synthesis reads the frozen v1 archive since the segment cutover.**
+  `bin/atrium/atrium-synthesis` (dotfiles) passes `$SYNTOPICA_DATA/conversations/archive.jsonl`. In segment mode that file stopped moving on 2026-11-05 (mini 09:41, MacBook 10:01), so no conversation captured after the cutover is ever synthesized. Since 46dbce5 a pass skips conversations already finished at their content (5,643 skipped on the second pass, 6,871 markers at 15:25), so a full walk is cheap once the markers converge. Next: feed the pass from the segment store, for example a materialized export refreshed when the generation or the pending set changes, and key the markers on content the export keeps.
+
 - [ ] **Synthesis coverage and quality.** Built 2026-08-28 (`6263938`); the lane question is
       settled by the owner routing rule of 2026-09-30 (bulk on the worker's agy and local
       lanes, cursor cancelled, `drip-loop.sh` retired). The build history, the lane
@@ -289,6 +292,12 @@
       first two rules changed 42 of 527 rows between them.
 
 ## Observability
+
+- [ ] 2026-11-06 — **The embed stage dominates segment-mode refreshes under CPU contention.**
+  Mini refresh 14:29-15:24: embed 14:45:28-15:18:23 for 394 records (256 in 427.8 s, then 138 in 1509.7 s, 11 s/record), against 1.3 s/record on 2026-11-05. CPU samples 14:10-14:55: mini total 466 % of 800 % on average, mostly `node` from other sessions; atrium 49 % average, 373 % peak. Next: measure the ONNX embedder's threads against the free cores, and lower its priority (`nice`) so it yields to interactive work instead of competing with it.
+
+- [ ] 2026-11-06 — **`tests/test_context_protocol.py::test_context_cli_and_fresh_mcp_agree` is flaky in the full suite.**
+  It failed once in a full `pytest` run (ranked vs linked lane order) and passed alone three times, and in the next full run. Next: rerun the full suite until it fails, then pin the tie order the CLI and the MCP path compare.
 
 - [!] **Dependency audit blocks the Python gate (2026-10-21).**
   `uv run pip-audit` reports certifi 2026.7.22, PYSEC-2026-4320, fixed in

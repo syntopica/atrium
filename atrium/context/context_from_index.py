@@ -53,7 +53,9 @@ def context_from_index(  # noqa: PLR0913 -- shared adapter contract
             dense_matrix=dense_matrix,
             reranker=reranker,
         )
-        if state is not None and index.resolve().parent != state.resolve():
+        # The directory holding the path, not the file's target: the index may be
+        # a link from the state directory to a cache volume.
+        if state is not None and index.absolute().parent.resolve() != state.resolve():
             result["freshness"] = {"status": "unknown", "last_refresh": None, "source": None}
             result["warnings"].append("index_state_mismatch")
             result["degraded"] = True

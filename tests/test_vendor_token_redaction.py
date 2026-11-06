@@ -73,6 +73,8 @@ def test_an_inline_labelled_credential_is_redacted(line: str) -> None:
         "next_public_turnstile_site_key: " + "0x4AAAAAAA" + "Bc1dEf2gHi3j",
         "Idempotency-Key: " + "a1b2c3d4e5f6" + "g7h8i9j0",
         "Result: 12 of 34 passed",
+        "SESSION_SECRET=" + "crypto.randomBytes(32).toString(1)",
+        "Google API key https:" + "//www.example.com/a/settings/apikey2",
         "key: '" + "exports/raw/2026-10-20/part_1/" + "manifest.json'",
     ],
 )
@@ -126,6 +128,23 @@ def test_the_lines_after_a_one_line_escaped_private_key_stay() -> None:
     redacted = redact_sensitive_text(text)
     assert body not in redacted
     assert '"client_email": "bot@example.com"' in redacted
+    assert redacted.endswith("Run pnpm install from package.json next.")
+
+
+def test_a_truncated_one_line_escaped_private_key_goes_and_the_rest_stays() -> None:
+    body = "b3Bl" + _ALNUM[:60]
+    text = (
+        '"key": "-----BEGIN OPENSSH '
+        + "PRIVATE KEY-----\\n"
+        + body
+        + "\\n"
+        + body
+        + '..." (truncated)\n'
+        + "Run pnpm install from package.json next."
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert '..." (truncated)' in redacted
     assert redacted.endswith("Run pnpm install from package.json next.")
 
 

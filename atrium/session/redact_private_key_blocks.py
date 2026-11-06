@@ -1,30 +1,30 @@
 """Drop every PEM private key block from a text, as the exporter does."""
 
 from atrium.session.closes_private_key_on_same_line import closes_private_key_on_same_line
+from atrium.session.escaped_private_key_pattern import ESCAPED_PRIVATE_KEY_PATTERN
+from atrium.session.holds_escaped_private_key import holds_escaped_private_key
+from atrium.session.is_private_key_marker_line import is_private_key_marker_line
 
 
 def redact_private_key_blocks(text: str) -> str:
     """Replace each ``-----BEGIN ... PRIVATE KEY-----`` block with one marker.
 
-    Ported line for line from rocket-agents' `redactPrivateKeyBlocks.ts` so a
-    record written during the session is redacted exactly as its transcript
-    will be when the exporter archives it.
+    Same rule as scribe's `redactPrivateKeyBlocks.ts`: a key escaped onto one
+    line is replaced within that line, END marker or not; a block opens only on
+    a line that holds neither, and everything up to its END line goes.
     """
     output: list[str] = []
     inside = False
     for line in text.split("\n"):
-        opens = line.startswith("-----BEGIN ") and "PRIVATE KEY-----" in line
-        if opens and not inside and closes_private_key_on_same_line(line):
+        if inside:
+            inside = not is_private_key_marker_line(line, "END")
+            continue
+        if holds_escaped_private_key(line):
+            output.append(ESCAPED_PRIVATE_KEY_PATTERN.sub("[REDACTED:private-key]", line))
+            continue
+        if not is_private_key_marker_line(line, "BEGIN") or closes_private_key_on_same_line(line):
             output.append(line)
             continue
-        if opens:
-            if not inside:
-                output.append("[REDACTED:private-key]")
-            inside = True
-            continue
-        if inside and line.startswith("-----END ") and "PRIVATE KEY-----" in line:
-            inside = False
-            continue
-        if not inside:
-            output.append(line)
+        output.append("[REDACTED:private-key]")
+        inside = True
     return "\n".join(output)

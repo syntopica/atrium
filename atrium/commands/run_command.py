@@ -3,6 +3,7 @@
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
 
+from atrium.commands.run_compact import run_compact
 from atrium.commands.run_curate_command import run_curate_command
 from atrium.commands.run_doctor import run_doctor
 from atrium.commands.run_embed import run_embed
@@ -92,6 +93,8 @@ def run_command(  # noqa: PLR0911, PLR0912, PLR0915 -- one return per subcommand
         return run_remember_cli(args.index, default_registry(), args.project, args.supersedes)
     if args.command == "erase":
         return run_erase(args.index, args.plan, archive, apply=args.apply)
+    if args.command == "compact":
+        return run_compact(args.index, state, apply=args.apply)
     if args.command == "repair-index":
         return run_repair_index(args.index, state, apply=args.apply)
     if args.command == "forget":

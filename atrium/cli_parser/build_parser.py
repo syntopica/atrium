@@ -3,6 +3,7 @@
 import argparse
 from pathlib import Path
 
+from atrium.cli_parser.add_compact_parser import add_compact_parser
 from atrium.cli_parser.add_context_parser import add_context_parser
 from atrium.cli_parser.add_curate_cluster_parser import add_curate_cluster_parser
 from atrium.cli_parser.add_curate_extract_parser import add_curate_extract_parser
@@ -63,6 +64,7 @@ def build_parser(
     add_erase_parser(subcommands)
     add_forget_parser(subcommands)
     add_repair_index_parser(subcommands)
+    add_compact_parser(subcommands)
     add_search_parser(subcommands)
     add_prepare_context_parser(subcommands)
     add_context_parser(subcommands)

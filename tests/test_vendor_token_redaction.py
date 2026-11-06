@@ -73,6 +73,7 @@ def test_an_inline_labelled_credential_is_redacted(line: str) -> None:
         "next_public_turnstile_site_key: " + "0x4AAAAAAA" + "Bc1dEf2gHi3j",
         "Idempotency-Key: " + "a1b2c3d4e5f6" + "g7h8i9j0",
         "Result: 12 of 34 passed",
+        "key: '" + "exports/raw/2026-10-20/part_1/" + "manifest.json'",
     ],
 )
 def test_ids_hashes_public_keys_and_prose_stay(line: str) -> None:

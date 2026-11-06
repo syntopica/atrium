@@ -70,6 +70,8 @@ def test_an_inline_labelled_credential_is_redacted(line: str) -> None:
         "Commit: 4f257ac8d3e1b2c4f5a6b7c8d9e0f1a2b3c4d5e6",
         "Supabase Public Key: sb_publishable_abc123def456ghi789",
         'STOP_ALL_KEY = "Escape"',
+        "next_public_turnstile_site_key: " + "0x4AAAAAAA" + "Bc1dEf2gHi3j",
+        "Idempotency-Key: " + "a1b2c3d4e5f6" + "g7h8i9j0",
         "Result: 12 of 34 passed",
     ],
 )

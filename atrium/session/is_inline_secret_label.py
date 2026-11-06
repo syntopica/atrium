@@ -3,8 +3,18 @@
 from atrium.session.is_secret_table_label import is_secret_table_label
 
 # Inline, a bare "key" usually is one ("Merchant key: ...", "app_key: ..."), but
-# these qualifiers name things that are not secrets.
-_PUBLIC_KEY_QUALIFIERS = ("public", "publishable", "primary", "foreign", "host", "ssh host")
+# these qualifiers name things that are not secrets: a Turnstile site key ships
+# to the browser, an idempotency key is a request id.
+_PUBLIC_KEY_QUALIFIERS = (
+    "public",
+    "publishable",
+    "primary",
+    "foreign",
+    "host",
+    "ssh host",
+    "site",
+    "idempotency",
+)
 # Spanish puts the noun first ("Token de Hetzner", "Token API Hetzner Cloud"); a
 # bare leading "token" is not enough, or "Token count" would be a credential.
 _SPANISH_TOKEN_LINKS = ("de", "del", "api", "para")

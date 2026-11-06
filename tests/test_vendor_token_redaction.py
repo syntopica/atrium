@@ -196,3 +196,32 @@ def test_a_quoted_begin_marker_with_its_key_below_and_no_end_still_goes() -> Non
     redacted = redact_sensitive_text(text)
     assert body not in redacted
     assert redacted.startswith("key = '[REDACTED:private-key]")
+
+
+def test_a_truncated_key_takes_no_listing_after_it() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = "\n".join(
+        [
+            "-----BEGIN RSA " + "PRIVATE KEY-----",
+            body,
+            "id | nif | name",
+            "1 | B12345678 | Acme",
+        ]
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert redacted.endswith("id | nif | name\n1 | B12345678 | Acme")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "STRIPE_KEY = process.argv[3]",
+        "SECRET_KEY=process.env.STRIPE_SECRET_KEY",
+        'api_key = "CONTEXT7_API_KEY"',
+        "Clave: A1234567890123456",
+        'KEY = "[HOME]/.ssh/id_ed25519"',
+    ],
+)
+def test_a_non_secret_value_after_a_credential_name_stays(text: str) -> None:
+    assert redact_sensitive_text(text) == text

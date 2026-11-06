@@ -2,6 +2,7 @@
 
 import re
 
+from atrium.session.is_non_secret_value import is_non_secret_value
 from atrium.session.is_secret_variable_name import is_secret_variable_name
 
 # The value ends at a backslash, which in captured text is usually an escaped
@@ -16,18 +17,17 @@ def redact_environment_secret_assignments(text: str) -> str:
     """Replace a token-shaped value whose variable name says it is a credential.
 
     `export RESEND_API_KEY=...` is a key; `STOP_KEY = "Escape"` is a key binding
-    and stays, a URL is where a credential goes, not one, and a value with a
-    parenthesis is code that makes one. Same rule as
+    and stays, a URL is where a credential goes, not one, and code, a variable
+    name or a tax reference (`is_non_secret_value`) is not one either. Same rule as
     scribe's `redactEnvironmentSecretAssignments`.
     """
 
     def replace(match: re.Match[str]) -> str:
         value = match.group("value")
         has_shape = re.search(r"\d", value) and re.search(r"[A-Za-z]", value)
-        code = "(" in value or ")" in value
         if (
             not has_shape
-            or code
+            or is_non_secret_value(value)
             or "://" in value
             or not is_secret_variable_name(match.group("name"))
         ):

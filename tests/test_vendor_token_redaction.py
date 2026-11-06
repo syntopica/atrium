@@ -152,3 +152,16 @@ def test_an_assignment_value_ends_at_an_escaped_newline() -> None:
     value = _ALNUM[:32]
     redacted = redact_sensitive_text(f"KEY={value}\\nSTART=$(date)")
     assert redacted == "KEY=[REDACTED:secret]\\nSTART=$(date)"
+
+
+def test_a_pem_begin_marker_quoted_in_prose_takes_no_text_after_it() -> None:
+    text = "\n".join(
+        [
+            "-----BEGIN OPENSSH PRIVATE KEY----- ... and the END marker",
+            "then run pnpm install from package.json.",
+            "Done.",
+        ]
+    )
+    redacted = redact_sensitive_text(text)
+    assert "then run pnpm install from package.json." in redacted
+    assert redacted.endswith("Done.")

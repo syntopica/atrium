@@ -438,7 +438,10 @@
       rerank `845562c` (holdout Hit@8 0.511 full vs 0.443 fused vs 0.511 at 24
       scored; acceptance 0.412 / 0.224 / 0.365; `wiki/atrium/evaluations/partial-rerank-2026-11-06/`),
       but no live partial cut has been observed yet; quota guard at 80% `4f257ac`;
-      `atrium compact` `d16be2f` (clone 23,331 to 3,915 MiB in ~17 min); gitleaks
+      `atrium compact` `d16be2f` (live index 24.5 to 4.1 GB in 15 min on
+      2026-11-06, words 92 s, substrings 558 s, VACUUM 244 s; a link-resolution bug
+      that marked every answer since 2026-10-27 `index_state_mismatch` was fixed in
+      `4a2d49a`); gitleaks
       corpus and vendor patterns `9b6e30c` (curated-note findings 32 to 6). Short-prompt
       skip already existed (`should-skip.js`, 24 characters). Faithfulness A/B
       (`wiki/atrium/evaluations/faithfulness-cite-2026-11-06/`, GPT-6 blind, 445

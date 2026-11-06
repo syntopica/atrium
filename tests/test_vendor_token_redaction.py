@@ -276,3 +276,25 @@ def test_an_escaped_encrypted_key_goes_with_its_headers() -> None:
     redacted = redact_sensitive_text(text)
     assert body not in redacted
     assert redacted.endswith('" and after')
+
+
+def test_a_placeholder_begin_marker_takes_no_prose_up_to_a_later_end_marker() -> None:
+    text = "\n".join(
+        [
+            '"keys": "-----BEGIN OPENSSH ' + "PRIVATE KEY----- ... comment 'deploy'\",",
+            '  "note": "nova is the ProxyJump bastion for db-123456, see below",',
+            '  "tail": "-----END OPENSSH PRIVATE KEY----- (end)"',
+        ]
+    )
+    assert redact_sensitive_text(text) == text
+
+
+def test_an_inline_key_after_a_placeholder_marker_still_goes() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = (
+        "see -----BEGIN " + "PRIVATE KEY----- ... in docs. key: -----BEGIN "
+        "PRIVATE KEY----- " + body + " -----END PRIVATE KEY----- done"
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert redacted.endswith("done")

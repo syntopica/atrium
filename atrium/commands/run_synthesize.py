@@ -7,6 +7,7 @@ from pathlib import Path
 
 from atrium.synthesis_pass.conversation_at import conversation_at
 from atrium.synthesis_pass.conversations_in_workspace import conversations_in_workspace
+from atrium.synthesis_pass.drop_complete_conversations import drop_complete_conversations
 from atrium.synthesis_pass.holding_conversations import holding_conversations
 from atrium.synthesis_pass.make_conversation_runner import make_conversation_runner
 from atrium.synthesis_pass.newest_conversations import newest_conversations
@@ -98,11 +99,12 @@ def run_synthesize(  # noqa: PLR0913, PLR0917 -- the CLI surface: each argument 
         unfinished = started_conversations(partials) - holding
         if unfinished:
             print(f"  {len(unfinished)} conversations were left half done; walking them next")
-        conversations.sort(
+        conversations = sorted(
+            drop_complete_conversations(conversations, holding, default_registry()),
             key=lambda conversation: (
                 conversation["id"] not in holding,
                 conversation["id"] not in unfinished,
-            )
+            ),
         )
         made = skipped = failed = deferred = trivial = 0
         total = len(conversations)

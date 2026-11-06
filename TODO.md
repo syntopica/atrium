@@ -451,8 +451,15 @@
       since dropping it (1.9 GB) or `detail=none` (2.2 GB, no bm25 or phrase MATCH)
       changes retrieval unmeasured; the owner declined rotating the credentials
       that `atrium_context` served unredacted before `9b6e30c`.
-      Left: port `VENDOR_TOKEN_PATTERNS` and labelled-inline redaction to scribe's
-      `redactSensitiveText`; tool-output truncation for the Haiku tick; one
+      Ported to scribe's `redactSensitiveText` in scribe `92c97a4` (vendor
+      tokens, labelled inline values, secret-named environment assignments; 219
+      tests), with `site` and `idempotency` added to the public-key qualifiers
+      in both. It applies to new captures only: the last 300 MB of
+      `conversations/archive.jsonl` (1,818 records) still holds 51 vendor
+      tokens, 47 labelled values and 41 assignments the old patterns passed
+      (counted, values never printed). Re-redacting the archive is a rewrite of
+      the canonical store through scribe's erasure plan: owner decision.
+      Left: that decision; tool-output truncation for the Haiku tick; one
       unreproduced flaky test in 3 full runs (5 reruns clean).
 - [~] **The atrium-context mod was silently disabled from 2026-10-18 to 2026-11-06.**
       The dotfiles auto-sync `d554437` (and `9831be7` on the Mac mini) committed a

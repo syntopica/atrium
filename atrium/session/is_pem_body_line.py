@@ -3,6 +3,7 @@
 import re
 
 from atrium.session.is_base64_character import is_base64_character
+from atrium.session.is_pem_header_line import is_pem_header_line
 from atrium.session.pem_body_prefix_max_length import PEM_BODY_PREFIX_MAX_LENGTH
 
 
@@ -18,7 +19,7 @@ def is_pem_body_line(line: str) -> bool:
     trimmed = line.rstrip()
     if trimmed.strip() == "":
         return True
-    if re.match(r"[A-Za-z-]+: \S", trimmed.lstrip()):
+    if is_pem_header_line(trimmed):
         return True
     start = len(trimmed)
     while start > 0 and is_base64_character(trimmed[start - 1]):

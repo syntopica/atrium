@@ -225,3 +225,43 @@ def test_a_truncated_key_takes_no_listing_after_it() -> None:
 )
 def test_a_non_secret_value_after_a_credential_name_stays(text: str) -> None:
     assert redact_sensitive_text(text) == text
+
+
+def test_a_double_escaped_private_key_goes_and_the_config_after_it_stays() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = "\n".join(
+        [
+            '"key": "-----BEGIN ' + "PRIVATE KEY-----\\\\n" + body + "\\\\n",
+            'databaseUrl: "postgres://db.example.test/app"',
+            "host: db-123456",
+            "identityFile: ~/.ssh/example_ed25519",
+        ]
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert "host: db-123456" in redacted
+    assert redacted.endswith("identityFile: ~/.ssh/example_ed25519")
+
+
+def test_a_word_colon_line_after_a_begin_marker_opens_no_block() -> None:
+    text = 'echo "-----BEGIN ' + 'PRIVATE KEY----- goes here"\nhost: db-123456'
+    assert redact_sensitive_text(text) == text
+
+
+def test_an_encrypted_key_with_its_rfc_1421_headers_goes_whole() -> None:
+    body = "MII" + _ALNUM[:60]
+    text = "\n".join(
+        [
+            "-----BEGIN RSA " + "PRIVATE KEY-----",
+            "Proc-Type: 4,ENCRYPTED",
+            "DEK-Info: AES-128-CBC," + _ALNUM[:32],
+            "",
+            body,
+            "-----END RSA PRIVATE KEY-----",
+            "after",
+        ]
+    )
+    redacted = redact_sensitive_text(text)
+    assert body not in redacted
+    assert "DEK-Info" not in redacted
+    assert redacted.endswith("after")

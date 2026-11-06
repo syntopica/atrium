@@ -3,8 +3,10 @@
 import re
 
 from atrium.session.redact_assigned_secrets import redact_assigned_secrets
+from atrium.session.redact_labelled_inline_secrets import redact_labelled_inline_secrets
 from atrium.session.redact_markdown_table_secrets import redact_markdown_table_secrets
 from atrium.session.redact_private_key_blocks import redact_private_key_blocks
+from atrium.session.vendor_token_patterns import VENDOR_TOKEN_PATTERNS
 
 _TOKEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bBearer\s+(?!\[REDACTED:)\S{16,}", re.IGNORECASE), "Bearer [REDACTED:token]"),
@@ -24,11 +26,13 @@ def redact_sensitive_text(text: str) -> str:
 
     A session record is written from the model's own words, not from the
     archive, so it would otherwise bypass the exporter's `redactSensitiveText`
-    and index a credential verbatim. Same patterns, same order, same markers.
+    and index a credential verbatim. Same patterns, same order, same markers,
+    then the vendor shapes the exporter does not know yet.
     """
     text = redact_private_key_blocks(text)
     text = redact_markdown_table_secrets(text)
     text = redact_assigned_secrets(text)
-    for pattern, replacement in _TOKEN_PATTERNS:
+    text = redact_labelled_inline_secrets(text)
+    for pattern, replacement in [*_TOKEN_PATTERNS, *VENDOR_TOKEN_PATTERNS]:
         text = pattern.sub(replacement, text)
     return text

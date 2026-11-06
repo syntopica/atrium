@@ -10,6 +10,7 @@ from atrium.doctor.entry_point_health import entry_point_health
 from atrium.doctor.finding import Finding
 from atrium.doctor.fts_consistency import fts_consistency
 from atrium.doctor.index_coverage import index_coverage
+from atrium.doctor.prompt_retrieval_health import prompt_retrieval_health
 from atrium.doctor.read_archive_admissions import read_archive_admissions
 from atrium.doctor.record_total_coherence import record_total_coherence
 from atrium.doctor.refresh_health import refresh_health
@@ -34,7 +35,12 @@ def run_doctor(
     ``inventory`` (`scribe segments-inventory` output) means segment mode: the
     generation check replaces the checks that read the frozen v1 file.
     """
-    findings = [entry_point_health(), archive_freshness(archive), refresh_health(stamp)]
+    findings = [
+        entry_point_health(),
+        prompt_retrieval_health(),
+        archive_freshness(archive),
+        refresh_health(stamp),
+    ]
     if inventory is not None:
         # Segment mode. The v1 file stopped being written at the cutover, so
         # every check that streams it would compare the index against a frozen

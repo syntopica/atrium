@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from atrium.context.routine_warnings import ROUTINE_WARNINGS
+
 
 def finalize_context(response: dict[str, Any]) -> dict[str, Any]:
     """Make empty, bounded, and degraded outcomes explicit."""
@@ -12,5 +14,5 @@ def finalize_context(response: dict[str, Any]) -> dict[str, Any]:
         response["warnings"].append("index_empty")
     if not response["evidence"] and response["index_status"] != "unavailable":
         response["warnings"].append("no_matches")
-    response["degraded"] = any(warning != "no_matches" for warning in response["warnings"])
+    response["degraded"] = any(warning not in ROUTINE_WARNINGS for warning in response["warnings"])
     return response

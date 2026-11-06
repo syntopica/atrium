@@ -9,6 +9,7 @@ from typing import Any
 from atrium.synthesis_pass.producer_lane import ProducerLane
 from atrium.synthesis_pass.registry_state import RegistryState
 from atrium.synthesize.ack_conversation_results import ack_conversation_results
+from atrium.synthesize.complete_marker import complete_marker
 from atrium.synthesize.default_registry import default_registry
 from atrium.synthesize.quota_exhausted_error import QuotaExhaustedError
 from atrium.synthesize.read_worker_job_owners import read_worker_job_owners
@@ -83,6 +84,12 @@ def make_conversation_runner(
             print(f"  [{position}/{total}] {conversation['id'][:12]} FAILED: {error}", flush=True)
             return {"synthesized": 0, "skipped": 0, "failed": 1}
         settle(conversation["id"])
+        # No exception means no episode is left pending: a later pass need not
+        # segment this content again to find that out.
+        marker = complete_marker(default_registry(), conversation)
+        if marker is not None:
+            marker.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+            marker.touch()
         print(
             f"  [{position}/{total}] {conversation['id'][:12]} "
             f"+{result['synthesized']} (skipped {result['skipped']})",

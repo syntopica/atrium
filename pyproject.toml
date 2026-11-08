@@ -38,8 +38,11 @@ convention = "google"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["."]
 
 [tool.deptry]
+# These offline experiments have their own pinned requirements and explicit checks.
+extend_exclude = ["benchmarks"]
 # The cached Codex package runs these sibling modules as standalone hooks.
 known_first_party = ["atrium", "brain_use", "file_history", "instance_data", "touched_paths"]
 

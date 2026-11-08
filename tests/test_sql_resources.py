@@ -1,4 +1,4 @@
-"""Every statement the engine loads exists, and every statement file is loaded."""
+"""Every engine or benchmark statement exists, and every SQL file is loaded."""
 
 import ast
 from pathlib import Path
@@ -12,7 +12,7 @@ _SQL = _PACKAGE / "sql"
 
 def _loaded_names() -> set[str]:
     names = set()
-    for source in _PACKAGE.rglob("*.py"):
+    for source in (*_PACKAGE.rglob("*.py"), *(_ROOT / "benchmarks").rglob("*.py")):
         for node in ast.walk(ast.parse(source.read_text(encoding="utf-8"))):
             if (
                 isinstance(node, ast.Call)

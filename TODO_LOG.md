@@ -8,6 +8,11 @@
 
 ### 2026-11
 
+- [x] 2026-11-09 — **Observability:** 2026-11-06 — **`tests/test_context_protocol.py::test_context_cli_and_fresh_mcp_agree` is flaky in the full suite.**
+  It failed once in a full `pytest` run (ranked vs linked lane order) and passed alone three times, and in the next full run. Next: rerun the full suite until it fails, then pin the tie order the CLI and the MCP path compare.
+  - Result: The test now demands identical evidence only when both processes' rerank steps scored the same number of candidates; otherwise it demands the same records, ignoring score and lane. Cause: the rerank budget is wall time (RERANK_BUDGET_S 3 s), so under load the CLI and the MCP process score different prefixes and order the same evidence differently.
+  - Evidence: Before: 2 of 40 parallel runs (10 at a time) failed with the 'reranked' vs 'linked' order diff. After: 0 of 60 at 12 at a time; uv run pytest tests/test_context_protocol.py passes.
+
 - [-] 2026-11-06 — **Security:** **Rotate the credentials that reached tool output (owner decision, 2026-11-05).** The access-map mailbox password, and the MySQL password, HMAC secret and API token rows of records `009ec41f...` and `cbb6bbf1...`, were returned unredacted by `atrium_context` before the 2026-11-05 fixes. Removing them from the index does not invalidate them. The owner decides later whether and when to rotate; nothing is to be rotated, tested or used until then. Smallest unblock: the owner's decision, then rotate at each service and update `~/p/wiki/brain/business/access-map.md`.
   - Resolution: Owner declined rotation on 2026-11-06; the values were removed from the index and are redacted at every output surface since 9b6e30c. Reopen if the owner decides to rotate.
 
@@ -63,6 +68,13 @@
   and choose whether to restore both fused lists or expose partial application.
   - Result: An unavailable history or notes rerank now returns both original fused lists, preserving original scores and lanes consistently with applied=false. Fully successful reranking remains unchanged. No resident service reload, index mutation or archive change was performed.
   - Evidence: uv run pytest tests/test_rerank_populations.py tests/test_rerank_hits.py -q passed 10 tests after two partial-failure regressions failed before the fix. The wider context subset passed 40 tests; uv run codeality-py gate --json passed all required stages after replacing an unrelated scheduling-dependent test with deterministic CPU/wall clock cases. Independent review returned no findings. The SQL gate retains its recorded BDB406 finding.
+
+- [x] 2026-10-21 — **Observability:** **Dependency audit blocks the Python gate (2026-10-21).**
+  `uv run pip-audit` reports certifi 2026.7.22, PYSEC-2026-4320, fixed in
+  2026.10.19. This predates the Codex plugin changes. Smallest next step:
+  update the locked certifi dependency and rerun the Python gate.
+  - Result: Verified the existing dependency fix during benchmark validation; no dependency change was required by this experiment.
+  - Evidence: uv run codeality-py gate --json: pip-audit passed; installed certifi is 2026.10.19.
 
 - [x] 2026-10-21 — **Provenance:** Preserve canonical observing-host labels in structured retrieval.
   - Result: Added a forward-only provenance side table, independent metadata reconciliation that preserves vectors, and shared annotation for context/search/recall. Unknown legacy hosts remain absent. Updated the vulnerable certifi leaf to 2026.10.19. Live index migration and resident reload were not performed.

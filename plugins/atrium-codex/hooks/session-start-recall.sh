@@ -58,7 +58,7 @@ Memory could not be read for this session, so an empty recall means nothing.
 Do not treat this project as having no history.
 
     ${reason:-atrium recall exited $status}"
-elif [ -z "$out" ]; then
+elif [ -z "$out" ] && [ -z "${ATRIUM_PROMPT_RETRIEVAL_OFF:-}" ]; then
   # Genuinely nothing to recall. Inject nothing rather than spend context
   # saying so.
   exit 0
@@ -70,6 +70,22 @@ if [ "$status" -ne 0 ]; then
   notice="atrium: recall unavailable (${reason:-exit $status})"
 else
   notice="atrium: $(printf '%s\n' "$out" | grep -c '^- ') episodes recalled for this project"
+fi
+
+# Claude Code's entry point names a profile whose settings lost the
+# atrium-context plugin. Twice a settings sync dropped it and sessions went on
+# with no per-prompt retrieval and nothing saying so, while the model, handed
+# nothing, rarely looked itself. Say it to both.
+if [ -n "${ATRIUM_PROMPT_RETRIEVAL_OFF:-}" ]; then
+  notice="${notice:+$notice · }per-prompt retrieval OFF: atrium-context@atrium is not enabled in $ATRIUM_PROMPT_RETRIEVAL_OFF"
+  out="${out:+$out
+
+}# atrium per-prompt retrieval is off
+
+Nothing is retrieved for each prompt in this session. Before answering anything
+that sounds already established here, run it yourself:
+
+    atrium context \"<the question>\" --project ."
 fi
 
 printf '%s' "$out" | NOTICE="$notice" python3 -c "

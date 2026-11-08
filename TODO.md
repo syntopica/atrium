@@ -489,7 +489,15 @@
       The session-start hook now says so in every Claude Code session, to the
       person (`per-prompt retrieval OFF` in the start line) and to the model (run
       `atrium context` yourself), via `hooks/claude-code/prompt_retrieval_missing.py`,
-      which reuses the doctor's predicate. Left: confirm the writer on the mini
-      (`ps` for claude processes older than 2026-11-06), and stop the sync from
-      committing a settings file that drops `enabledPlugins` keys.
+      which reuses the doctor's predicate. Cause found the same day: the three
+      plugins were never installed on the mini (`installed_plugins.json` is per
+      machine and untracked; the 2026-11-06 re-install only fixed settings), and
+      each time a settings rewrite there lost exactly those three. Installed on
+      the mini with `claude plugin install`; dotfiles `73bec09` makes
+      sync-all-safe restore any `enabledPlugins` entry HEAD has and the working
+      copy lost before it commits claude-config, with a `PLUGINS_DROPPED` PROBLEM
+      notification (turn a plugin off with `false`, never by deleting the entry).
+      Left: whether Claude Code itself prunes uninstalled plugins on write is
+      unproven; close this after a week with no `PLUGINS_DROPPED` in
+      `~/.local/state/sync-all-safe.log` on either Mac.
 

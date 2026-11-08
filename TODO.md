@@ -296,13 +296,6 @@
 - [ ] 2026-11-06 — **The embed stage dominates segment-mode refreshes under CPU contention.**
   Mini refresh 14:29-15:24: embed 14:45:28-15:18:23 for 394 records (256 in 427.8 s, then 138 in 1509.7 s, 11 s/record), against 1.3 s/record on 2026-11-05. CPU samples 14:10-14:55: mini total 466 % of 800 % on average, mostly `node` from other sessions; atrium 49 % average, 373 % peak. Next: measure the ONNX embedder's threads against the free cores, and lower its priority (`nice`) so it yields to interactive work instead of competing with it.
 
-- [ ] 2026-11-06 — **`tests/test_context_protocol.py::test_context_cli_and_fresh_mcp_agree` is flaky in the full suite.**
-  It failed once in a full `pytest` run (ranked vs linked lane order) and passed alone three times, and in the next full run. Next: rerun the full suite until it fails, then pin the tie order the CLI and the MCP path compare.
-
-- [!] **Dependency audit blocks the Python gate (2026-10-21).**
-  `uv run pip-audit` reports certifi 2026.7.22, PYSEC-2026-4320, fixed in
-  2026.10.19. This predates the Codex plugin changes. Smallest next step:
-  update the locked certifi dependency and rerun the Python gate.
 - [~] **The prompt hook gets nothing under load, and the service keeps working for
       clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients
       send `timeout_s`, and the service's `DeadlineReranker` ends every rerank at the
@@ -411,6 +404,29 @@
 
 - [~] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence. Source hardening now passes synthetic MCP/CLI/ingestion and excerpt regressions plus the full Python gate; legacy unverified truncated excerpts are withheld by the updated adapter. The resident runtime was not reloaded, and pre-existing chunks that lost their labels remain unclassified. A 2026-10-22 live MCP response additionally returned an unrelated curated database/SMTP table with redacted secret labels but unredacted value cells in both text content and structured content. No values are copied, tested or used. This confirms that the current resident output boundary remains unsafe for raw evidence, irrespective of source-only gate success; inspect metadata only until a synthetic runtime acceptance proves otherwise. The adjacent Secret/Value source defect is separately corrected with decorated English/Spanish header regressions; the isolated Python gate passes all seven required stages, 709 tests and the original 80% coverage threshold. This source result does not qualify the resident process or unlabelled legacy records. Next: verify fresh runtime boundaries using synthetic sentinels, then separately plan derived-record remediation and owner-authorized rotation. **2026-11-05:** a live probe of the resident service (release `487a220`) still returned three key/value rows unredacted, labelled `MySQL password`, `HMAC secret` and `API token` (shapes inspected masked, values never printed): `is_secret_table_label` matched exact labels only. Fixed in `4c79229` (qualified English suffix / Spanish prefix labels, `tests/test_is_secret_table_label.py`), release moved and `com.cristian.atrium-context` restarted; the same probe over five credential questions then found 41 labelled rows, 27 redacted, 0 suspicious. Left: (1) `atrium-mcp` processes started before 2026-11-05 19:35 keep the old redactor until their sessions restart; new ones run the release (dotfiles `31f0b81`, both profiles on both Macs) and delegate to the service anyway; (2) synthesis records were not redacted at indexing: fixed in `8470981`, applied by the next `ingest-synthesis`; notes re-chunk under the new redactor on the next `ingest-notes`; the registry files and archive keep the canonical text by design; (3) rotation is tracked as its own owner decision below. **2026-11-05 20:55:** after the refresh, `redact_sensitive_text` changes 0 of 76,266 synthesis records (80 before) and 1 of 6,764 note records (31 before); the one left is `brain/business/debt-position.md`, whose matches are AEAT debt reference numbers, not credentials. A 2026-10-23 ticketing continuation again received plaintext credentials in a curated-note excerpt through the resident MCP structuredContent evidence text; the response was exposed in session tool output. Values are not repeated in this record, tested, or rotated. The resident boundary remains unsafe; withhold raw evidence and require synthetic runtime acceptance before resuming sensitive retrieval.
 
+- [!] **Secret-pattern matches in the semantic index (2026-10-21).** A
+  benchmark privacy audit found 203 note records and 58 synthesis records
+  changed by `redact_sensitive_text`. These are candidates, not verified live
+  credentials; values were never printed or sent to external services. The
+  benchmark excludes every matching record before export and removes its
+  discarded session-created copies. Smallest next step: review match types
+  without values and decide where to apply redaction to note ingestion and
+  existing derived records, preserving the canonical notes and archive.
+
+- [ ] **Fresh blinded judgments for cross-system memory evaluation.** The
+  historical 85/88-question sets have already informed Atrium tuning and were
+  judged from Atrium candidate pools. Competitor-only valid sources can be
+  unjudged. Smallest next step: freeze a new question set, pool all backends'
+  sources with identities hidden, and independently judge answer-bearing
+  passages before claiming a general system ranking.
+
+- [~] **Paired local retrieval benchmark against other memory systems (2026-10-21).**
+  Run Atrium, Mem0 OSS and a Chroma vector baseline on the same frozen semantic
+  corpus and the existing acceptance and holdout questions. Preserve private
+  inputs outside Git, pin versions, report coverage separately from ranking,
+  and distinguish retrieval-only results from untested extraction and agentic
+  memory. Full Graphiti/Letta lifecycle comparisons remain a separate experiment.
+
 ## Integrations
 
 - [ ] Add Codex plugin installation and cache-update verification to the owning
@@ -429,16 +445,6 @@
   store, and a server-side export for Windsurf if one exists.
 
 ## Self-improvement
-
-## Cross-project
-
-- [ ] Scribe (formerly `rocket-agents`), tracked in `~/p/scribe/TODO.md`: canonical event IDs are conversation-local in practice —
-      `conversationEventFromRecord.ts:20` derives them from `event_index + text`
-      with no conversation identity, and real cross-conversation collisions were
-      measured (OpenCode, Cursor). Atrium works around it with
-      `sha256(conversation_id, event_id)`; the canonical contract should carry the
-      identity itself. It re-keys every archived event, so it lands with the v2
-      stage 3 cutover.
 
 - [~] **Trials from the November 2026 study of other memory projects**
       (`docs/studies/memory-projects-2026-11.md`), run 2026-11-06. Done: partial
@@ -500,4 +506,14 @@
       Left: whether Claude Code itself prunes uninstalled plugins on write is
       unproven; close this after a week with no `PLUGINS_DROPPED` in
       `~/.local/state/sync-all-safe.log` on either Mac.
+
+## Cross-project
+
+- [ ] Scribe (formerly `rocket-agents`), tracked in `~/p/scribe/TODO.md`: canonical event IDs are conversation-local in practice —
+      `conversationEventFromRecord.ts:20` derives them from `event_index + text`
+      with no conversation identity, and real cross-conversation collisions were
+      measured (OpenCode, Cursor). Atrium works around it with
+      `sha256(conversation_id, event_id)`; the canonical contract should carry the
+      identity itself. It re-keys every archived event, so it lands with the v2
+      stage 3 cutover.
 

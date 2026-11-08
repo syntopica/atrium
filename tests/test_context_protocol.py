@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 from context_protocol_fixture import context_protocol_fixture
+from rerank_scored import rerank_scored as _rerank_scored
+from unordered_evidence import unordered_evidence as _unordered
 
 
 def test_context_cli_and_fresh_mcp_agree(tmp_path):
@@ -51,7 +53,13 @@ def test_context_cli_and_fresh_mcp_agree(tmp_path):
     exchange = asyncio.run(context_protocol_exchange(env, fixture["project"]))
     mcp = exchange["context"]
     assert not mcp.is_error
-    assert mcp.structured_content["evidence"] == result["evidence"]
+    # The rerank budget is wall time, so on a loaded machine one process can
+    # score every candidate and the other only a prefix. The same records must
+    # come back either way; the order and scores only when both scored alike.
+    if _rerank_scored(result) == _rerank_scored(mcp.structured_content):
+        assert mcp.structured_content["evidence"] == result["evidence"]
+    else:
+        assert _unordered(mcp.structured_content["evidence"]) == _unordered(result["evidence"])
     text = "\n".join(item["text"] for item in result["evidence"])
     assert "ORBIT-42" in text
     assert "250 response" in text

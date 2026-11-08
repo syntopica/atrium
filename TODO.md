@@ -481,4 +481,15 @@
       re-enabled on both Macs (claude-config `d21be96`); the Mac mini's config repo
       had sat in an unresolved auto-sync merge since 2026-11-05 20:00, over
       `.skillkit.json` timestamps only, resolved in `b059867`.
+      **2026-11-08: dropped again** by the Mac mini auto-sync `81ac524`
+      (2026-11-07 20:00), same three plugins, together with `defaultMode` and a
+      `playwright` toggle: a rewrite of the whole file from a copy predating
+      `78e7848`, which points at a long-running Claude Code process on the mini
+      writing back its in-memory settings (unverified). Re-enabled (claude-config).
+      The session-start hook now says so in every Claude Code session, to the
+      person (`per-prompt retrieval OFF` in the start line) and to the model (run
+      `atrium context` yourself), via `hooks/claude-code/prompt_retrieval_missing.py`,
+      which reuses the doctor's predicate. Left: confirm the writer on the mini
+      (`ps` for claude processes older than 2026-11-06), and stop the sync from
+      committing a settings file that drops `enabledPlugins` keys.
 

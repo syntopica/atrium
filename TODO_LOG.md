@@ -8,6 +8,45 @@
 
 ### 2026-11
 
+- [-] 2026-11-09 — **Ingest / Store:** **The trigram lane is ~70% of the index and serves no traffic.** Measured
+      2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);
+      `substrings_data` 3,800,043 blocks against `words_data` 387,204, roughly 15 GB
+      against 1.5 GB at FTS5's ~4 KB blocks. Every insert pays both lanes through
+      `records_ai`. Usage since 2026-09-01 across every Claude Code transcript: 0 calls
+      with lane `substring` (152 `atrium_context`, 35 `atrium_search`, 2 of them dense,
+      no CLI `--lane substring`). `dbstat` on 2026-10-11 (read-only, 416 s, 20,875 MiB
+      over all objects): `substrings_data` 15,092 MiB (72%), `records` 3,361,
+      `words_data` 1,580, `vectors` 169, every index under 160. The first day of lane
+      telemetry logged 2 `substring` calls out of 96; the same day's trace of the
+      `bench-`/`judge-` workspaces used `--substring`, a real fragment lookup that a
+      `words` prefilter plus `instr` would also have answered. Smallest next step: re-read
+      `atrium status --lanes` on 2026-11-11, after a 30-day window.
+      Then obtain an owner decision between dropping the
+      raw-corpus trigram table (fragment search answered by `instr` over a `words`
+      prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
+      "word-level separate from substring" decision is about ranking, not about trigram
+      over 1.9M raw records, but it must be re-read before changing the schema.
+      2026-10-14: the admission cut took the index from 1,923,985 to 483,624 records,
+      yet the file stays 23,331 MiB (5,972,727 pages, freelist only 213,437): FTS5
+      keeps deleted rows in its segments until they are merged. Reclaiming the space
+      needs an FTS `optimize` on both lanes and then `VACUUM`, and Atrium has no
+      supported command for either; direct mutation is off limits. With 100 GiB free
+      it is not urgent. Smallest step: an `atrium compact` command run under
+      `refresh.lock`, sized after the trigram decision, since dropping that lane
+      reclaims most of the same space.
+  - Resolution: Decided 2026-11-06 (Self-improvement entry): the trigram lane is kept and compacted, since dropping it or detail=none changes retrieval unmeasured; atrium compact (d16be2f) took the live index from 24.5 to 4.1 GB, which was this item's space concern.
+
+- [x] 2026-11-09 — **Measurement:** **Secret-pattern matches in the semantic index (2026-10-21).** A
+  benchmark privacy audit found 203 note records and 58 synthesis records
+  changed by `redact_sensitive_text`. These are candidates, not verified live
+  credentials; values were never printed or sent to external services. The
+  benchmark excludes every matching record before export and removes its
+  discarded session-created copies. Smallest next step: review match types
+  without values and decide where to apply redaction to note ingestion and
+  existing derived records, preserving the canonical notes and archive.
+  - Result: Redaction now runs at note and synthesis indexing (8470981, 4c79229, 9b6e30c); the derived records were re-indexed under it. Canonical notes and archive keep their text by design; the archive's own re-redaction is the separate scribe erasure track.
+  - Evidence: 2026-11-09 read-only count over the live index: redact_sensitive_text changes 0 of 76,763 synthesis records and 1 of 6,820 note records (brain/business/debt-position.md, AEAT debt reference numbers, not credentials); values never printed.
+
 - [x] 2026-11-09 — **Observability:** 2026-11-06 — **`tests/test_context_protocol.py::test_context_cli_and_fresh_mcp_agree` is flaky in the full suite.**
   It failed once in a full `pytest` run (ranked vs linked lane order) and passed alone three times, and in the next full run. Next: rerun the full suite until it fails, then pin the tie order the CLI and the MCP path compare.
   - Result: The test now demands identical evidence only when both processes' rerank steps scored the same number of candidates; otherwise it demands the same records, ignoring score and lane. Cause: the rerank budget is wall time (RERANK_BUDGET_S 3 s), so under load the CLI and the MCP process score different prefixes and order the same evidence differently.

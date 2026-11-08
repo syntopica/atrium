@@ -68,32 +68,6 @@
     parity 10 s. Repeat on the first live export at cutover.
 
 
-- [ ] **The trigram lane is ~70% of the index and serves no traffic.** Measured
-      2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);
-      `substrings_data` 3,800,043 blocks against `words_data` 387,204, roughly 15 GB
-      against 1.5 GB at FTS5's ~4 KB blocks. Every insert pays both lanes through
-      `records_ai`. Usage since 2026-09-01 across every Claude Code transcript: 0 calls
-      with lane `substring` (152 `atrium_context`, 35 `atrium_search`, 2 of them dense,
-      no CLI `--lane substring`). `dbstat` on 2026-10-11 (read-only, 416 s, 20,875 MiB
-      over all objects): `substrings_data` 15,092 MiB (72%), `records` 3,361,
-      `words_data` 1,580, `vectors` 169, every index under 160. The first day of lane
-      telemetry logged 2 `substring` calls out of 96; the same day's trace of the
-      `bench-`/`judge-` workspaces used `--substring`, a real fragment lookup that a
-      `words` prefilter plus `instr` would also have answered. Smallest next step: re-read
-      `atrium status --lanes` on 2026-11-11, after a 30-day window.
-      Then obtain an owner decision between dropping the
-      raw-corpus trigram table (fragment search answered by `instr` over a `words`
-      prefilter, or trigram over notes and synthesis only) and keeping it. AGENTS.md's
-      "word-level separate from substring" decision is about ranking, not about trigram
-      over 1.9M raw records, but it must be re-read before changing the schema.
-      2026-10-14: the admission cut took the index from 1,923,985 to 483,624 records,
-      yet the file stays 23,331 MiB (5,972,727 pages, freelist only 213,437): FTS5
-      keeps deleted rows in its segments until they are merged. Reclaiming the space
-      needs an FTS `optimize` on both lanes and then `VACUUM`, and Atrium has no
-      supported command for either; direct mutation is off limits. With 100 GiB free
-      it is not urgent. Smallest step: an `atrium compact` command run under
-      `refresh.lock`, sized after the trigram decision, since dropping that lane
-      reclaims most of the same space.
 - [~] **The archive's shape will not scale.** Specification agreed 2026-08-31
   with codex over three review rounds and kept at
   `docs/designs/conversation-archive-v2.md`: append-only journal of immutable
@@ -403,15 +377,6 @@
 ## Measurement
 
 - [~] **Unredacted credential in context output (2026-10-21).** During the InteliFactu continuation, `atrium_context` returned a plaintext mailbox password from `brain/business/access-map.md` in the `evidence[].text` field. The value was exposed in tool output; validity was not tested and the value is intentionally omitted here. This confirms an output leak beyond the benchmark's candidate-only findings. Next: redact note ingestion, existing derived records and every retrieval serialization surface (MCP content, structuredContent, CLI and injected context); cover Markdown table values with synthetic sentinel regressions; coordinate source remediation and owner-authorized credential rotation separately, preserving canonical evidence. Source hardening now passes synthetic MCP/CLI/ingestion and excerpt regressions plus the full Python gate; legacy unverified truncated excerpts are withheld by the updated adapter. The resident runtime was not reloaded, and pre-existing chunks that lost their labels remain unclassified. A 2026-10-22 live MCP response additionally returned an unrelated curated database/SMTP table with redacted secret labels but unredacted value cells in both text content and structured content. No values are copied, tested or used. This confirms that the current resident output boundary remains unsafe for raw evidence, irrespective of source-only gate success; inspect metadata only until a synthetic runtime acceptance proves otherwise. The adjacent Secret/Value source defect is separately corrected with decorated English/Spanish header regressions; the isolated Python gate passes all seven required stages, 709 tests and the original 80% coverage threshold. This source result does not qualify the resident process or unlabelled legacy records. Next: verify fresh runtime boundaries using synthetic sentinels, then separately plan derived-record remediation and owner-authorized rotation. **2026-11-05:** a live probe of the resident service (release `487a220`) still returned three key/value rows unredacted, labelled `MySQL password`, `HMAC secret` and `API token` (shapes inspected masked, values never printed): `is_secret_table_label` matched exact labels only. Fixed in `4c79229` (qualified English suffix / Spanish prefix labels, `tests/test_is_secret_table_label.py`), release moved and `com.cristian.atrium-context` restarted; the same probe over five credential questions then found 41 labelled rows, 27 redacted, 0 suspicious. Left: (1) `atrium-mcp` processes started before 2026-11-05 19:35 keep the old redactor until their sessions restart; new ones run the release (dotfiles `31f0b81`, both profiles on both Macs) and delegate to the service anyway; (2) synthesis records were not redacted at indexing: fixed in `8470981`, applied by the next `ingest-synthesis`; notes re-chunk under the new redactor on the next `ingest-notes`; the registry files and archive keep the canonical text by design; (3) rotation is tracked as its own owner decision below. **2026-11-05 20:55:** after the refresh, `redact_sensitive_text` changes 0 of 76,266 synthesis records (80 before) and 1 of 6,764 note records (31 before); the one left is `brain/business/debt-position.md`, whose matches are AEAT debt reference numbers, not credentials. A 2026-10-23 ticketing continuation again received plaintext credentials in a curated-note excerpt through the resident MCP structuredContent evidence text; the response was exposed in session tool output. Values are not repeated in this record, tested, or rotated. The resident boundary remains unsafe; withhold raw evidence and require synthetic runtime acceptance before resuming sensitive retrieval.
-
-- [!] **Secret-pattern matches in the semantic index (2026-10-21).** A
-  benchmark privacy audit found 203 note records and 58 synthesis records
-  changed by `redact_sensitive_text`. These are candidates, not verified live
-  credentials; values were never printed or sent to external services. The
-  benchmark excludes every matching record before export and removes its
-  discarded session-created copies. Smallest next step: review match types
-  without values and decide where to apply redaction to note ingestion and
-  existing derived records, preserving the canonical notes and archive.
 
 - [ ] **Fresh blinded judgments for cross-system memory evaluation.** The
   historical 85/88-question sets have already informed Atrium tuning and were

@@ -268,7 +268,7 @@
 ## Observability
 
 - [ ] 2026-11-06 — **The embed stage dominates segment-mode refreshes under CPU contention.**
-  Mini refresh 14:29-15:24: embed 14:45:28-15:18:23 for 394 records (256 in 427.8 s, then 138 in 1509.7 s, 11 s/record), against 1.3 s/record on 2026-11-05. CPU samples 14:10-14:55: mini total 466 % of 800 % on average, mostly `node` from other sessions; atrium 49 % average, 373 % peak. Next: measure the ONNX embedder's threads against the free cores, and lower its priority (`nice`) so it yields to interactive work instead of competing with it.
+  Mini refresh 14:29-15:24: embed 14:45:28-15:18:23 for 394 records (256 in 427.8 s, then 138 in 1509.7 s, 11 s/record), against 1.3 s/record on 2026-11-05. CPU samples 14:10-14:55: mini total 466 % of 800 % on average, mostly `node` from other sessions; atrium 49 % average, 373 % peak. Next: measure the ONNX embedder's threads against the free cores. Correction 2026-11-09: the priority half is already in place, `atrium-refresh` renices the whole pipeline to 10 since 2026-10-19, so the 11 s/record above was measured at nice 10; `cpu_session_options` sets no `intra_op_num_threads`, so ONNX starts one thread per core whatever is free. The new per-stage CPU lines (dotfiles `9e0bbe1`) give the embed stage's CPU beside its wall time.
 
 - [~] **The prompt hook gets nothing under load, and the service keeps working for
       clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients
@@ -291,7 +291,7 @@
       0.2-0.3 s, curated 0.15-1.9 s, and the rerank spent its whole 3 s on 64 candidates and
       was discarded every time. Proposal for the owner: keep the scores of the prefix that
       finished inside the budget instead of discarding them (needs a decision, since
-      `test_reranking_is_atomic_across_populations` makes atomicity deliberate). Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
+      `test_reranking_is_atomic_across_populations` makes atomicity deliberate). Done since: partial rerank `845562c` (2026-11-06, kept by the owner on the measurements) keeps the scored head; left is the smallest step above, the `steps` of a call that still times out. Original entry: After the 19:06 restart (`09c354d`, `7758b81`),
       28 of 29 context calls returned `service_timeout` at the client's 7 s, while the
       service still ran retrieval and the rerank to the end: `ContextRequestHandler`
       only notices the peer is gone when it writes the result. In-process at load ~23:
@@ -315,14 +315,27 @@
       jobs and a 4.5-day `atrium.tasks` job cancelled, MacBook processes measured) is
       tracked in the instance's `worker/TODO.md`. Smallest step: after a day, compare `synthesis.log` episodes against the
       Favish usage page and decide the worker count.
+      **Measured 2026-11-09 from `synthesis.log`:** 64 episodes in four days (11-05: 4,
+      11-06: 25, 11-07: 35, 11-08 onwards: 0). Every pass since 11-08 stops at the 9th
+      conversation on `You've hit your weekly limit · resets Nov 10 at 1am`, with 16,540
+      conversations walkable and 14,063 deferred. The lane is starved by the shared
+      Favish weekly limit, so the worker count is not the lever. Owner decision: another
+      lane for synthesis, or accepting near-zero synthesis on weeks Favish work spends
+      the limit. The usage page itself was not read (browser, not needed for this).
 
-- [ ] **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
+- [~] **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
       bounded: roughly 19 passes a day of export ~6 min, import ~5 min, ingest ~1 min,
       doctor ~2 min, at most ~310 core-min/day if each held one core. Export and import
       dominate, and segment mode removes both (see the stage 3 entry above). Owner,
       2026-10-18: the refresh stays hourly. Smallest step: record user+system CPU per
       stage in `~/p/dotfiles/bin/atrium/atrium-refresh` so the cutover saving can be
       measured instead of estimated.
+      **2026-11-09:** dotfiles `9e0bbe1` logs the run's cumulative children user and
+      system CPU on every `stage` line and on `refresh done`, so the difference between
+      two lines is a stage's CPU. Left: read the first full refresh with the new lines
+      on each Mac (the 00:49 run on the MacBook failed at line 260 because the script was
+      rewritten while it ran; it had already acked, and the next hourly run repeats the
+      skipped ingest-synthesis, ingest-notes and embed).
 
 - [ ] **Cause of the 2026-10-15 orphan posting is unknown.** `words` held a posting
       for rowid 19395878, in neither `records` nor `words_docsize`, so every ranked
@@ -394,13 +407,21 @@
 
 ## Integrations
 
-- [ ] Add Codex plugin installation and cache-update verification to the owning
+- [~] Add Codex plugin installation and cache-update verification to the owning
   machine-convergence workflow. On 2026-10-21 the Mac mini had Atrium checkout
   `e582eb6` and its MCP, but no plugin or legacy Atrium hooks. Installed and
   verified six enabled, trusted hooks in a fresh Codex process; ongoing update
   convergence remains unverified. Next: inspect the workflow owner's current
   configuration and add an idempotent package refresh with changed-hook review.
   Evidence: `docs/evaluations/mac-mini-codex-check-2026-10-21.md`.
+  **2026-11-09:** dotfiles `34a9b9c` adds step 2c to `sync-all-safe`:
+  `codex-refresh-atrium-plugin` reinstalls `atrium-context@atrium` when its cache
+  differs from the checkout (the MacBook's was behind `78c67b5`; refreshed by hand,
+  diff now identical), and `codex-atrium-hook-trust` asks a fresh `codex app-server`
+  for `hooks/list` and prints a PROBLEM line for every Atrium hook not trusted. After
+  the refresh all six report `modified`, so **Codex sessions on the MacBook run no
+  Atrium hook until the owner reviews them with `/hooks`** (trust is never recorded
+  automatically). Left: that review, and one daily run on each Mac showing the step.
 
 - [!] Windsurf and Trae remain unindexable at layer 1, and not for an exporter
   bug: agents' `TODO_LOG.md` (2026-08-31) found Trae's dialogue store encrypted at

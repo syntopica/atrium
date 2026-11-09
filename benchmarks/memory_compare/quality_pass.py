@@ -15,6 +15,7 @@ from atrium.store.open_store import open_store
 from benchmarks.memory_compare.cached_embedder import CachedEmbedder
 from benchmarks.memory_compare.query_backend import query_backend
 from benchmarks.memory_compare.score_query import score_query
+from benchmarks.memory_compare.single_thread_session import single_thread_session
 from benchmarks.memory_compare.source_identity import source_identity
 from benchmarks.memory_compare.summarize import summarize
 from benchmarks.memory_compare.verify_snapshot import verify_snapshot
@@ -31,8 +32,6 @@ def quality_pass(directory):
     embedder = CachedEmbedder(
         {}, {row["question"]: vector for row, vector in zip(questions, vectors, strict=True)}
     )
-    options = onnxruntime.SessionOptions()
-    options.intra_op_num_threads = options.inter_op_num_threads = 1
     connection = open_store(directory / "snapshot.sqlite3", read_only=True)
     backends = {
         "matrix": matrix,
@@ -42,7 +41,7 @@ def quality_pass(directory):
         "reranker": CrossEncoder(),
     }
     output = []
-    factory = partial(onnxruntime.InferenceSession, sess_options=options)
+    factory = single_thread_session(onnxruntime.InferenceSession)
     expanded = partial(rerank_populations, budget_s=120.0)
     with (
         patch.object(onnxruntime, "InferenceSession", factory),

@@ -104,7 +104,7 @@ The clients have telemetry disabled and use no inference credentials. A Python
 audit hook rejects socket connections, datagrams and DNS lookups before the
 clients load. No benchmark question or private document is sent to a hosted
 model or vector service. The process guard watches the progress log and stops
-only its own child process group after 120 seconds without output or 30 minutes
+only its own child process group after 120 seconds without output or 90 minutes
 total. Models run at low priority; the production index is never modified.
 
 ## Reproduce and verify
@@ -152,6 +152,56 @@ uv run ruff check benchmarks tests/test_memory_benchmark.py tests/test_sql_resou
 Private texts, questions, source IDs and result journals remain under
 `.benchmarks/`. Only aggregate measurements, environment versions and hashes
 are suitable for committing to this public repository.
+
+## Results (run of 2026-11-09)
+
+The first complete run took place on 2026-11-09 on the MacBook, at load
+averages of 17 to 40 from other sessions, against the frozen snapshot of
+2026-10-21: 73,141 note and synthesis records, 140 excluded by the redactor.
+`finalize` recomputed the statistics from the journal and `verify` checked
+73,141 shared records, 173 questions and 865 paired results. Earlier attempts
+were stopped: one by the privacy audit above, one at query vector 85 for a
+reason its log does not record, and two by
+this harness itself (a keyword `sess_options` that the engine's positional
+session options made a duplicate argument after 2026-10-28, then the original
+30-minute total limit at about two queries a minute under that load).
+
+Hit@8 (`recall_at_8`) and MRR@8, all questions and answerable questions:
+
+| Backend | Acceptance all (85) | Acceptance answerable (62) | Holdout all (88) | Holdout answerable (71) | p50 / p95 ms |
+| --- | --- | --- | --- | --- | --- |
+| Atrium, reranked | 0.341 / 0.241 | 0.468 / 0.331 | 0.398 / 0.349 | 0.493 / 0.433 | 3,244-3,319 / 3,663-4,650 |
+| Atrium, fused | 0.212 / 0.119 | 0.290 / 0.163 | 0.341 / 0.258 | 0.423 / 0.319 | 208-242 / 683-783 |
+| Mem0 OSS 2.2.1 | 0.165 / 0.094 | 0.226 / 0.129 | 0.352 / 0.271 | 0.437 / 0.336 | 332-393 / 657-888 |
+| Chroma 1.5.9 | 0.141 / 0.070 | 0.194 / 0.096 | 0.341 / 0.266 | 0.423 / 0.330 | 2-4 / 6-22 |
+| Exact dense | 0.165 / 0.094 | 0.226 / 0.129 | 0.352 / 0.271 | 0.437 / 0.336 | 7 / 12-23 |
+
+Paired Hit@8 differences for reranked Atrium, with 95% bootstrap intervals:
+
+| Against | Acceptance | Holdout |
+| --- | --- | --- |
+| Exact dense | +0.176 (15 wins, 0 losses) [0.106, 0.259] | +0.045 (7 wins, 3 losses) [-0.023, 0.114] |
+| Mem0 | +0.176 (15 wins, 0 losses) [0.106, 0.259] | +0.045 (7 wins, 3 losses) [-0.023, 0.114] |
+| Chroma | +0.200 (17 wins, 0 losses) [0.118, 0.282] | +0.057 (7 wins, 2 losses) [0.000, 0.125] |
+| Atrium fused | +0.129 (11 wins, 0 losses) [0.059, 0.212] | +0.057 (6 wins, 1 loss) [0.000, 0.125] |
+
+Readings, within the limits stated above:
+
+- Mem0 returned exactly the exact-dense ranking on every question: with the
+  same vectors, no inferred memories and no reranker, its retrieval reduces
+  to dense similarity here. Chroma's approximate index lost one holdout and
+  two acceptance hits against the exhaustive ranking.
+- The reranker is where Atrium's gain is. Fused Atrium beats the dense
+  systems on acceptance (18 hits against 14) and is level with them on
+  holdout (30 against 31). Every reranked call
+  reported `rerank_partial_fused_tail`, so under this load the three-second
+  budget scored only a prefix, and these numbers understate an unloaded
+  reranker. Its latency is the budget itself.
+- Acceptance shaped Atrium's tuning and both sets were judged from Atrium
+  candidate pools, so the acceptance advantage is the least trustworthy
+  number here. On holdout, only the comparisons against Chroma and fused
+  Atrium exclude zero, and only just. The fresh jointly pooled judgment
+  round in the repository TODO is still what a general ranking needs.
 
 ## Comparisons outside this run
 

@@ -8,6 +8,15 @@
 
 ### 2026-11
 
+- [x] 2026-11-09 — **Measurement:** **Paired local retrieval benchmark against other memory systems (2026-10-21).**
+  Run Atrium, Mem0 OSS and a Chroma vector baseline on the same frozen semantic
+  corpus and the existing acceptance and holdout questions. Preserve private
+  inputs outside Git, pin versions, report coverage separately from ranking,
+  and distinguish retrieval-only results from untested extraction and agentic
+  memory. Full Graphiti/Letta lifecycle comparisons remain a separate experiment.
+  - Result: First complete run on the frozen 2026-10-21 snapshot (73,141 records). Reranked Atrium Hit@8 0.341 acceptance / 0.398 holdout against Mem0 0.165 / 0.352, Chroma 0.141 / 0.341, exact dense 0.165 / 0.352; on holdout only the Chroma and fused-Atrium differences exclude zero. Results and caveats in docs/evaluations/local-memory-comparison-2026-10-21.md.
+  - Evidence: benchmarks.memory_compare.verify .benchmarks/run-05: verified 73141 shared records, 173 questions, 865 paired results; pytest tests/test_memory_benchmark.py tests/test_sql_resources.py 8 passed.
+
 - [-] 2026-11-09 — **Ingest / Store:** **The trigram lane is ~70% of the index and serves no traffic.** Measured
       2026-10-10: index 22.4 GB (5,473,158 pages of 4 KiB, freelist 566, so no bloat);
       `substrings_data` 3,800,043 blocks against `words_data` 387,204, roughly 15 GB

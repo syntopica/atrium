@@ -3,7 +3,6 @@
 import hashlib
 import importlib.metadata
 import json
-from functools import partial
 from pathlib import Path
 from unittest.mock import patch
 
@@ -20,6 +19,7 @@ from benchmarks.memory_compare.load_questions import load_questions
 from benchmarks.memory_compare.paired_differences import paired_differences
 from benchmarks.memory_compare.prepare_snapshot import prepare_snapshot
 from benchmarks.memory_compare.run_queries import run_queries
+from benchmarks.memory_compare.single_thread_session import single_thread_session
 from benchmarks.memory_compare.summarize import summarize
 
 
@@ -47,8 +47,6 @@ def execute(index: Path, evaluations: Path, directory: Path) -> None:
     )
     memory, chroma, timings = ingest_backends(directory, corpus, matrix, embedder)
     manifest.update(timings)
-    options = onnxruntime.SessionOptions()
-    options.intra_op_num_threads = options.inter_op_num_threads = 1
     backends = {
         "mem0": memory,
         "chroma": chroma,
@@ -58,7 +56,7 @@ def execute(index: Path, evaluations: Path, directory: Path) -> None:
         "connection": open_store(directory / "snapshot.sqlite3", read_only=True),
         "reranker": CrossEncoder(),
     }
-    factory = partial(onnxruntime.InferenceSession, sess_options=options)
+    factory = single_thread_session(onnxruntime.InferenceSession)
     with patch.object(onnxruntime, "InferenceSession", factory):
         results = run_queries(
             questions, corpus, query_vectors, backends, directory / "results.jsonl"

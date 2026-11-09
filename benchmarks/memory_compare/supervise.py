@@ -9,7 +9,7 @@ from pathlib import Path
 
 
 def main() -> None:
-    """Watch only the child group launched here, with a 120-second stall limit."""
+    """Watch only the child group launched here, with a 120-second stall limit and 90 minutes in all (a loaded shared Mac ran 2 queries a minute)."""
     log = Path(sys.argv[1])
     started = time.monotonic()
     log.parent.mkdir(parents=True, exist_ok=True)
@@ -17,9 +17,9 @@ def main() -> None:
         process = subprocess.Popen(
             sys.argv[2:], stdout=handle, stderr=subprocess.STDOUT, start_new_session=True
         )
-        print(f"supervising pid={process.pid} log={log} stall=120s total=1800s", flush=True)
+        print(f"supervising pid={process.pid} log={log} stall=120s total=5400s", flush=True)
         while process.poll() is None:
-            if time.time() - log.stat().st_mtime > 120 or time.monotonic() - started > 1800:  # noqa: PLR2004 -- explicit guard limits
+            if time.time() - log.stat().st_mtime > 120 or time.monotonic() - started > 5400:  # noqa: PLR2004 -- explicit guard limits
                 os.killpg(process.pid, signal.SIGTERM)
                 try:
                     process.wait(timeout=5)

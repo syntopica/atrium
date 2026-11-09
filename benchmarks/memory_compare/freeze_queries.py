@@ -3,7 +3,6 @@
 import hashlib
 import json
 import time
-from functools import partial
 from pathlib import Path
 from unittest.mock import patch
 
@@ -11,13 +10,11 @@ import numpy as np
 import onnxruntime
 
 from atrium.embed.query_embedder import query_embedder
+from benchmarks.memory_compare.single_thread_session import single_thread_session
 
 
 def freeze_queries(questions: list[dict], directory: Path) -> dict:
     """Persist validated vectors, with embedding latency outside retrieval timing."""
-    options = onnxruntime.SessionOptions()
-    options.intra_op_num_threads = 1
-    options.inter_op_num_threads = 1
     result = []
     identity = hashlib.sha256(
         json.dumps([row["question"] for row in questions]).encode()
@@ -31,7 +28,7 @@ def freeze_queries(questions: list[dict], directory: Path) -> dict:
             "query_embeddings_reused": True,
         }
     started = time.perf_counter()
-    factory = partial(onnxruntime.InferenceSession, sess_options=options)
+    factory = single_thread_session(onnxruntime.InferenceSession)
     with patch.object(onnxruntime, "InferenceSession", factory):
         embedder = query_embedder()
         for index, row in enumerate(questions):

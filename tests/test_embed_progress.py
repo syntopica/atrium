@@ -25,7 +25,7 @@ _LOADING = "  <<loading>>"
 class _FakeEmbedder:
     """Stands in for the 300 MB model, and marks the moment it is constructed."""
 
-    def __init__(self):
+    def __init__(self, *, batch=False):
         print(_LOADING, flush=True)
 
     def embed(self, texts):

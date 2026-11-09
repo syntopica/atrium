@@ -42,7 +42,7 @@ def run_embed(index: Path) -> int:
     print(f"  {len(pending):,} records to embed", flush=True)
     source = "from the local cache" if model_is_cached() else "downloading it, first run here"
     print(f"  loading the embedder: {MODEL_REPO} ({source})", flush=True)
-    embedder = Embedder()
+    embedder = Embedder(batch=True)
     batch_size = 256
     print(f"  embedder loaded; embedding in batches of {batch_size}", flush=True)
     written = 0

@@ -29,13 +29,16 @@ _BATCH_SIZE = 32
 class Embedder:
     """Lazy-loading CPU embedder returning L2-normalized float32 vectors."""
 
-    def __init__(self, prefix: str = DOCUMENT_PREFIX) -> None:
+    def __init__(self, prefix: str = DOCUMENT_PREFIX, *, batch: bool = False) -> None:
         """Defer every heavy load; construction must stay cheap.
 
         ``prefix`` is the prompt every text is embedded under: the default is the
         one stored vectors carry, and queries pass theirs (``query_embedder``).
+        ``batch`` selects ``batch_session_options`` for a background run that
+        trades nothing for latency, such as the refresh's ``atrium embed``.
         """
         self._prefix = prefix
+        self._batch = batch
         self._session: "onnxruntime.InferenceSession | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._tokenizer: "Tokenizer | None" = None  # noqa: UP037 -- TYPE_CHECKING-only import
         self._output_index: int | None = None
@@ -89,6 +92,7 @@ class Embedder:
             import onnxruntime
             from tokenizers import Tokenizer
 
+            from atrium.embed.batch_session_options import batch_session_options
             from atrium.embed.cached_model_file import cached_model_file
             from atrium.embed.cpu_session_options import cpu_session_options
 
@@ -97,7 +101,9 @@ class Embedder:
             tokenizer_path = cached_model_file(MODEL_REPO, "tokenizer.json")
 
             session = onnxruntime.InferenceSession(
-                model_path, cpu_session_options(), providers=["CPUExecutionProvider"]
+                model_path,
+                batch_session_options() if self._batch else cpu_session_options(),
+                providers=["CPUExecutionProvider"],
             )
             output_names = [output.name for output in session.get_outputs()]
             self._output_index = (

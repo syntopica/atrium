@@ -398,13 +398,6 @@
   sources with identities hidden, and independently judge answer-bearing
   passages before claiming a general system ranking.
 
-- [~] **Paired local retrieval benchmark against other memory systems (2026-10-21).**
-  Run Atrium, Mem0 OSS and a Chroma vector baseline on the same frozen semantic
-  corpus and the existing acceptance and holdout questions. Preserve private
-  inputs outside Git, pin versions, report coverage separately from ranking,
-  and distinguish retrieval-only results from untested extraction and agentic
-  memory. Full Graphiti/Letta lifecycle comparisons remain a separate experiment.
-
 ## Integrations
 
 - [~] Add Codex plugin installation and cache-update verification to the owning

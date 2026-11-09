@@ -102,9 +102,6 @@
 
 ## Synthesis
 
-- [ ] 2026-11-06 — **Synthesis reads the frozen v1 archive since the segment cutover.**
-  `bin/atrium/atrium-synthesis` (dotfiles) passes `$SYNTOPICA_DATA/conversations/archive.jsonl`. In segment mode that file stopped moving on 2026-11-05 (mini 09:41, MacBook 10:01), so no conversation captured after the cutover is ever synthesized. Since 46dbce5 a pass skips conversations already finished at their content (5,643 skipped on the second pass, 6,871 markers at 15:25), so a full walk is cheap once the markers converge. Next: feed the pass from the segment store, for example a materialized export refreshed when the generation or the pending set changes, and key the markers on content the export keeps.
-
 - [ ] **Synthesis coverage and quality.** Built 2026-08-28 (`6263938`); the lane question is
       settled by the owner routing rule of 2026-09-30 (bulk on the worker's agy and local
       lanes, cursor cancelled, `drip-loop.sh` retired). The build history, the lane
@@ -268,7 +265,7 @@
 ## Observability
 
 - [ ] 2026-11-06 — **The embed stage dominates segment-mode refreshes under CPU contention.**
-  Mini refresh 14:29-15:24: embed 14:45:28-15:18:23 for 394 records (256 in 427.8 s, then 138 in 1509.7 s, 11 s/record), against 1.3 s/record on 2026-11-05. CPU samples 14:10-14:55: mini total 466 % of 800 % on average, mostly `node` from other sessions; atrium 49 % average, 373 % peak. Next: measure the ONNX embedder's threads against the free cores. Correction 2026-11-09: the priority half is already in place, `atrium-refresh` renices the whole pipeline to 10 since 2026-10-19, so the 11 s/record above was measured at nice 10; `cpu_session_options` sets no `intra_op_num_threads`, so ONNX starts one thread per core whatever is free. The new per-stage CPU lines (dotfiles `9e0bbe1`) give the embed stage's CPU beside its wall time.
+  Mini refresh 14:29-15:24: embed 14:45:28-15:18:23 for 394 records (256 in 427.8 s, then 138 in 1509.7 s, 11 s/record), against 1.3 s/record on 2026-11-05. CPU samples 14:10-14:55: mini total 466 % of 800 % on average, mostly `node` from other sessions; atrium 49 % average, 373 % peak. Next: measure the ONNX embedder's threads against the free cores. Correction 2026-11-09: the priority half is already in place, `atrium-refresh` renices the whole pipeline to 10 since 2026-10-19, so the 11 s/record above was measured at nice 10; `cpu_session_options` sets no `intra_op_num_threads`, so ONNX starts one thread per core whatever is free. The new per-stage CPU lines (dotfiles `9e0bbe1`) give the embed stage's CPU beside its wall time. First reading, MacBook 2026-11-09 01:56-01:59: embed used 12 min 17 s of CPU in 2 min 32 s (about 4.8 cores at nice 10), 79% of the whole refresh's CPU.
 
 - [~] **The prompt hook gets nothing under load, and the service keeps working for
       clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients
@@ -322,20 +319,6 @@
       Favish weekly limit, so the worker count is not the lever. Owner decision: another
       lane for synthesis, or accepting near-zero synthesis on weeks Favish work spends
       the limit. The usage page itself was not read (browser, not needed for this).
-
-- [~] **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
-      bounded: roughly 19 passes a day of export ~6 min, import ~5 min, ingest ~1 min,
-      doctor ~2 min, at most ~310 core-min/day if each held one core. Export and import
-      dominate, and segment mode removes both (see the stage 3 entry above). Owner,
-      2026-10-18: the refresh stays hourly. Smallest step: record user+system CPU per
-      stage in `~/p/dotfiles/bin/atrium/atrium-refresh` so the cutover saving can be
-      measured instead of estimated.
-      **2026-11-09:** dotfiles `9e0bbe1` logs the run's cumulative children user and
-      system CPU on every `stage` line and on `refresh done`, so the difference between
-      two lines is a stage's CPU. Left: read the first full refresh with the new lines
-      on each Mac (the 00:49 run on the MacBook failed at line 260 because the script was
-      rewritten while it ran; it had already acked, and the next hourly run repeats the
-      skipped ingest-synthesis, ingest-notes and embed).
 
 - [ ] **Cause of the 2026-10-15 orphan posting is unknown.** `words` held a posting
       for rowid 19395878, in neither `records` nor `words_docsize`, so every ranked

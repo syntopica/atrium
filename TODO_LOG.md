@@ -8,6 +8,27 @@
 
 ### 2026-11
 
+- [x] 2026-11-09 — **Observability:** **Refresh stages report wall time, not CPU (2026-10-18).** Daily cost can only be
+      bounded: roughly 19 passes a day of export ~6 min, import ~5 min, ingest ~1 min,
+      doctor ~2 min, at most ~310 core-min/day if each held one core. Export and import
+      dominate, and segment mode removes both (see the stage 3 entry above). Owner,
+      2026-10-18: the refresh stays hourly. Smallest step: record user+system CPU per
+      stage in `~/p/dotfiles/bin/atrium/atrium-refresh` so the cutover saving can be
+      measured instead of estimated.
+      **2026-11-09:** dotfiles `9e0bbe1` logs the run's cumulative children user and
+      system CPU on every `stage` line and on `refresh done`, so the difference between
+      two lines is a stage's CPU. Left: read the first full refresh with the new lines
+      on each Mac (the 00:49 run on the MacBook failed at line 260 because the script was
+      rewritten while it ran; it had already acked, and the next hourly run repeats the
+      skipped ingest-synthesis, ingest-notes and embed).
+  - Result: dotfiles 9e0bbe1 logs cumulative children user/system CPU on each stage line and on refresh done. First run on the MacBook (segment mode, 2026-11-09 01:52-01:59): capture 36 s CPU in 51 s wall, ingest-synthesis about 2 min, embed 12 min 17 s CPU in 2 min 32 s wall (about 4.8 cores), 15 min 28 s in all over 6 min 51 s.
+  - Evidence: ~/p/wiki/atrium/refresh.log 2026-11-09 01:52:12-01:59:03, every stage line carries (children cpu U S); refresh done (children cpu 14m40.195s 0m48.156s).
+
+- [x] 2026-11-09 — **Synthesis:** 2026-11-06 — **Synthesis reads the frozen v1 archive since the segment cutover.**
+  `bin/atrium/atrium-synthesis` (dotfiles) passes `$SYNTOPICA_DATA/conversations/archive.jsonl`. In segment mode that file stopped moving on 2026-11-05 (mini 09:41, MacBook 10:01), so no conversation captured after the cutover is ever synthesized. Since 46dbce5 a pass skips conversations already finished at their content (5,643 skipped on the second pass, 6,871 markers at 15:25), so a full walk is cheap once the markers converge. Next: feed the pass from the segment store, for example a materialized export refreshed when the generation or the pending set changes, and key the markers on content the export keeps.
+  - Result: dotfiles `78cc5ff`: atrium-synthesis reads $SYNTOPICA_DATA/atrium/synthesis-source.jsonl, a scribe export-materialized rebuilt when older than 6 h (about 6 min, 10 GB, outside the replicated records/ and ignored by git). Measured before switching, with the tick's SYNTOPICA_DATA: v1 archive 65,623 conversations / 16,540 incomplete, export 67,406 / 18,327 incomplete, 1,673 of them updated after the cutover; markers key on id and updatedAt, so re-redaction did not reopen finished conversations.
+  - Evidence: Tick 2026-11-09 02:05: the pass walked [n/18327] (16540 on every earlier pass) and stopped at the Favish weekly quota wall, so nothing new is synthesized until it resets (2026-11-10 01:00).
+
 - [x] 2026-11-09 — **Measurement:** **Paired local retrieval benchmark against other memory systems (2026-10-21).**
   Run Atrium, Mem0 OSS and a Chroma vector baseline on the same frozen semantic
   corpus and the existing acceptance and holdout questions. Preserve private

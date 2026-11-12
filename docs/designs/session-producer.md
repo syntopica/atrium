@@ -166,8 +166,13 @@ session. Order of checks:
 5. Baseline = the consumed checkpoint's offset and time, else the transcript's
    first record. Silent unless at least one `user` prompt arrived after the
    baseline (finding 13: the recording bookkeeping must not trigger the next
-   reminder). Then refuse when three prompts have arrived, or when
-   `new_bytes >= 4 KiB` and `now - baseline_at >= 3600 s`. Size is not a
+   reminder), and silent unless the interval edited a file (`Edit`,
+   `MultiEdit`, `NotebookEdit`, `Write`) or ran `git commit` through Bash.
+   Then refuse when ten prompts have arrived, or when
+   `new_bytes >= 4 KiB` and `now - baseline_at >= 7200 s`. The edit rule and
+   the higher limits date from 2026-11-12: over the previous 30 days the
+   reminder forced 428 recording turns in 26 sessions, about 533k output and
+   193M cache-read tokens, many of them on read-only intervals. Size is not a
    trigger: one turn of tool-heavy work writes hundreds of kilobytes of
    eligible records -- measured 89 KB to 690 KB per interval on 2026-09-17,
    at 1 or 2 prompts each -- so the original 32 KiB limit refused the stop
@@ -242,8 +247,9 @@ few duplicate titles in recall during the transition, and no lost record.
   with none it is uncovered until they add one.
 - Work after the last consumed checkpoint is not recorded by the session
   and, because the conversation is then skipped by the batch lanes, not by
-  them either. The limits keep this tail under two prompts, or under an hour
-  when the conversation is one long prompt.
+  them either. The limits keep this tail under ten prompts, or under two
+  hours when the conversation is one long prompt; a tail that edited nothing
+  is not reminded at all.
 - After compaction the model records what it still knows of the interval.
 
 ## Not in this revision

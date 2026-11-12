@@ -11,7 +11,9 @@
 # so the hook refused the stop after every turn and the person read a red
 # "Stop says" line each time. What tracks work worth an episode is how many
 # times the person asked for something.
-MIN_NEW_PROMPTS = 3
+# Raised from 3 on 2026-11-12: over 30 days the reminder forced 428 recording
+# turns in 26 sessions, about 533k output tokens and 193M cache-read tokens.
+MIN_NEW_PROMPTS = 10
 # The age rule is the loss bound: any real work is recorded within the window
 # even when the conversation is one long prompt. Replayed over that same
 # session's 56 prompts, the old rule refused 48 stops -- one per prompt. With
@@ -19,7 +21,7 @@ MIN_NEW_PROMPTS = 3
 # and the extra half hour of tail is a conversation the batch lanes synthesize
 # anyway.
 MIN_NEW_BYTES_AGED = 4 * 1024
-MAX_UNRECORDED_SECONDS = 3600
+MAX_UNRECORDED_SECONDS = 7200
 # Refusals per checkpoint before the hook goes quiet and leaves it pending
 # for the next ordinary turn (Claude Code itself gives up after eight).
 MAX_ATTEMPTS = 3

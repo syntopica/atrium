@@ -25,7 +25,8 @@ def session_stop_decision(
 ) -> dict[str, object] | None:
     """Return the Stop feedback JSON to print, or None.
 
-    Silent (None) is the common answer: excluded sessions, nothing new, a
+    Silent (None) is the common answer: excluded sessions, nothing new or
+    nothing edited or committed since the last record, a
     checkpoint already consumed, or a session whose conversation was erased. A refusal freezes the checkpoint first, so
     the recording turn's own records fall outside the episode.
     """
@@ -45,7 +46,7 @@ def session_stop_decision(
         # ancestry resumed): that interval is uncovered, and stays so.
         context.state["pending"] = None
         write_session_state(context.state_path, context.state)
-    if active or context.scan.prompts_after == 0:
+    if active or context.scan.prompts_after == 0 or context.scan.edits_after == 0:
         return None
     consumed = context.consumed
     baseline_at = (

@@ -18,3 +18,6 @@ class TranscriptScan:
     # Bytes of user and assistant records after the consumed offset; never
     # the file growth, which attachments and snapshots dominate.
     new_bytes: int
+    # File edits and commits after the consumed offset: a session that changed
+    # nothing is not reminded to record itself.
+    edits_after: int

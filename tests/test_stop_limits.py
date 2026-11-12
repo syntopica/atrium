@@ -7,7 +7,7 @@ from atrium.session.stop_limits import MAX_UNRECORDED_SECONDS, MIN_NEW_PROMPTS
 
 _NOW = datetime(2026, 9, 17, 21, 0, tzinfo=UTC)
 _JUST_NOW = "2026-09-17T20:58:00.000Z"
-_LONG_AGO = "2026-09-17T19:40:00.000Z"
+_LONG_AGO = "2026-09-17T18:40:00.000Z"
 
 
 def test_one_prompt_of_heavy_tool_work_is_not_a_record() -> None:

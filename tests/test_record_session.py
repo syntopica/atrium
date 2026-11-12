@@ -43,8 +43,9 @@ def _frozen(tmp_path):
     cwd.mkdir(parents=True)
     (cwd / ".git").mkdir()
     transcript = T(tmp_path / "s1.jsonl").append(
-        T.prompt("u1", "do it", "2026-09-16T11:00:00Z"),
-        T.answer("a1", "done " * 8_000, "2026-09-16T11:05:00Z"),
+        T.prompt("u1", "do it", "2026-09-16T09:00:00Z"),
+        T.tool_call("e1", "2026-09-16T09:01:00Z"),
+        T.answer("a1", "done " * 8_000, "2026-09-16T09:05:00Z"),
     )
     environ = {"ATRIUM_STATE": str(tmp_path / "state")}
     payload = {"session_id": "s1", "transcript_path": str(transcript.path), "cwd": str(cwd)}
@@ -70,7 +71,7 @@ def test_writes_the_record_at_the_frozen_boundary_even_after_the_transcript_grew
     assert record["segmentation"] == "session-self-v1"
     assert record["model_requested"] == "session-claude-fable-5-1"
     assert record["workspace"].endswith("/p/proj")
-    assert record["authored_at"] == "2026-09-16T11:05:00.000Z"
+    assert record["authored_at"] == "2026-09-16T09:05:00.000Z"
     assert record["event_ids"] == []
     state = json.loads(session_state_path("s1", environ).read_text())
     assert state["pending"] is None and state["consumed"]["job_key"] == record["job_key"]
@@ -162,8 +163,9 @@ def test_an_erased_session_is_never_asked_for_a_record(tmp_path):
     cwd.mkdir(parents=True)
     (cwd / ".git").mkdir()
     transcript = T(tmp_path / "s1.jsonl").append(
-        T.prompt("u1", "do it", "2026-09-16T11:00:00Z"),
-        T.answer("a1", "done " * 8_000, "2026-09-16T11:05:00Z"),
+        T.prompt("u1", "do it", "2026-09-16T09:00:00Z"),
+        T.tool_call("e1", "2026-09-16T09:01:00Z"),
+        T.answer("a1", "done " * 8_000, "2026-09-16T09:05:00Z"),
     )
     environ = {"ATRIUM_STATE": str(tmp_path / "state")}
     (tmp_path / "state").mkdir()

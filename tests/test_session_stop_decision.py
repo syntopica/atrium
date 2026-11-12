@@ -50,10 +50,11 @@ def _payload(cwd, transcript, **extra):
 
 
 def _big_session(transcript):
-    """Enough transcript to cross the byte limit, with a prompt and an answer."""
+    """An aged interval over the byte limit, with a prompt, an edit and an answer."""
     transcript.append(
-        T.prompt("u1", "please do the thing", "2026-09-16T11:00:00Z"),
-        T.answer("a1", "done " * 8_000, "2026-09-16T11:05:00Z"),
+        T.prompt("u1", "please do the thing", "2026-09-16T10:00:00Z"),
+        T.tool_call("e1", "2026-09-16T10:01:00Z"),
+        T.answer("a1", "done " * 8_000, "2026-09-16T10:05:00Z"),
     )
 
 
@@ -69,7 +70,7 @@ def test_refuses_above_the_byte_limit_and_freezes_the_boundary(tmp_path):
     state = json.loads(session_state_path("s1", environ).read_text())
     pending = state["pending"]
     assert pending["boundary_uuid"] == "a1"
-    assert pending["since"] == "2026-09-16T11:00:00.000Z"
+    assert pending["since"] == "2026-09-16T10:00:00.000Z"
     assert pending["model"] == "claude-fable-5-1"
     assert f"--checkpoint {pending['id']}" in output["additionalContext"]
     assert state["workspace"].endswith("/p/proj")
@@ -79,15 +80,16 @@ def test_silent_under_the_limits_and_without_a_prompt(tmp_path):
     cwd, transcript, environ = _session(tmp_path)
     transcript.append(
         T.prompt("u1", "hi", "2026-09-16T11:59:00Z"),
+        T.tool_call("e1", "2026-09-16T11:59:00Z"),
         T.answer("a1", "hello", "2026-09-16T11:59:01Z"),
     )
     assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
     # Aged but tiny: still silent; aged and over the small limit: refused.
     transcript.append(T.answer("a2", "x" * 5_000, "2026-09-16T11:59:02Z"))
     assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
-    # Past the hour the age rule waits: the limits count prompts, and a
+    # Past two hours the age rule waits: the limits count prompts, and a
     # single-prompt interval is recorded only once it has aged.
-    later = datetime(2026, 9, 16, 13, 5, tzinfo=UTC)
+    later = datetime(2026, 9, 16, 14, 5, tzinfo=UTC)
     assert session_stop_decision(_payload(cwd, transcript), environ, later) is not None
 
 
@@ -145,7 +147,7 @@ def test_consumed_checkpoint_silences_the_active_turn(tmp_path):
     state = json.loads(path.read_text())
     state["consumed"] = {
         "offset": transcript.path.stat().st_size,
-        "at": "2026-09-16T11:05:00.000Z",
+        "at": "2026-09-16T10:05:00.000Z",
         "job_key": "k",
     }
     state["pending"] = None
@@ -172,3 +174,24 @@ def test_checkpoint_whose_boundary_vanished_is_dropped(tmp_path):
         is None
     )
     assert json.loads(session_state_path("s1", environ).read_text())["pending"] is None
+
+
+def test_an_interval_that_edited_nothing_is_not_reminded(tmp_path):
+    """Questions, reviews and status checks are left to the batch lanes."""
+    cwd, transcript, environ = _session(tmp_path)
+    transcript.append(
+        T.prompt("u1", "review this", "2026-09-16T09:00:00Z"),
+        T.tool_call("r1", "2026-09-16T09:00:01Z", name="Read", tool_input={"file_path": "x"}),
+        T.tool_call("b1", "2026-09-16T09:00:02Z", name="Bash", tool_input={"command": "git log"}),
+        T.answer("a1", "done " * 8_000, "2026-09-16T09:05:00Z"),
+    )
+    assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is None
+    transcript.append(
+        T.tool_call(
+            "c1",
+            "2026-09-16T09:06:00Z",
+            name="Bash",
+            tool_input={"command": "git -C x commit -m y"},
+        )
+    )
+    assert session_stop_decision(_payload(cwd, transcript), environ, NOW) is not None

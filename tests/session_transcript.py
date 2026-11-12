@@ -49,6 +49,19 @@ class SessionTranscript:
         }
 
     @staticmethod
+    def tool_call(uuid: str, at: str, name: str = "Edit", tool_input: dict | None = None) -> dict:
+        return {
+            "type": "assistant",
+            "uuid": uuid,
+            "timestamp": at,
+            "message": {
+                "role": "assistant",
+                "model": "claude-fable-5-1",
+                "content": [{"type": "tool_use", "name": name, "input": tool_input or {}}],
+            },
+        }
+
+    @staticmethod
     def attachment(at: str, size: int = 40_000) -> dict:
         return {
             "type": "attachment",

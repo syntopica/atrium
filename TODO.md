@@ -381,7 +381,7 @@
   sources with identities hidden, and independently judge answer-bearing
   passages before claiming a general system ranking.
 
-- [ ] **Opt-in tree navigation for curated notes (PageIndex study, 2026-11-12).** Offline test on the 39 note-answer questions (`~/p/wiki/atrium/evaluations/pageindex-2026-11-12/README.md`): an LLM picking pages from the full brain tree (title + summary, then H2/H3 outlines) reached page MRR 0.774 / H@8 0.872 with gemini-4-argon versus 0.576 / 0.769 for fused + cross-encoder; Flash low 0.684 at a 10.7 s median. Heading paths or summaries in chunk text gave no gain after rerank, so no re-embed. Too slow for the prompt hook. Smallest next step: expose it as an explicit MCP/CLI deep mode (e.g. `atrium navigate "<question>"`) and confirm on the full 85+88 sets plus a fresh question set before any default use.
+- [ ] **Opt-in tree navigation for curated notes (PageIndex study, 2026-11-12).** Offline test on the 39 note-answer questions (`docs/studies/pageindex.md`, which holds the method, prompts, results and implementation proposal): an LLM picking pages from the full brain tree (title + summary, then H2/H3 outlines) reached page MRR 0.774 / H@8 0.872 with gemini-4-argon versus 0.576 / 0.769 for fused + cross-encoder; Flash low 0.684 at a 10.7 s median. Heading paths or summaries in chunk text gave no gain after rerank, so no re-embed. Too slow for the prompt hook. Smallest next step: expose it as an explicit MCP/CLI deep mode (e.g. `atrium navigate "<question>"`) and confirm on the full 85+88 sets plus a fresh question set before any default use.
 
 ## Integrations
 

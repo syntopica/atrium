@@ -1,0 +1,28 @@
+{
+  "tadu": 2,
+  "id": "t-1c0421b0-f00e-47a4-ba2a-2792a3a783a0",
+  "title": "Second adversarial Codex review (BLOCK, nine",
+  "state": "done",
+  "category": "bugs",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "findings, all [REAL] and reproduced) closed the same day. Critical: absent",
+    "conversations/notes were never swept on re-ingest, so upstream deletions and",
+    "redactions never reached a long-lived index — fixed with a per-provider",
+    "sweep (`--partial` opts out). High: pipeline version not bumped with an",
+    "admission change; populated unstamped indexes silently adopted; mid-embed",
+    "reconciliation could attach a stale vector to a new revision; the adjacency",
+    "verifier dropped diacritic-folded hits and could be exhausted by a wall of",
+    "false candidates; hybrid truncated lanes to the output limit before fusing.",
+    "Medium: unbroken oversized paragraphs bypassed the chunk bound (a 17,999-char",
+    "chunk embedded identically to its prefix); busy_timeout was set after",
+    "journal_mode (43/100 concurrent first-opens failed); dense/fused score ties",
+    "followed physical row order and diverged between machines."
+  ],
+  "closed": "2026-08-27",
+  "result": "Second adversarial Codex review (BLOCK, nine",
+  "evidence": [
+    "commit `71b8eb3`; 49 tests green; review transcript in Codex rollout `01a04450` (2026-08-27); index rebuilt under pipeline 2."
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-236f4116-3ec9-490e-b15d-acb3ed511fd5",
+  "title": "Four defects a Codex review found in remember, file-context, the rerank floor and the query log",
+  "state": "done",
+  "category": "review",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "the query log redacts the question with the archive's patterns; a lone reranked candidate is scored instead of keeping its fused score (which the -0.8 floor and `gaps` read as a logit); `insert_supersession` keeps the later statement (ties by record id, as ingest now does), so a retried older `remember` cannot undo a newer one; `file-context` returns and the mod renders the `[superseded <date>]` mark. Existing query logs scanned: 0 lines would change.",
+  "evidence": [
+    "`ca04dff`; new tests in `tests/test_query_log.py`, `tests/test_rerank_hits.py`, `tests/test_remember.py`, mod `register.test.ts` (40 pass); `codeality-py gate` 0 failed."
+  ]
+}

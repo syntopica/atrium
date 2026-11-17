@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-fb81c30f-a2d3-4861-8e64-90a18b90047d",
+  "title": "Records written on the peer reach the primary",
+  "state": "done",
+  "category": "durability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "`sync-all-safe` pushed the registry from the primary only, so session (and now remembered) records written on the mini stayed there: 314 did (session-claude-opus-5-5 and -fable-5-1, some ollama). It now pulls `records/` from the peer with `--ignore-existing` before pushing; the 314 were pulled by hand the same day.",
+  "evidence": [
+    "dotfiles `86d3d10`; `rsync --dry-run` listed 314 peer-only files, 0 after."
+  ]
+}

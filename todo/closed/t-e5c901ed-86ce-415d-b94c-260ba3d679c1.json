@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-e5c901ed-86ce-415d-b94c-260ba3d679c1",
+  "title": "\"Thin adapters over the CLI core: MCP",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "server and per-agent hooks\" — verified already built, not rebuilt."
+  ],
+  "closed": "2026-09-01",
+  "result": "`atrium/adapters/mcp_server.py` serves `atrium_search` and `atrium_recall` over stdio by calling the same `search`/`recent_episodes` the CLI uses (read-only annotations, bounded limits); registered in the personal profile's MCP list. Per-agent hooks: `~/.claude/hooks/atrium-recall.sh` (SessionStart injection) and `atrium-refresh-on-session-end.sh`, both thin shells over the CLI. The adapter never became the engine: `mcp` stays an optional extra and the core imports nothing from it. This session's CONNECTION_CLOSED was the uv resolution outage, not the adapter; import verified clean after the fix.",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

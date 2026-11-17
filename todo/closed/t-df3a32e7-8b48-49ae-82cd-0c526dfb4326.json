@@ -1,0 +1,26 @@
+{
+  "tadu": 2,
+  "id": "t-df3a32e7-8b48-49ae-82cd-0c526dfb4326",
+  "title": "Atrium shows in the Claude Code TUI through a mod",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`plugins/atrium-context` (atrium f05920b): a `prompt.submit` hook runs `atrium context",
+    "--json`, adds the evidence as context, and keeps `atrium-context: N retrieved (...)` in",
+    "the status line under the prompt plus a person-only log line; same skip rules, 10 s",
+    "budget, failure notice and rendering as the shell hook, exit 2 silent. The repo is a",
+    "marketplace. `claude plugin validate --strict .` passes, `claude plugin test` 7 pass.",
+    "Live: with the mod one `# atrium context` block, without it and the hook off none; same",
+    "on the Mac mini (2.1.295). The UserPromptSubmit shell hook is unregistered on both",
+    "machines (dotfiles b5e838c) so prompts do not retrieve twice; it stays in the repo as",
+    "the fallback for hosts without mods. Not built, on Codex's advice: the `/recall` pane",
+    "and the `atrium_context` ToolResult renderer."
+  ],
+  "closed": "2026-10-10",
+  "result": "Atrium shows in the Claude Code TUI through a mod",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-28c23602-3dc3-41c9-88e1-2941e8672579",
+  "title": "Query log and gap detection",
+  "state": "done",
+  "category": "self-improvement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "placement resolved as the registry directory (`synthesis/queries/<day>.jsonl`), which `sync-all-safe` now carries (dotfiles `9e75805`); ids, scores and lanes only, never evidence text. `atrium gaps` lists questions whose best reranked logit is under 0 or that got nothing (flags 28/42 missed and 5/46 answered holdout questions), most-asked first, plus the records served most. The gap list is the proposal list: a gap is by definition something the memory cannot draft, so the note is written by whoever answers it.",
+  "evidence": [
+    "`d321af1`; `tests/test_gaps.py`, `tests/test_query_log.py`; live `atrium context` wrote a line and `atrium gaps --days 1` read it."
+  ]
+}

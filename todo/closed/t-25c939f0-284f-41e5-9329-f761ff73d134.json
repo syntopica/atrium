@@ -1,0 +1,19 @@
+{
+  "tadu": 2,
+  "id": "t-25c939f0-284f-41e5-9329-f761ff73d134",
+  "title": "Status review of 2026-09-04",
+  "state": "cancelled",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Its open points were the agy drip's",
+    "",
+    "output (lane retired), project coverage, disk and slow searches during a refresh.",
+    "Disk and the memstore copy are tracked in the memstore item under Ingest / Store;",
+    "coverage is on demand with `status --coverage`; the slow-search note asked for an idle",
+    "re-measurement, and warm dense context now answers in 0.87-0.95 s (759f2ef)."
+  ],
+  "closed": "2026-10-09",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

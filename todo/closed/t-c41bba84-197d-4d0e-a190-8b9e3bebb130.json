@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-c41bba84-197d-4d0e-a190-8b9e3bebb130",
+  "title": "Curated notes fuse 30/70 lexical to dense",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "(`14aa1ab`). Acceptance",
+    "",
+    "set, 20 note questions: 0.70/0.50 R@10/MRR offline against 0.50/0.40 at 0.7; end to end",
+    "through `retrieve_context` 0.55/0.47 against 0.45/0.39. Codex review: no regression. The",
+    "context service was restarted to serve it (2.2 s warm)."
+  ],
+  "closed": "2026-10-11",
+  "result": "Curated notes fuse 30/70 lexical to dense",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

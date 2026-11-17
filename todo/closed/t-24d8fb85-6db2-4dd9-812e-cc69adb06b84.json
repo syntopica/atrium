@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-24d8fb85-6db2-4dd9-812e-cc69adb06b84",
+  "title": "Re-embed the memstore palace with embeddinggemma",
+  "state": "cancelled",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "memstore was",
+    "",
+    "retired (2026-09-14) and `~/p/memstore` no longer exists; Atrium already embeds with",
+    "`embeddinggemma-300m`. What is left of memstore is the 26 GB retired copy, tracked under",
+    "Ingest / Store."
+  ],
+  "closed": "2026-10-09",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

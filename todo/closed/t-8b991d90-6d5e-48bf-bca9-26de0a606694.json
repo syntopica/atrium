@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-8b991d90-6d5e-48bf-bca9-26de0a606694",
+  "title": "Worker lane leftovers of 2026-10-04",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "(1) Identical transcripts",
+    "",
+    "sharing one worker key: they share one kept partial now (31e53cb). (2) A journaled job",
+    "whose conversation is otherwise done: acked when that conversation ends without error",
+    "(2d7c02c, `ack_conversation_results`). (3) Map-reduce partials unacked until reduce:",
+    "acked once kept (31e53cb). Tests: `test_kept_partials.py`, `test_started_conversations.py`,",
+    "`test_ack_conversation_results.py`."
+  ],
+  "closed": "2026-10-09",
+  "result": "Worker lane leftovers of 2026-10-04",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

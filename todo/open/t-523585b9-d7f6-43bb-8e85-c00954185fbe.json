@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-523585b9-d7f6-43bb-8e85-c00954185fbe",
+  "title": "Fresh blinded judgments for cross-system memory evaluation",
+  "state": "pending",
+  "category": "measurement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "The",
+    "",
+    "historical 85/88-question sets have already informed Atrium tuning and were",
+    "judged from Atrium candidate pools. Competitor-only valid sources can be",
+    "unjudged. Smallest next step: freeze a new question set, pool all backends'",
+    "sources with identities hidden, and independently judge answer-bearing",
+    "passages before claiming a general system ranking."
+  ]
+}

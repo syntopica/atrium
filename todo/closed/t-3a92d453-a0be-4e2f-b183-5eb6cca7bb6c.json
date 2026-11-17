@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-3a92d453-a0be-4e2f-b183-5eb6cca7bb6c",
+  "title": "The in-index dense scan no longer reads every record",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`dense_hits.sql`",
+    "",
+    "ordered by `r.record_id`, so SQLite walked all 1.86M records by primary key to test their",
+    "role: 213 s per unscoped query, and 115 s end to end for an MCP `atrium_context` call",
+    "without a project. Driven from the ~70k vectors with a `CROSS JOIN`, the scan takes 0.6 s",
+    "(`75ac8da`); `tests/test_dense_hits_plan.py` pins the plan and fails on the old SQL. Also",
+    "`4f99a1f`: `retrieve/lane.py` declared a data module, which had failed the codeality gate."
+  ],
+  "closed": "2026-10-11",
+  "result": "The in-index dense scan no longer reads every record",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

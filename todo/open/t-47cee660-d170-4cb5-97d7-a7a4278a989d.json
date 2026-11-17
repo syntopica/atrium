@@ -1,0 +1,31 @@
+{
+  "tadu": 2,
+  "id": "t-47cee660-d170-4cb5-97d7-a7a4278a989d",
+  "title": "`atrium embed` sat at 0% CPU for twelve minutes printing nothing",
+  "state": "in_progress",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "The",
+    "",
+    "network half is fixed and measured (`cached_model_file`, commit `23c3bb8`):",
+    "the model load made three `hf_hub_download` calls that each revalidate the",
+    "etag before falling back to the cache, costing 34.2 s against a packet-",
+    "dropping endpoint versus 1.4 s normally, and now 1.4 s in both cases. The",
+    "first diagnosis, a writer queued behind the refresh, was disproved by a",
+    "controlled probe: a second writer raises `database is locked` after 30.9 s",
+    "exactly as `busy_timeout` promises. Remaining, and why this is `[~]` rather",
+    "than closed: 3 x 34 s is about 100 s, not twelve minutes, so the original",
+    "observation is still not fully explained — either the retries stack worse",
+    "than measured, or something else was also waiting. Worth one more look the",
+    "next time a long command goes quiet; `embed` should also say what it is doing",
+    "before the load, so the next occurrence is legible instead of mysterious.",
+    "**The legibility half is done 2026-09-08 (`e52b6d9`)**: every step that can block now",
+    "announces itself and flushes -- opening the index, counting pending records, loading the",
+    "named model (from cache or network, probed without touching the network and across all",
+    "three files the load needs), then the batch size. What stays open is only the diagnosis:",
+    "the next time embed goes quiet the log will name the step, and that is the evidence this",
+    "item has been missing."
+  ]
+}

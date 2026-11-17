@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-7e921020-155f-46b6-a2b8-5f91fcb63467",
+  "title": "the alias",
+  "state": "done",
+  "category": "p-brain-sessions-no-longer-filed-as-wiki-memory",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "file accepts `{\"to\": ..., \"until\": \"YYYY-MM-DD\"}` and `canonical_workspace` skips a",
+    "dated alias for a conversation started on or after the date (`startedAt`); the wiki",
+    "instance dates `[HOME]/p/brain -> [HOME]/p/wiki` at 2026-09-14. Verified by",
+    "`tests/test_workspace_aliases.py::test_a_dated_alias_stops_at_its_date` and a",
+    "re-ingest of the archive."
+  ],
+  "closed": "2026-09-16",
+  "result": "the alias",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

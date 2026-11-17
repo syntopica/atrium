@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-49f7d538-5d14-4cb4-8b29-d27f0a2eb91b",
+  "title": "File context on the first Read/Edit/Write of a file (claude-mem's PreToolUse timeline)",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "`atrium file-context <path>` returns the project's three newest episodes naming the file (word-index phrase; a generic name takes its directory), 0.2 s on the live index; the atrium-context mod adds them as tool-result context once per file per session.",
+  "evidence": [
+    "`62849d6`; `tests/test_file_context.py`, mod tests; live run on `retrieve_context.py` and `register.js` returned the relevant 2026-10-09..14 episodes."
+  ]
+}

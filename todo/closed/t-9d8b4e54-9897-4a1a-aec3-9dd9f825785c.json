@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-9d8b4e54-9897-4a1a-aec3-9dd9f825785c",
+  "title": "ES/EN query expansion (Anchored)",
+  "state": "cancelled",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "resolution": "ceiling measured with Gemini 3.8 Flash translations of every question run as a second word-lane pass (`evaluations/expansion-2026-10-15/`, `expansion-*.log`): acceptance R 0.40 to 0.42, holdout 0.52 to 0.51, MRR unchanged on both. A glossary would do worse than a perfect translation, and a translation per prompt costs a model call."
+}

@@ -1,0 +1,19 @@
+{
+  "tadu": 2,
+  "id": "t-13681ab1-2d52-46c6-9188-917812b2943b",
+  "title": "Cursor lane remainder and the agy Claude-model cost question",
+  "state": "cancelled",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "The",
+    "",
+    "cursor lane was removed and drip-loop.sh retired on 2026-10-01 (see that entry); bulk",
+    "synthesis goes through the worker on agy or local models. The SIGTERM handler for",
+    "`cursor-agent`, the CodexBar Antigravity windows and the Claude-on-agy cost comparison",
+    "have no lane left to apply to."
+  ],
+  "closed": "2026-10-09",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

@@ -1,0 +1,25 @@
+{
+  "tadu": 2,
+  "id": "t-af795333-b974-46e1-89e1-8f944cb93406",
+  "title": "The prompt context hook waits 10 s and is visible",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Owner chose 10 s",
+    "",
+    "over 5 s (atrium dab9700): the cold index after a reboot timed out at 5. The hook and",
+    "the session-start recall now return a `systemMessage` the person sees (\"atrium: 4",
+    "retrieved (2 notes, 2 episodes)\", \"atrium: 12 episodes recalled for this project\"),",
+    "because `additionalContext` never reaches the transcript (a726caf, dotfiles 83d79f1);",
+    "both hooks name themselves in the spinner (dotfiles 5a1064b). Closes the silent-hook",
+    "item too: failures had emitted a notice since 7c22866 and 1c7a31d. Live check: the",
+    "hook answered a real prompt in this repository with 4 items."
+  ],
+  "closed": "2026-10-09",
+  "result": "The prompt context hook waits 10 s and is visible",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

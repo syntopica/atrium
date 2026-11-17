@@ -1,0 +1,19 @@
+{
+  "tadu": 2,
+  "id": "t-99812dbf-913d-44fd-b0e0-383451cfab4f",
+  "title": "Dependency audit blocks the Python gate (2026-10-21)",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`uv run pip-audit` reports certifi 2026.7.22, PYSEC-2026-4320, fixed in",
+    "2026.10.19. This predates the Codex plugin changes. Smallest next step:",
+    "update the locked certifi dependency and rerun the Python gate."
+  ],
+  "closed": "2026-10-21",
+  "result": "Verified the existing dependency fix during benchmark validation; no dependency change was required by this experiment.",
+  "evidence": [
+    "uv run codeality-py gate --json: pip-audit passed; installed certifi is 2026.10.19."
+  ]
+}

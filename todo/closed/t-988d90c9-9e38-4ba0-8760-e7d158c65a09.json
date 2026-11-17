@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-988d90c9-9e38-4ba0-8760-e7d158c65a09",
+  "title": "The secrets repository commits again",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`~/p/dotfiles/secrets` got",
+    "",
+    "the local identity `info@busirocket.com` (owner approved). Backups and the",
+    "`config.d_check` probe were ignored and unstaged first, since `snapshot_repo` runs",
+    "`git add -A`; the four new keypairs, `ssh/config` and the retired",
+    "`busirocket-clientes` pair (`ssh/retired/` already held two) went to the private",
+    "BusiRocket/secrets in 4d086af. The next `sync-all-safe` run is not yet observed."
+  ],
+  "closed": "2026-10-10",
+  "result": "The secrets repository commits again",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

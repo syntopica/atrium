@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-35050c3c-9a2f-493e-ba6b-b9363f37a2b3",
+  "title": "`~/.memstore` deleted; 118 GB reclaimed",
+  "state": "done",
+  "category": "cutover",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "- Checked before deleting rather than after: no process held the directory,",
+    "  no LaunchAgent referenced it, and the plugin was already disabled.",
+    "- Operator directive: the store was not wanted for anything except what could",
+    "  be exported and reused."
+  ],
+  "closed": "2026-08-31",
+  "result": "free space went from 272 Gi to 343 Gi. Deleted only after every part of it was accounted for: the 3,008 conversations that existed nowhere else are in the canonical archive, the knowledge graph is a file in brain's inbox, the purge export held base64 blobs and dirty checkpoints discarded on purpose, and the five palace backups were subsets — the largest divergence yielded zero sessions the archive does not already hold.",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

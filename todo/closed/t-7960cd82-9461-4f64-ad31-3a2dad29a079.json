@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-7960cd82-9461-4f64-ad31-3a2dad29a079",
+  "title": "Restore both fused populations when either rerank fails",
+  "state": "done",
+  "category": "measurement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`rerank_populations` can keep successfully reranked history when notes time out,",
+    "but marks the combined step `applied=false`; `ordered_candidates` then",
+    "interleaves those lists and reports `rerank_unavailable_fused_order`. The",
+    "benchmark must not interpret that warning as equivalence to no reranking.",
+    "Smallest next step: add a regression where the second population times out",
+    "and choose whether to restore both fused lists or expose partial application."
+  ],
+  "closed": "2026-10-21",
+  "result": "An unavailable history or notes rerank now returns both original fused lists, preserving original scores and lanes consistently with applied=false. Fully successful reranking remains unchanged. No resident service reload, index mutation or archive change was performed.",
+  "evidence": [
+    "uv run pytest tests/test_rerank_populations.py tests/test_rerank_hits.py -q passed 10 tests after two partial-failure regressions failed before the fix. The wider context subset passed 40 tests; uv run codeality-py gate --json passed all required stages after replacing an unrelated scheduling-dependent test with deterministic CPU/wall clock cases. Independent review returned no findings. The SQL gate retains its recorded BDB406 finding."
+  ]
+}

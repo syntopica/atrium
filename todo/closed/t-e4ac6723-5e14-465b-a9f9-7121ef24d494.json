@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-e4ac6723-5e14-465b-a9f9-7121ef24d494",
+  "title": "\"Session-start injection with frozen-snapshot",
+  "state": "cancelled",
+  "category": "synthesis",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "discipline\" — superseded by the live SessionStart hook.",
+    "- The injection exists and runs: `~/.claude/hooks/atrium-recall.sh` injects",
+    "  `atrium recall` output at every session start (verified live this run,",
+    "  including its honest failure block during the uv outage). The",
+    "  frozen-snapshot half was deliberately rejected in the hook's own header:",
+    "  recall is deterministic given the index and runs in ~1.2s with no",
+    "  embedder, so a snapshot file would add a staleness window and a writer",
+    "  for no measured gain — revisit only if recall ever needs the dense lane.",
+    "  The ~900-token budget is enforced in `render_snapshot`",
+    "  (`_BUDGET_CHARACTERS = 3600`), and the staleness warning added this run",
+    "  rides the same block."
+  ],
+  "closed": "2026-09-01",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

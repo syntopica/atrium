@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-6f9c11ac-fd62-4563-af5a-4ee3457c8d52",
+  "title": "The quality-baseline adoption briefly made uv",
+  "state": "done",
+  "category": "tooling",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "resolution unsatisfiable, taking the MCP server and hourly refresh down;",
+    "fixed at the source by the baseline rollout session."
+  ],
+  "closed": "2026-09-01",
+  "result": "`syntopica-codeality-py` needed Python >=3.12 against this project's >=3.11; every plain `uv run` failed, so `atrium-mcp` died at connect and `atrium-refresh` failed after its export step. codeality-py 0.1.3 published with >=3.11, lock updated (`1e55c25`). Coordinated live with session baseline-5a: config files stay with the rollout; code-level ruff/mypy findings belong to this backlog. Never hand-edit `.codeality-py-baseline.json`; `uv run codeality-py baseline update`.",
+  "evidence": [
+    "`uv sync` clean; `uv run atrium status` works; refresh log shows a completed pass minutes after the fix."
+  ]
+}

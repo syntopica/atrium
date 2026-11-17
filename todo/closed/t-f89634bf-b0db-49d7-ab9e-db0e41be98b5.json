@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-f89634bf-b0db-49d7-ab9e-db0e41be98b5",
+  "title": "Status documents for dashboards",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`doctor --json` stays too slow to",
+    "",
+    "poll (114-188 s), but the refresh job publishes `status/doctor.json` at its end",
+    "(dotfiles 6e766e6; last written 2026-10-09 23:00, \"doctor published: ok\"), which is",
+    "the published document the item asked for. The double registry read in",
+    "`status --publish` stays as it is: the refresh tail has not grown."
+  ],
+  "closed": "2026-10-09",
+  "result": "Status documents for dashboards",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

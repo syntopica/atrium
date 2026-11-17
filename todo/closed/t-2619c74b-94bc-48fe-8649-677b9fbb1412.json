@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-2619c74b-94bc-48fe-8649-677b9fbb1412",
+  "title": "The local synthesis lane finishes nothing and holds ~38 GB doing it",
+  "state": "done",
+  "category": "synthesis",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "result": "dotfiles `06bc6f7` fixed the cooling line, the job was bootstrapped again on 2026-10-16, and the lane's passes deliver through the worker's `atrium.synthesis` ladder (agy Flash medium, OpenRouter, local) while the Mac is idle. `exit 124` is the pass's 3300 s time box, not a failure.",
+  "evidence": [
+    "records since 2026-10-16 20:34 requested as `ollama-qwen3.6-35b`: 179 served by OpenRouter nemotron-3-super and 106 by agy `gemini-3.8-flash-medium`; `ollama ps` empty while the owner was active."
+  ]
+}

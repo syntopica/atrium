@@ -1,0 +1,28 @@
+{
+  "tadu": 2,
+  "id": "t-6c71d082-139e-4063-a03a-2bcb44a45ee3",
+  "title": "Fixed the staleness warning that the",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "staleness reporting itself created.",
+    "- Adding the refresh age to `atrium status` made every hourly `refresh done`",
+    "  line in `~/.local/state/atrium/refresh.log` report the run as",
+    "  `<- STALE`: `~/.local/bin/atrium-refresh` ran `atrium status` *before*",
+    "  writing its completion stamp, so status always read the previous run's,",
+    "  one whole interval old. A warning on every single run is one nobody reads",
+    "  — the exact failure the observability group exists to prevent, introduced",
+    "  by the fix for it.",
+    "- The stamp now precedes the status call. The pipeline's work is finished at",
+    "  that line; status only describes it, and a failing status no longer erases",
+    "  the record of ingest and embed having succeeded. The script is untracked",
+    "  local tooling, so a timestamped copy was kept beside it before editing."
+  ],
+  "closed": "2026-09-01",
+  "result": "Fixed the staleness warning that the",
+  "evidence": [
+    "`sh -n` clean; the next scheduled run's log line will carry the ages without the marker."
+  ]
+}

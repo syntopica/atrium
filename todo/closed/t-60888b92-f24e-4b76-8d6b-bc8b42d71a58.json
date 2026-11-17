@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-60888b92-f24e-4b76-8d6b-bc8b42d71a58",
+  "title": "Every exportable source is in the index —",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "including four that never reached the old system's memory (cursor, opencode,",
+    "pi, openclaw). Totals: claude-code 442,447 records (4,734 conversations,",
+    "566 MB export, 4m40s ingest), cursor 67,568 (2,002), opencode 2,586 (67),",
+    "pi 63, openclaw 2, brain notes 3,599 = 516,265 records, 1.8+ GB index.",
+    "Stored counts match the export CLI exactly at every size."
+  ],
+  "closed": "2026-08-27",
+  "result": "Every exportable source is in the index —",
+  "evidence": [
+    "`atrium status` per-provider table; export logs `ok: true` for all four new sources."
+  ]
+}

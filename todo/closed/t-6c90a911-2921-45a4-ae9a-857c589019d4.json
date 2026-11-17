@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-6c90a911-2921-45a4-ae9a-857c589019d4",
+  "title": "Bulk jobs on nova capped in memory and CPU",
+  "state": "done",
+  "category": "cross-project",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "result": "the rule is now a hard boundary in `AGENTS.md`, with both incidents (MariaDB OOM-killed 2026-10-12, Apache `MaxRequestWorkers` 2026-10-14) and the transient-unit recipe.",
+  "evidence": [
+    "`AGENTS.md`, \"Hard boundaries\"."
+  ]
+}

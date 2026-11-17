@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-f1e8a261-fd47-4ee4-9455-00861e4e7247",
+  "title": "Synthesis written about a lone harness echo leaves the index",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "result": "`atrium forget --echoes` reads the registry's single-event episodes against the archive (one pass, ~20 s) and ledgers those whose only event is a known echo under the restorable rule `harness-echo`; `status` counts forgotten episodes apart instead of as NOT IN INDEX. Applied: 2,239 records (2,152 \"Structured output provided successfully\", 87 \"[Request interrupted by user]\"), wiki `93d6ac74b`.",
+  "evidence": [
+    "refresh 2026-10-16 01:17: synthesis records 63,156 to 60,923; `status` shows each population's `forgotten` count and no NOT IN INDEX drift except 1 session record; `tests/test_forget.py`, `tests/test_population_report.py`."
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-05c7abec-0162-4208-80f8-630d0e132165",
+  "title": "Studies directory created with the",
+  "state": "done",
+  "category": "self-improvement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "pending second research round: `docs/studies/mem0.md`, `letta-memgpt.md`,",
+    "`graphiti.md` — mechanisms, what to steal mapped to the disposable-index",
+    "constraints, what to avoid; researched via Codex with live web search,",
+    "claims cited."
+  ],
+  "closed": "2026-08-27",
+  "result": "Studies directory created with the",
+  "evidence": [
+    "commit `aa81f8a`."
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "tadu": 2,
+  "id": "t-a72a00b9-09bc-4baf-a48b-6ce71dfaa598",
+  "title": "The curated notes were never re-indexed, so each machine's brain memory froze",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`atrium-refresh` ran `ingest`, `ingest-synthesis` and `embed` but not `ingest-notes`, which",
+    "was left to be run by hand -- so a machine's brain index sat at whatever commit it last",
+    "saw while the notes themselves moved on. Measured 2026-09-05 with both checkouts at the",
+    "same commit: 268 notes indexed here against 243 on the second machine, and this machine's own index",
+    "was 268 notes stale before the manual catch-up. The notes are half the dense lane, so a",
+    "frozen brain is a quietly worse `atrium search` with nothing on screen to say so. Fixed by",
+    "adding the step to the refresh (33 s, incremental, skips unchanged notes) in",
+    "`~/p/dotfiles/bin/atrium/atrium-refresh` (`280c432` there). The same commit versions",
+    "`atrium-refresh`, `atrium-lock` and `watch-mtime.sh`, which had lived unversioned in",
+    "`~/.local/bin` and been copied between machines by hand -- which is how the two came to run",
+    "different pipelines at all -- and points `~/.local/bin` at them by symlink on both.",
+    "**Adding the step exposed the deeper cause, fixed in `05ae293`:** the ingest read files the",
+    "brain repository ignores. `inbox/` (its own SCHEMA calls it a scratch drop-zone \"emptied",
+    "after ingestion\"), `reviews/` and `tools/offers/reports/` are all gitignored generated",
+    "output, and 49 such files were in the dense lane as if they were curated knowledge -- 44",
+    "raw newsletter-triage dumps among them. Being untracked they also differ per machine, which",
+    "is the whole reason the two counts could not converge. `read_notes` now skips what the",
+    "notes repo itself ignores, which is the right unit: an exclude list cannot express it,",
+    "since brain ignores `tools/offers/reports/` while `docs/reports/` is curated content, and",
+    "it would need editing on every new ignore rule. `--exclude` stays for raw subtrees a repo",
+    "does track, which is what `sources/` is. Verified 2026-09-05: both machines index the",
+    "identical set of 219 notes, diffed id by id."
+  ],
+  "closed": "2026-09-05",
+  "result": "The curated notes were never re-indexed, so each machine's brain memory froze",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

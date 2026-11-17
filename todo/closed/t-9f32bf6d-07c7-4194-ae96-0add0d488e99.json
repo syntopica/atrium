@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-9f32bf6d-07c7-4194-ae96-0add0d488e99",
+  "title": "The context service was swapped out under memory pressure",
+  "state": "done",
+  "category": "cross-project",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "result": "the 14 GB holder was the synthesis driver itself: `newest_conversations` parsed all ~56,000 archived conversations (6.8 GB) into memory before the first call. The pass now keeps a stub per conversation (id, workspace, dates, byte offset) and loads each one by offset inside its pool thread. The other holder, the local Ollama model, has leased only while the Mac is idle since worker `e00ac0b` (2026-10-12). `serve-context` is not pinned: neither cause remains, and Python offers no supported way to lock its working set on macOS.",
+  "evidence": [
+    "`atrium synthesize <archive> --dry-run --limit 200` on the live archive peaks at 556 MB resident (`/usr/bin/time -l`, 135 s); `tests/test_synthesis_collects_pending_results.py::test_the_pass_holds_stubs_and_loads_each_conversation_by_offset`; gate passes."
+  ]
+}

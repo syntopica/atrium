@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-210441c6-d5e7-4b18-aa8a-b2b10821f871",
+  "title": "Stop spending synthesis calls on Codex machine jobs, Atrium's own stages and the remote-control notice",
+  "state": "done",
+  "category": "synthesis",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "result": "`is_machine_job_episode` now ignores harness injections (`# AGENTS.md instructions`, a bare `<environment_context>` block) instead of requiring every user message to open a job, so Codex jobs on the skip list are skipped; Atrium's synthesis and four curation system prompts joined `MACHINE_JOB_PREFIXES` (which ingest also uses, so their user records stay out of the index); a lone `/remote-control is active ... session_<id>` notice is trivial, matched in full. Codex review caught two false positives in the first cut (text after the environment block, a person's message starting with the notice), both fixed with tests. Not covered: the ad-hoc LLM-judge prompts of evaluation scripts, which vary per run.",
+  "evidence": [
+    "`uv run pytest -q` 663 passed, ruff and mypy clean; pattern matched 3 real notices from the archive."
+  ]
+}

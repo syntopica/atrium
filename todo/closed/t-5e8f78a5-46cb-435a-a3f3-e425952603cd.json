@@ -1,0 +1,31 @@
+{
+  "tadu": 2,
+  "id": "t-5e8f78a5-46cb-435a-a3f3-e425952603cd",
+  "title": "Two Claude Code profiles, and only two",
+  "state": "done",
+  "category": "config",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "- `~/.claude/rules/claude-profiles.md` rewritten to name both profiles, their",
+    "  accounts, how each is started and which file each uses; to forbid",
+    "  `CLAUDE_CONFIG_DIR=~/.claude` with the reason; to record that an MCP",
+    "  `command` must be an absolute path; and to mark `gateway-example` as a deliberate",
+    "  per-profile difference rather than drift, since it belongs to one of the",
+    "  two accounts only.",
+    "- `.zshrc` gained `claudeb` beside the existing `claudef`, so both profiles",
+    "  are named rather than one being \"the default\". It runs",
+    "  `env -u CLAUDE_CONFIG_DIR claude`: a shell that already ran `claudef`, or",
+    "  any nested agent session, would otherwise send a bare `claude` to the work",
+    "  profile without saying so. Nothing in the shell ever set",
+    "  `CLAUDE_CONFIG_DIR=~/.claude`, so the stray profile came from an ad-hoc",
+    "  invocation about a month earlier — plausibly an agent following the old",
+    "  rule text, which called `~/.claude` \"canonical\" without saying it is the",
+    "  canonical *shared tree*, not a profile."
+  ],
+  "closed": "2026-08-31",
+  "result": "A third configuration existed at `~/.claude/.claude.json` — one project, one MCP server, and its own `oauthAccount` binding the personal address to the work organization, crossing the email-separation rule in the global guidance. It is reached by setting `CLAUDE_CONFIG_DIR=~/.claude`, which looks like the way to name the personal profile and is not: Claude Code keeps its config at `$HOME/.claude.json` when the variable is unset and at `$CLAUDE_CONFIG_DIR/.claude.json` when it is set, so pointing it at `~/.claude` starts a fresh empty profile and every MCP server silently disappears. Parked at a retired-profile directory rather than deleted, because it carries auth. The two real profiles are the personal one (plain `claude`) and the work one (its own `CLAUDE_CONFIG_DIR`).",
+  "evidence": [
+    "both profiles answer with their own account and connect Atrium over MCP after the removal; asked in each profile, both quote the new rule back. `.zshrc` needs a real pty to verify — it returns early for agent shells and again for an interactive shell with no TTY — and under one both functions resolve."
+  ]
+}

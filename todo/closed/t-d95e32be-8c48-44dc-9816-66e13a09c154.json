@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-d95e32be-8c48-44dc-9816-66e13a09c154",
+  "title": "`atrium status` says how stale it is, and",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "recall complains instead of staying silent over a dead archive."
+  ],
+  "closed": "2026-09-01",
+  "result": "every `status` now prints the archive's age, the last finished refresh, and the gap between the newest indexed content and now, with a loud `<- STALE` / `<- BROKEN` marker past the doctor's thresholds; the session-start recall block prints a `memory may be stale` warning when the archive or refresh is unhealthy — including when the block itself would be empty, which is exactly the case nothing else reports. New `atrium/doctor/newest_content_gap.py`; stamp and archive paths injectable for tests.",
+  "evidence": [
+    "`tests/test_status_staleness.py` (6 tests), suite 102 passed; live `atrium status` prints `archive last written 459s ago / last refresh finished 253s ago / newest indexed content authored 726s ago`."
+  ]
+}

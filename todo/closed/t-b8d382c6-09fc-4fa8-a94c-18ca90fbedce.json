@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-b8d382c6-09fc-4fa8-a94c-18ca90fbedce",
+  "title": "Database baseline blocks the SQL gate (2026-10-21)",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "BDB406 on `store/read_archive_revision_providers.sql`."
+  ],
+  "closed": "2026-11-05",
+  "result": "Rewrote the DISTINCT read as a recursive MIN loose index scan instead of baselining it: same provider set, 0.30 s to 0.01 s on the live index.",
+  "evidence": [
+    "atrium `aca396d`; `pnpm dlx @syntopica/db-quality@0.6.0 gate` baseline-check passed; `tests/test_read_archive_revision_providers.py`."
+  ]
+}

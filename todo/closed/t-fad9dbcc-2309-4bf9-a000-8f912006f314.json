@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-fad9dbcc-2309-4bf9-a000-8f912006f314",
+  "title": "`atrium status` names every synthesis",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "population and how many episodes of each the index serves.",
+    "- First live run: `claude-sonnet-5` (the 383-episode Max-lane tranche,",
+    "  4.7M input tokens) serves 0 episodes — fully shadowed by",
+    "  `codex-cli-default`, which covers every episode it has. Expected under",
+    "  the priority, but now visible instead of assumed. Status now costs ~7s",
+    "  (one registry pass, ~16k records)."
+  ],
+  "closed": "2026-09-01",
+  "result": "new `atrium/synthesize/population_report.py` and `choose_served_records.py` (chooser extracted from `_ingest_synthesis`, now shared, so status reports exactly what ingest would serve). Rows carry records/episodes/served, flag models missing from the active recipe, and mark a population serving zero episodes with `<- SERVES NOTHING`. The wave review hardened it twice: `intended` (what the manifest would serve) is now printed beside `indexed` (episodes the index actually holds), so an ingest that never ran shows as `<- N NOT IN INDEX` instead of hiding inside a recomputed count; and status reads the recipe through a non-writing reader (`read_recipe_priority`), so inspecting the system can never create the manifest the next ingest obeys.",
+  "evidence": [
+    "`tests/test_population_report.py` (4 tests); suite 109 passed."
+  ]
+}

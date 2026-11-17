@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-87426236-1945-42df-b952-fa78d4b832eb",
+  "title": "Drop the subject/predicate/value triple from extraction",
+  "state": "done",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "result": "removed from `claim_extraction_tool`, `StructuredClaim` and `extracted_claim` (`f79c702`); ledger rows already written keep their fields.",
+  "evidence": [
+    "`codeality-py gate` passed; `tests/test_curate_extraction.py` 20 passed."
+  ]
+}

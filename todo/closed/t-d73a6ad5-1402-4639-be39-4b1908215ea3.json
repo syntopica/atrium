@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-d73a6ad5-1402-4639-be39-4b1908215ea3",
+  "title": "Installable Codex memory plugin",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Package recall, per-prompt retrieval,",
+    "",
+    "first-file history and observed Brain usage; preserve legacy hook entry points",
+    "and migrate the local registrations without duplicate retrieval. Verify the",
+    "relocated package and a fresh Codex session before closing."
+  ],
+  "closed": "2026-10-21",
+  "result": "Added the Codex marketplace and self-contained hooks package, shared legacy entry points, bounded per-file history and source-role exclusion. Installed and trusted the local package; backed up hooks.json and removed only the five duplicate Atrium registrations. Documented the UI limits and the existing dependency and SQL gate blockers.",
+  "evidence": [
+    "uv run pytest -q: 678 passed, 2 skipped; relocated and legacy hook suite: 25 passed; fresh codex exec confirmed recall and prompt context; /hooks showed all six packaged hooks active; installed package matched source byte for byte."
+  ]
+}

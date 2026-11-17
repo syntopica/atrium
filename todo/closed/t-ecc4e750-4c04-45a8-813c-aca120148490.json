@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-ecc4e750-4c04-45a8-813c-aca120148490",
+  "title": "Per-ingest O(corpus) FTS rebuild (Codex review",
+  "state": "done",
+  "category": "backend",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "finding 4) — verified already fixed by `83ac330` before this run: both FTS",
+    "lanes are trigger-maintained, no rebuild call exists anywhere",
+    "(`rg rebuild|optimize` returns only comments), and ingest is one",
+    "transaction with per-conversation delete+insert."
+  ],
+  "closed": "2026-08-27",
+  "result": "Per-ingest O(corpus) FTS rebuild (Codex review",
+  "evidence": [
+    "`atrium/store/schema.py` triggers; `tests/test_index_consistency.py`."
+  ]
+}

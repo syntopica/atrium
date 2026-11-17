@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-ad459cb3-1e40-421e-adf1-66504f1de3d8",
+  "title": "Remote-export adapter family designed",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "before the local-file assumption hardened further."
+  ],
+  "closed": "2026-09-01",
+  "result": "spike at `docs/designs/remote-export-adapter-family.md`. Grounded in current vendor reality (both ChatGPT and Grok ship official JSON account exports; neither has a consumer API): a content-addressed inbox of vendor ZIPs, vendor-specific parse, then the shared redaction and manifest path with `complete:false` and per-source `exportedAt` staleness. Scraping explicitly last. Implementation filed in `~/p/agents/TODO.md` (Conversations export) with the smallest next step: request both exports and write the ChatGPT parser against a real `conversations.json`.",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

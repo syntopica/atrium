@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-b580ab86-0ace-4806-832e-b5c8f8021427",
+  "title": "**`atrium synthesis recent|passes|show --json` shows what",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "synthesis did.** `passes` parses the wrapper's `synthesis.log` (exit codes,",
+    "`timeout`/`killed`/`interrupted`, tallies) plus the running pass's progress;",
+    "`recent` lists the newest records by one `scandir` (model, tokens, duration,",
+    "window, fact counts) and tokens per UTC day; `show` alone prints a record's",
+    "title, summary, facts and open ends. New records carry `synthesized_at` and",
+    "`duration_ms`. Evidence: `tests/test_synthesis_ledger_*.py`, gate green; on",
+    "the full instance `passes` 0.13 s, `recent` 6 s at load 41 (76,095 records,",
+    "15,696 in the 14-day window). orbit consumes it."
+  ],
+  "closed": "2026-10-04",
+  "result": "**`atrium synthesis recent|passes|show --json` shows what",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

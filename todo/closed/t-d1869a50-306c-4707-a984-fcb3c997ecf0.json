@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-d1869a50-306c-4707-a984-fcb3c997ecf0",
+  "title": "Adjacent-token phrase false positive closed",
+  "state": "done",
+  "category": "bugs",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "(Codex review finding 6). `3.7.0` no longer matches `allocate 3 7 0 workers`:",
+    "punctuated terms carry an adjacency verifier requiring parts joined by",
+    "punctuation (underscore included) in the stored text; mixed queries keep OR",
+    "semantics untouched."
+  ],
+  "closed": "2026-08-27",
+  "result": "Adjacent-token phrase false positive closed",
+  "evidence": [
+    "commit `103a065`; `tests/test_lexical_lanes.py` exclusion, snake_case and mixed-query tests (10 passed)."
+  ]
+}

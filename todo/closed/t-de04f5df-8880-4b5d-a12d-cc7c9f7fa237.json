@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-de04f5df-8880-4b5d-a12d-cc7c9f7fa237",
+  "title": "Acceptance set built and used for every retrieval decision since",
+  "state": "done",
+  "category": "measurement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "result": "GPT-6 labels with a Claude audit (85 questions, 2026-10-11), then a held-out set of 88 (2026-10-15). Its three next steps are settled: history fusion and the reranker shipped (context reranked, 50/50), the notes-only FTS table was rejected, dense-over-raw stays unshipped. `search_hybrid` for the CLI keeps 0.7 (0.5 gains R@10 and loses MRR).",
+  "evidence": [
+    "the 2026-10-11, 2026-10-12 and 2026-10-15 entries in this log; `atrium/evaluations/acceptance-2026-10-11/` and `holdout-2026-10-15/` in the instance."
+  ]
+}

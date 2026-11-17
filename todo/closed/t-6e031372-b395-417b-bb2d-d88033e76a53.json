@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-6e031372-b395-417b-bb2d-d88033e76a53",
+  "title": "Redact labeled table credentials before ingestion chunking and output excerpting",
+  "state": "done",
+  "category": "retrieval-output-hardening",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-21",
+  "result": "Added key/value and header-column table redaction, applied full-text sanitization to shared hits, context/MCP/CLI and injected recall, and withheld legacy truncated resident excerpts without pre-excerpt sanitization provenance. Excerpt offsets explicitly refer to redacted text. Canonical inputs and hashes are preserved; existing derived records, credential exposure remediation and runtime reload remain open.",
+  "evidence": [
+    "Seven boundary regressions reproduced before the fix. The focused security suite passed 70 tests, independent parent review and a further combined 38-test run passed, and `uv run codeality-py gate --json` passed every required stage. `pnpm dlx @syntopica/db-quality@0.6.0 gate` still reports the pre-existing BDB406 provider-revision scan. No real secret, index, archive or service was changed."
+  ]
+}

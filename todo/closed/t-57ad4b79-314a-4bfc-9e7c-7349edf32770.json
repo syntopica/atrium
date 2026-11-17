@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-57ad4b79-314a-4bfc-9e7c-7349edf32770",
+  "title": "Qualified credential labels leaked through key/value tables",
+  "state": "done",
+  "category": "security",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-11-05",
+  "result": "`is_secret_table_label` now accepts short labels ending in a credential noun (English) or starting with one (Spanish); bare \"key\" excluded. Release moved and the context service restarted.",
+  "evidence": [
+    "atrium `4c79229`; `tests/test_is_secret_table_label.py` (red before the change); live probe after restart: 41 labelled rows, 27 redacted, 0 suspicious."
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-d498998e-80a9-47bd-8e85-9ab6153b4b22",
+  "title": "Session-start recall seeks the project instead of scanning",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "e65a4cf: 0.1 s warm but over 20 s cold scan of 79k episodes replaced by a range on",
+    "`records_context_role_workspace` (819 rows for atrium). Plus: lockfile refresh",
+    "(0e85013), every SQL statement in `atrium/sql` with codeality-py BPY006 enforced and",
+    "db-quality 0.6.0 gating the plans (f81e89c, 4a91e0b), hook failure notices",
+    "(7c22866, 1c7a31d). Evidence: `uv run codeality-py gate` and",
+    "`pnpm dlx @syntopica/db-quality@0.6.0 gate` exit 0, 453 tests."
+  ],
+  "closed": "2026-10-09",
+  "result": "Session-start recall seeks the project instead of scanning",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

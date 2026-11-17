@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-e7728a4d-0b55-4cf1-b43d-4fa60b64d56e",
+  "title": "Reinforcement by use (claude-mem)",
+  "state": "cancelled",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "resolution": "the query log now counts what is served (`atrium gaps` lists it), but a served-count boost cannot be measured on the fixed evaluation sets and feeds back on itself (served because boosted). Counts kept as data, no boost."
+}

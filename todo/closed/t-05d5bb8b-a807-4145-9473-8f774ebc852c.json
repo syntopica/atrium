@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-05d5bb8b-a807-4145-9473-8f774ebc852c",
+  "title": "Explicit memory with supersession: `atrium remember` and the `atrium_remember` MCP tool",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "a statement is written to the registry as population `remember`, redacted, and indexed at once with its vector and the revision `ingest-synthesis` computes, so the next refresh finds it unchanged. `--supersedes RECORD_ID` marks synthesized episodes it replaces; the additive `supersessions` table is rebuilt from the registry on every `ingest-synthesis`; context ranks superseded evidence last and marks it `superseded_by`, and both hooks show `[superseded <date>]`. The fact-level update that Mem0 and Graphiti do, by explicit statement rather than an LLM merge.",
+  "evidence": [
+    "`310c5b8`, `d20a194`; `tests/test_remember.py` (6), mod test 39/39; gates green."
+  ]
+}

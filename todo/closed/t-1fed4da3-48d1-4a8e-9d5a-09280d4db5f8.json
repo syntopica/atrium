@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-1fed4da3-48d1-4a8e-9d5a-09280d4db5f8",
+  "title": "\"Decide whether Trae `unknown`-role events are",
+  "state": "cancelled",
+  "category": "ingest",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "admissible\" — resolved by looking at the data: the full Trae export holds 3",
+    "events with texts `rule`, `code`, `folder` from `state.vscdb:ItemTable` —",
+    "VS Code workspace metadata, not conversation. The admission gate is correct",
+    "to drop them; the defect is the layer-1 exporter, filed in",
+    "`~/p/agents/TODO.md`."
+  ],
+  "closed": "2026-08-27",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

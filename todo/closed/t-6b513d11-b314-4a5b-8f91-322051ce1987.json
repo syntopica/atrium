@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-6b513d11-b314-4a5b-8f91-322051ce1987",
+  "title": "the lock moved pyjwt 2.13.0 ->",
+  "state": "done",
+  "category": "pip-audit-green-again",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "2.15.1 (12 CVEs, via `mcp[crypto]`) and urllib3 2.7.0 -> 2.8.0 (3 CVEs) with",
+    "`uv lock --upgrade-package`; `codeality-py gate` passed every stage."
+  ],
+  "closed": "2026-09-30",
+  "result": "the lock moved pyjwt 2.13.0 ->",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "tadu": 2,
+  "id": "t-206be6cd-2f5b-4be5-87f7-3b221aa11338",
+  "title": "The drip's own scripts live only in `~/.local/share/atrium/synthesis/`",
+  "state": "done",
+  "category": "durability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`drip-loop.sh`, `drip-quota.py`, `drip-guard.sh` and `lane.env` are the bulk",
+    "synthesis producer's whole control surface -- which lane runs, which quota",
+    "gates it, what kills a hung pass -- and they are in no repository, on the",
+    "same single disk as the registry, replicated by nothing. Two of them were",
+    "rewritten twice on 2026-09-04 and the only copies of the previous versions",
+    "are `*.bak-*` files beside them. Same class as the registry item below, and",
+    "cheaper to fix: they belong in `~/p/dotfiles/bin` (or this repo) with the",
+    "live paths as symlinks, so a lane switch is a reviewable commit rather than",
+    "an unrecorded edit on one machine. Not done during a running pass.",
+    "Closed 2026-09-08: all four are already versioned at `~/p/dotfiles/bin/atrium-drip/`",
+    "(`98559d9` there, worker count sized in `97e0e7d`) with a README, and the live paths under",
+    "`~/.local/share/atrium/synthesis/` are symlinks into that directory — verified with `ls -la`",
+    "while a pass was running, and `git status` on `bin/atrium-drip/` is clean. A lane switch is now",
+    "a reviewable commit, which is what the item asked for."
+  ],
+  "closed": "2026-09-08",
+  "result": "The drip's own scripts live only in `~/.local/share/atrium/synthesis/`",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

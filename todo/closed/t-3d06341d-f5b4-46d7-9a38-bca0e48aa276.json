@@ -1,0 +1,27 @@
+{
+  "tadu": 2,
+  "id": "t-3d06341d-f5b4-46d7-9a38-bca0e48aa276",
+  "title": "`deferred` counts real pending work",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "After a quota wall",
+    "",
+    "every remaining conversation was counted deferred before the covered and",
+    "already-synthesized checks ran, so the published number was the archive",
+    "size. Covered conversations are now skipped first, and after the wall a",
+    "conversation is deferred only if no record holds it at its current",
+    "revision; otherwise it counts as skipped. Exact per-episode counting",
+    "(segmenting every remaining conversation) was tried first and took minutes,",
+    "past the tick's time box, so the cheap revision test replaced it. README",
+    "documents the field. Evidence:",
+    "`test_deferred_counts_only_conversations_with_work_left`."
+  ],
+  "closed": "2026-10-04",
+  "result": "`deferred` counts real pending work",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

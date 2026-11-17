@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-f847960e-b8c1-4554-a964-09b9ccd33842",
+  "title": "Scribe archives harness-only `<tag>` text as role `system`",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Scribe",
+    "",
+    "`72c0e7d`: an event whose whole text is harness tags (system-reminder, command-*,",
+    "local-command-*, task-notification, user-prompt-submit-hook) becomes kind `message`, role",
+    "`system`; any other text keeps `user`. New events only, archived `user` variants kept, no",
+    "backfill, contract fixture unchanged. Checked in atrium: `to_records` drops role `system`,",
+    "and `turn_blocks` attaches it to the current turn instead of opening one."
+  ],
+  "closed": "2026-10-11",
+  "result": "Scribe archives harness-only `<tag>` text as role `system`",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,25 @@
+{
+  "tadu": 2,
+  "id": "t-24613914-5efb-4350-a432-d2a38d9f5d45",
+  "title": "Secret-pattern matches in the semantic index (2026-10-21)",
+  "state": "done",
+  "category": "measurement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "A",
+    "",
+    "benchmark privacy audit found 203 note records and 58 synthesis records",
+    "changed by `redact_sensitive_text`. These are candidates, not verified live",
+    "credentials; values were never printed or sent to external services. The",
+    "benchmark excludes every matching record before export and removes its",
+    "discarded session-created copies. Smallest next step: review match types",
+    "without values and decide where to apply redaction to note ingestion and",
+    "existing derived records, preserving the canonical notes and archive."
+  ],
+  "closed": "2026-11-09",
+  "result": "Redaction now runs at note and synthesis indexing (8470981, 4c79229, 9b6e30c); the derived records were re-indexed under it. Canonical notes and archive keep their text by design; the archive's own re-redaction is the separate scribe erasure track.",
+  "evidence": [
+    "2026-11-09 read-only count over the live index: redact_sensitive_text changes 0 of 76,763 synthesis records and 1 of 6,820 note records (brain/business/debt-position.md, AEAT debt reference numbers, not credentials); values never printed."
+  ]
+}

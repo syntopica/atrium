@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-1242a11c-b2a9-46ed-8edc-b8b380609e36",
+  "title": "Retirement calls executed",
+  "state": "done",
+  "category": "cross-project-memstore",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "per the two-agent consult: the `embeddinggemma` re-embed is skipped (`[-]`,",
+    "36 h CPU on a retiring system), and the private-key-shaped drawers are",
+    "purged — re-scan found 7 live matches (stricter body heuristic; the earlier",
+    "14 predates the base64/checkpoint purges), daemon dry-run matched 7/7,",
+    "delete removed 7/7, post-scan finds 0. No values printed. Raw-transcript",
+    "mining deliberately stays on until Atrium replaces the live system."
+  ],
+  "closed": "2026-08-27",
+  "result": "Retirement calls executed",
+  "evidence": [
+    "`memstore_delete_drawers` dry-run and delete results; read-only re-scan count 0; `~/p/memstore/TODO.md` updated."
+  ]
+}

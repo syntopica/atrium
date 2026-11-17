@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-b4655388-121d-4d5d-9231-0a3dfb58b502",
+  "title": "Only pushed code reaches the live index",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "dotfiles `35d5c0c`:",
+    "",
+    "`atrium-release` keeps `~/.local/share/atrium/release` at this repository's",
+    "`origin/main` (fetched locally, no SSH needed under launchd); `atrium-refresh` and the",
+    "`atrium` wrapper, hence `serve-context`, run from it. The refresh logs the release",
+    "commit at `stage ingest`. Previously the editable working tree ran, and put",
+    "uncommitted phase-C code on the live index at 03:11."
+  ],
+  "closed": "2026-10-11",
+  "result": "Only pushed code reaches the live index",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

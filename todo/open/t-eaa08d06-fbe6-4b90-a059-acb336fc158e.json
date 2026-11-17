@@ -1,0 +1,29 @@
+{
+  "tadu": 2,
+  "id": "t-eaa08d06-fbe6-4b90-a059-acb336fc158e",
+  "title": "Synthesis now runs on Claude Haiku under the Favish profile (2026-11-05)",
+  "state": "pending",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Owner:",
+    "",
+    "    no synthesis model on the owner's computers. Ollama is stopped on the MacBook and the",
+    "    Mac mini (services disabled), the MacBook worker node is disabled, nova's night target",
+    "    and its Ollama are disabled too, and the tick runs `--producer claude` (atrium",
+    "    `06cebc0`, dotfiles `733766f`). Worker queues end in the same model through the",
+    "    engine's new `claude` runner (worker `548e76b`, `7f30e0f`). Watch: the",
+    "    Favish weekly limit is shared with Favish work. The worker side (14 `_shadow`",
+    "    jobs and a 4.5-day `atrium.tasks` job cancelled, MacBook processes measured) is",
+    "    tracked in the instance's `worker/TODO.md`. Smallest step: after a day, compare `synthesis.log` episodes against the",
+    "    Favish usage page and decide the worker count.",
+    "    **Measured 2026-11-09 from `synthesis.log`:** 64 episodes in four days (11-05: 4,",
+    "    11-06: 25, 11-07: 35, 11-08 onwards: 0). Every pass since 11-08 stops at the 9th",
+    "    conversation on `You've hit your weekly limit · resets Nov 10 at 1am`, with 16,540",
+    "    conversations walkable and 14,063 deferred. The lane is starved by the shared",
+    "    Favish weekly limit, so the worker count is not the lever. Owner decision: another",
+    "    lane for synthesis, or accepting near-zero synthesis on weeks Favish work spends",
+    "    the limit. The usage page itself was not read (browser, not needed for this)."
+  ]
+}

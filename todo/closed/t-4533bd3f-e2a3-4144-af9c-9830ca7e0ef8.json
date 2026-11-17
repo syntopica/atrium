@@ -1,0 +1,34 @@
+{
+  "tadu": 2,
+  "id": "t-4533bd3f-e2a3-4144-af9c-9830ca7e0ef8",
+  "title": "Nothing checks that Atrium's own documented entry points resolve, on either machine",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`doctor` proves the index would answer, and proved nothing about whether a caller can ask.",
+    "The same class of gap covers the `atrium-mcp` server, which both `.claude.json` files spawn as",
+    "`uv run --extra mcp --directory ~/p/mem atrium-mcp`. Smallest action: have `doctor` (or",
+    "`atrium-refresh`, which already runs hourly) assert `command -v atrium` and that the MCP entry",
+    "point starts, and report a machine where either is missing.",
+    "Done 2026-09-08 (`bd9dfba`): `doctor` gained an `entrypoints` check, first in the run. It",
+    "asks the question of a login shell's PATH rather than its own -- every documented route runs",
+    "the doctor through `uv run --project ~/p/mem`, which prepends `.venv/bin` where the",
+    "console scripts exist by construction, so the inherited PATH answers yes even during the",
+    "outage. Resolution follows the shell: candidates classified as directory / not executable /",
+    "broken symlink / runnable, the scan continues past an unusable one, a shadowed-but-working",
+    "wrapper is a warning. The directory case is the `bootstrap.sh` regression, and `shutil.which`",
+    "is blind to it. The MCP half asserts the console script is declared, its module resolves and",
+    "the `mcp` extra survived into the installed metadata, and says \"declared, not started\" --",
+    "the server is stdio and the hosts spawn it in a different environment, so starting it here",
+    "would prove nothing. Live on this machine: `ok entrypoints <host>:",
+    "atrium resolves at ~/.local/bin/atrium; atrium-mcp is declared, not",
+    "started`. 22 tests."
+  ],
+  "closed": "2026-09-08",
+  "result": "Nothing checks that Atrium's own documented entry points resolve, on either machine",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

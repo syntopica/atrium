@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-0ff8f92c-f99a-48c6-a772-021da2e19267",
+  "title": "Stage three's publishability verdict is too lenient",
+  "state": "cancelled",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "resolution": "the discrimination belongs at placement, as `claim_publishability`'s docstring records; with `--model codex` (`b426737`) placement refuses 147 of the 151 claims the GPT-6 judge called not wiki material (run `20261017T051312Z`, scored by `evaluations/placement-2026-10-17/compare_run.py`), so publishability stays the cheap pre-filter."
+}

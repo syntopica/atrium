@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-d1767d72-3ebd-42d9-b3f6-06ab4ad71cdd",
+  "title": "Synthesis had produced nothing since 2026-10-24",
+  "state": "done",
+  "category": "synthesis",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-11-05",
+  "result": "476 local-lane passes ended at the 55-minute timeout (exit 124) waiting on worker jobs: agy models cooling 28-41 h, OpenRouter over its 850/day cap, and the local `qwen3.6:35b` on nova's CPU at about one 70-100k-token job an hour. Added `--producer claude` (headless `claude -p`, no tools, settings or session file, structured output, quota wall on 429/usage limit) and moved the tick to Haiku under the Favish profile and to the release checkout; cancelled the queued local jobs and stopped Ollama on the MacBook and the Mac mini.",
+  "evidence": [
+    "atrium `06cebc0`; dotfiles `733766f`, `47b5ec0`; `tests/test_claude_cli_lane_call.py`; manual tick `--limit 10` synthesized the four conversations stuck since the morning, then the scheduled pass wrote 15 episodes in its first 5 minutes with 0 FAILED lines; `codeality-py gate` passed."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-251a1e35-f071-4c14-ad3a-597aff278f16",
+  "title": "A citation split across two note chunks reads as an unresolved link",
+  "state": "done",
+  "category": "self-improvement",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "    `brain/topics/agent-harnesses.md` chunk 26 ends in `[[S60]]` and chunk 27",
+    "    starts with `(#sources)`, so `link_targets` (`55a64ee`) sees a bare wikilink and",
+    "    warns `unresolved_indexed_link` (routine, so retrieval is not degraded). The",
+    "    other 23 unresolved links after 2026-11-06 are syntax examples or quotations.",
+    "    Smallest next step: keep a `[[...]](...)` together when chunking notes."
+  ],
+  "closed": "2026-11-06",
+  "result": "hard_split moves a positional cut back to the start of a link it would split (6029c21)",
+  "evidence": [
+    "Refresh 2026-11-06 04:10 rewrote 12 notes; agent-harnesses has 108 chunks, none ending in a bare citation; index scan 24 to 23 unresolved, all intentional; 5 live queries degraded false; 798 tests pass"
+  ]
+}

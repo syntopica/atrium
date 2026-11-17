@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-29a0aff8-9903-4d89-a6fb-0810c2833c76",
+  "title": "Separate CPU-budget and wall-cap behavior from host scheduling",
+  "state": "done",
+  "category": "test-reliability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-21",
+  "result": "Replaced one millisecond-sleep assertion with isolated module-local clocks covering waiting within the wall cap, CPU exhaustion and wall-cap exhaustion. Runtime budget code is unchanged.",
+  "evidence": [
+    "The previous test failed in two full gates and the lexical module on the saturated host. `uv run pytest tests/test_lexical_lanes.py tests/test_rerank_populations.py tests/test_rerank_hits.py -q` passed 31 tests; the subsequent complete Python gate passed. Independent review returned no findings."
+  ]
+}

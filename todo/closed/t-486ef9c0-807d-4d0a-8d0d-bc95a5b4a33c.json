@@ -1,0 +1,32 @@
+{
+  "tadu": 2,
+  "id": "t-486ef9c0-807d-4d0a-8d0d-bc95a5b4a33c",
+  "title": "**Worker results a pass stopped waiting for are collected",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "first.** A pass gives up on a job after its wait budget, a timeout kill or a",
+    "refused later chunk; the result then arrives unacknowledged and holds a",
+    "queue slot. Later passes walk newest-first and stop at the first 429, so",
+    "they never reached that conversation, and uncollected results filled",
+    "`max_outstanding` until the worker expired them (`unacked_expired`, the",
+    "output lost). Each worker-lane submission is now journaled",
+    "(`<registry>/worker-submissions.jsonl`, job id and conversation id only);",
+    "at pass start `pending_worker_jobs` pages `GET /v1/results`, and the",
+    "conversations those jobs belong to are walked first, where re-submission",
+    "finds the job by idempotency key (never refused by a full queue) and the",
+    "normal path records and acks it. A refused new chunk in such a conversation",
+    "does not raise the wall for the rest of them. Results submitted before the",
+    "journal existed have no entry and still wait for the walk. Evidence:",
+    "`tests/test_synthesis_collects_pending_results.py`,",
+    "`tests/test_pending_worker_jobs.py`, `tests/test_worker_submission_journal.py`;",
+    "gate green."
+  ],
+  "closed": "2026-10-04",
+  "result": "**Worker results a pass stopped waiting for are collected",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

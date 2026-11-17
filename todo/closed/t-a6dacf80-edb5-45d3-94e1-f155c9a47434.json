@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-a6dacf80-edb5-45d3-94e1-f155c9a47434",
+  "title": "Repository created and published:",
+  "state": "done",
+  "category": "infrastructure",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "the private predecessor of this repository, 5 commits; README and",
+    "`AGENTS.md` record the",
+    "layer boundary and the measured decisions (embedder, fusion weights,",
+    "separate lexical lanes, addressable dense lane)."
+  ],
+  "closed": "2026-08-27",
+  "result": "Repository created and published:",
+  "evidence": [
+    "the repository page (visibility verified PRIVATE); `git log --oneline` 5 commits."
+  ]
+}

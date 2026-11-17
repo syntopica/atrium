@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-e7834b83-307f-4dd0-aea1-bab63f54d321",
+  "title": "The retired MemPalace store is processed into the Brain and deleted",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Four palaces (three from the Mac mini, one in this Mac's retirement tarball) were classified",
+    "against the archive: over 99% re-derivable from archived sessions, Codex rollouts or files on",
+    "disk. Two Codex review rounds over the 2,988 remaining records accepted 182 as 85 sourced",
+    "facts in 13 Brain pages (wiki `355885351`); the 1,912 graph triples were rejected for lacking",
+    "record provenance. After a SHA-256 manifest of all 1,514 source files and the owner's",
+    "confirmation, `~/p/wiki/mem/mempalace` (26 GB) was removed. Ledgers, the redacted residue",
+    "JSONL, `work/verify.py` (PASS) and the manifest stay in",
+    "`~/p/wiki/mem/mempalace-processing-20261010/` (162 MB, this Mac only)."
+  ],
+  "closed": "2026-10-10",
+  "result": "The retired MemPalace store is processed into the Brain and deleted",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

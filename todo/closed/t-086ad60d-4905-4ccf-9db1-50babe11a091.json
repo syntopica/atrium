@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-086ad60d-4905-4ccf-9db1-50babe11a091",
+  "title": "The two machines' archives agree",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Conversation id sets diffed on",
+    "",
+    "2026-10-09 ~23:58: this machine 53,909, the Mac mini 53,906; the Mac mini has nothing",
+    "this machine lacks, and the three it lacks are claude-code sessions of this machine",
+    "started 2026-10-09 19:48-20:28, not yet carried by the daily `sync-all-safe` leg. The",
+    "nine old conversations of 2026-09-05 are no longer missing on either side."
+  ],
+  "closed": "2026-10-10",
+  "result": "The two machines' archives agree",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

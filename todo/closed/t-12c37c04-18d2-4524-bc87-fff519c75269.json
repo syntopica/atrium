@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-12c37c04-18d2-4524-bc87-fff519c75269",
+  "title": "One archive JSONL rewritten in full on every import",
+  "state": "cancelled",
+  "category": "ingest-store",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "resolution": "duplicate of the archive-shape entry. Segment archive stage 2 (`8cc2849`) removes the rewrite and stage 3 cuts over to it; both are tracked in `~/p/scribe/TODO.md`, and Atrium's side stays in TODO.md (Segment archive v2 stage 3, archive shape)."
+}

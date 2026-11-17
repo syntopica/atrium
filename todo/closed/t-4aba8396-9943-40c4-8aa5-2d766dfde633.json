@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-4aba8396-9943-40c4-8aa5-2d766dfde633",
+  "title": "Reranked evidence ordered by logit across history and notes, floor -0.8",
+  "state": "done",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "rerank keeps the gte logit as the hit score; with both populations reranked the alternation is replaced by one logit order (notes keep their links), candidates under -0.8 dropped.",
+  "evidence": [
+    "`d321af1`; `evaluations/retrieval-2026-10-15/merge-*.log`: holdout R 0.52 / MRR 0.43 to 0.52 / 0.44, acceptance 0.40 / 0.25 to 0.40 / 0.27; note questions 0.47 to 0.57 and 0.25 to 0.34."
+  ]
+}

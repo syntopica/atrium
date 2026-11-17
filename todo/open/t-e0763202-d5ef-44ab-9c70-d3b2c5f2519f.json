@@ -1,0 +1,19 @@
+{
+  "tadu": 2,
+  "id": "t-e0763202-d5ef-44ab-9c70-d3b2c5f2519f",
+  "title": "Whole conversations that have never entered the archive at all",
+  "state": "pending",
+  "category": "ingest-store",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "The",
+    "",
+    "    codex gap is closed (streaming export since 2026-08-31; every refresh reports",
+    "    `skipped: 0` over 31,119 codex artifacts); the Windsurf and Trae exporters emit zero conversations; ChatGPT",
+    "    and Grok leave no local transcript, so nothing has ever been captured from",
+    "    them. Windsurf and Trae are filed under Integrations below, but",
+    "    together they are the answer to \"is the archive complete\", and today the",
+    "    answer is no."
+  ]
+}

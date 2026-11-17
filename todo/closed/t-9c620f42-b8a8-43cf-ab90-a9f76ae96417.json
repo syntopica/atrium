@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-9c620f42-b8a8-43cf-ab90-a9f76ae96417",
+  "title": "A healthy retrieval no longer shows a warning on every prompt",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`$.ui.status` is drawn as a pinned warning (yellow, with the warning glyph; Claude Code",
+    "2.1.296 hard-codes `color ?? \"warning\"` for pinned notices), and a hook's `systemMessage`",
+    "is documented as a \"Warning message shown to the user\". The `atrium-context` mod (0.2.0)",
+    "now draws a healthy result green at the right of the prompt footer through a `ui.render`",
+    "hook on `SessionMode` (`Atrium · 2 notes, 2 past sessions`, `Atrium · nothing relevant`)",
+    "and pins a warning only for a failure or a real degradation; `dense_matrix_stale_rebuilding`",
+    "joined the routine warnings. The shell hook drops `systemMessage` on success. Evidence:",
+    "`claude plugin test` 13 pass, `claude plugin validate` passes, `uv run pytest -q` 498 pass."
+  ],
+  "closed": "2026-10-10",
+  "result": "A healthy retrieval no longer shows a warning on every prompt",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

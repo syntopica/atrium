@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-81c4e5a5-2b4a-4337-9942-e0cef7d24e78",
+  "title": "Design converged after three",
+  "state": "done",
+  "category": "pending-decisions",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "adversarial Codex rounds with real measurements over the user's corpus.",
+    "Settled: Atrium is layer 2 (derived, disposable) over the rocket-agents",
+    "canonical archive and brain; CLI core with thin adapters; FTS5 over",
+    "everything, vectors only over the semantic layer; `embeddinggemma-300m`",
+    "(dense R@10 70.4% vs 40.8% for the English-only default on this corpus);",
+    "fusion 70/30 (five-fold CV); synthesis promoted to the core."
+  ],
+  "closed": "2026-08-27",
+  "result": "Design converged after three",
+  "evidence": [
+    "benchmark tables recorded in `AGENTS.md`; session `a88ac62e` (2026-08-26/27) and Codex rounds 1-3."
+  ]
+}

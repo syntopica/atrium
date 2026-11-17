@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-e5a5858a-fdae-4ba7-b221-b69b2ffec144",
+  "title": "Both ingests report what they admitted",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "per role and what each admission rule rejected."
+  ],
+  "closed": "2026-09-01",
+  "result": "new `atrium/ingest/admission_tally.py`; `to_records` takes an optional tally and counts `kind <x>` / `role <x>` / `empty or acknowledgement` / `missing event id` rejections; ingest prints `admitted:` and `rejected:` lines ranked by count. The 162,225 tool-call records the memstore recovery mis-filed would now be the first line of output. `ingest-notes` gained the same lines after the wave review caught it missing: files skipped as hidden or excluded are counted per rule.",
+  "evidence": [
+    "`tests/test_admission_breakdown.py` (4 tests); suite 118 passed."
+  ]
+}

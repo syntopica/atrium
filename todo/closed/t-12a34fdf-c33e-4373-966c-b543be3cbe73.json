@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-12a34fdf-c33e-4373-966c-b543be3cbe73",
+  "title": "A scratchpad naming a deleted project is rescued by the alias map",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "`canonical_workspace` falls back to `alias_for_encoded_segment` (exact encoded match",
+    "only; a prefix would file `p/mem-old` under `p/mem`). Over the archive's 20,297",
+    "scratchpad paths, 3,024 were undecodable and 1,021 now resolve through an alias",
+    "(agents 301, cristiandeluxe-dev 360, verticagtm 254, codeality 106; paths seen",
+    "anywhere in the archive text, so an upper bound on records affected). Projects with",
+    "no alias (`p/atc-prototype`, `p/thewealthadvisor`) stay unattributed until one is",
+    "added. Evidence: tests/test_session_scratchpad_workspace.py, 3 new cases."
+  ],
+  "closed": "2026-10-09",
+  "result": "A scratchpad naming a deleted project is rescued by the alias map",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

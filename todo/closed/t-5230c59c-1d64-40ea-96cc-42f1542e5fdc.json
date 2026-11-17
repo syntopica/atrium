@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-5230c59c-1d64-40ea-96cc-42f1542e5fdc",
+  "title": "Per-fact vectors (one dense row per episode line, carrying its parent's id)",
+  "state": "cancelled",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "resolution": "measured and dropped. 598,646 fact units from 69,385 episodes embedded (`facts-2026-10-15/export_units.py`, `embed_units.py`, `build_matrix.py`; 668,031-row matrix, 1.65 GB float32). End to end with the gte reranker: holdout R 0.52 / MRR 0.44 unchanged (3 ranks moved, no hit gained or lost); acceptance 0.40 / 0.27 fell to 0.38 / 0.26 (2 hits lost, none gained). The reranker already reads the whole episode, so a closer dense match on one line adds candidates it does not need, at ten times the resident matrix. The dedupe in `dense_matrix_hits` (`8a6acb6`) stays: it is correct for any record with several rows. Artifacts trashed; the scripts remain."
+}

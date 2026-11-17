@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-c3a8e33a-e6f1-4752-897d-078fb8c470ec",
+  "title": "`--producer local`",
+  "state": "done",
+  "category": "a-local-synthesis-lane-off-every-quota",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "calls Ollama on this machine (`qwen3.6:35b-mlx`, population",
+    "`ollama-qwen3.6-35b-mlx`, atrium `d492df7`). Measured on the M4 Max against",
+    "real episodes: 15-16 s per median (~6k token) episode, prefill 1,000-1,600",
+    "tok/s, generation 90-110 tok/s, valid JSON on every episode; the GGUF build",
+    "with enforced schema takes 23-28 s and four parallel slots are slower than",
+    "one. About 14 days of idle time for the ~75,000-episode backlog."
+  ],
+  "closed": "2026-09-16",
+  "result": "`--producer local`",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

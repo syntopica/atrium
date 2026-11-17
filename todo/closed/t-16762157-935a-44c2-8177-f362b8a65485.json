@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-16762157-935a-44c2-8177-f362b8a65485",
+  "title": "MCP caller mistakes come back with their reason",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "The MCP SDK",
+    "",
+    "(2.3.0) hands the model only a `ToolError`'s text, so `checked_limit`, `atrium_search`'s",
+    "\"names no project\" and `atrium_context`'s request checks (empty query, `limit` /",
+    "`max_chars` bounds, project) now raise `ToolError`. `tests/test_mcp_caller_errors.py`",
+    "covers each case through `MCP.call_tool` (6 of them failed before the change)."
+  ],
+  "closed": "2026-10-11",
+  "result": "MCP caller mistakes come back with their reason",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "tadu": 2,
+  "id": "t-0b553c03-52e4-4789-a70b-9d75c50bc84d",
+  "title": "\"Bounded semantic layer via admission gate",
+  "state": "cancelled",
+  "category": "refactors",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "on raw drawers\" — superseded. Measured: a deterministic filter removes only",
+    "27.5% of 1.34M drawers, leaving 972,760 vectors (1.49 GB brute-force per",
+    "query). Replaced by: vectors only over synthesis + curated notes (~34k)."
+  ],
+  "closed": "2026-08-27",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

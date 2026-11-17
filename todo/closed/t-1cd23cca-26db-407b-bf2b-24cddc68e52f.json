@@ -1,0 +1,29 @@
+{
+  "tadu": 2,
+  "id": "t-1cd23cca-26db-407b-bf2b-24cddc68e52f",
+  "title": "A project's memory was split across two",
+  "state": "done",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "spellings, and half of it was unreachable from inside the project.",
+    "- Found while measuring which projects actually gained memory: 29 projects",
+    "  existed in the index under both `[HOME]/p/x` and `/Users/<name>/p/x`, with",
+    "  **4,053 conversations under the unredacted spelling**. `project_workspace`",
+    "  resolves a live cwd to the `[HOME]` form and every lane prefix-matches on",
+    "  it, so that half answered nothing — 1,331 of wide-project's conversations,",
+    "  a third of the project, invisible from inside wide-project.",
+    "- Cause is upstream: the exporter's `[HOME]` redaction missed those",
+    "  conversations, which also put the real username into a field the redaction",
+    "  existed to clear. The archive is canonical and is not rewritten, so the fix",
+    "  belongs in the derived index: `canonical_workspace` folds a real home path",
+    "  back to the marker at ingest. The next full ingest rewrites the affected",
+    "  conversations, because the stored workspace now differs from the new one."
+  ],
+  "closed": "2026-09-01",
+  "result": "A project's memory was split across two",
+  "evidence": [
+    "`tests/test_canonical_workspace.py` (7 tests, including the `/Users/someone-else` prefix trap); suite 133 passed. Filed upstream in `~/p/agents/TODO.md`."
+  ]
+}

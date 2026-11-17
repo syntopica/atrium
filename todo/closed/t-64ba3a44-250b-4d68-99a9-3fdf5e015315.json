@@ -1,0 +1,19 @@
+{
+  "tadu": 2,
+  "id": "t-64ba3a44-250b-4d68-99a9-3fdf5e015315",
+  "title": "\"The drip loop is stopped and nothing will restart it\"",
+  "state": "cancelled",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "was",
+    "",
+    "superseded: the loop has run by hand as `~/p/dotfiles/bin/atrium-drip/drip-loop.sh`",
+    "(lanes agy then cursor, guard `drip-guard.sh 1800`) since 2026-09-16 11:15. It is",
+    "still a manual lane with no LaunchAgent; that is now the documented state in",
+    "`atrium-drip/README.md`, not a gap."
+  ],
+  "closed": "2026-09-16",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

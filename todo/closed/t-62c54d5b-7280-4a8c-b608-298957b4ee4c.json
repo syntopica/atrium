@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-62c54d5b-7280-4a8c-b608-298957b4ee4c",
+  "title": "The `situational` label is mostly right but must not be a hard filter",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Hand-graded 30 of the 290 `situational` claims in `curation/claims.jsonl` (seed 1010):",
+    "25 correct (83%). All five errors go one way, durable knowledge labelled situational:",
+    "a Supabase PITR rule after an org move, a hiring-handbook fact, an endpoint's",
+    "`403 Business users cannot export data`, a described code defect, and a device's",
+    "boot-recovery behaviour. Used as a hard filter, stage three would drop about one",
+    "publishable claim in six; use it as a ranking signal or route situational claims to",
+    "review instead."
+  ],
+  "closed": "2026-10-10",
+  "result": "The `situational` label is mostly right but must not be a hard filter",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

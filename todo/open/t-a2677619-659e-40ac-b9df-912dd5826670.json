@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-a2677619-659e-40ac-b9df-912dd5826670",
+  "title": "The claim ledger stores `project` as resolved at extraction time. It is",
+  "state": "pending",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "    derived from the index and cheap to recompute, so if the resolution rule",
+    "    changes again, rewrite the field rather than re-calling the model -- the",
+    "    first two rules changed 42 of 527 rows between them."
+  ]
+}

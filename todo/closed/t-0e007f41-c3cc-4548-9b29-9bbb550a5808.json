@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-0e007f41-c3cc-4548-9b29-9bbb550a5808",
+  "title": "`doctor` probes both full-text indexes for orphan postings",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "`fts` check, a ranked query over common words per index; broken names `atrium repair-index --apply`. The cause stays open in `TODO.md`.",
+  "evidence": [
+    "atrium `3d08ac7`; `tests/test_fts_consistency.py`; live `fts ok` in ~3 s (words 1.1 s over 89% of records, substrings 1.7 s over 92%)."
+  ]
+}

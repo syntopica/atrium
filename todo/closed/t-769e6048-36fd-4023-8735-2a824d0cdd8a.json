@@ -1,0 +1,22 @@
+{
+  "tadu": 2,
+  "id": "t-769e6048-36fd-4023-8735-2a824d0cdd8a",
+  "title": "Cold `atrium context --lane auto` re-measured on the updated index",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Five fresh-process CLI queries took 1.5-2.1 s, with one 5.6 s outlier on the first,",
+    "disk-cold run (was 1.7-7 s). cProfile of one fresh query (2.09 s): lexical hits 1.04 s",
+    "(`ranked_hits` 0.96), embedder load 0.57 s plus forward 0.18 s, linked hits 0.1 s; the",
+    "`count(*) FROM records` that cost 1.5 s cold no longer appears (`record_total`). What",
+    "remains is the curated broad pass, which is the notes-only FTS item, and the CLI's",
+    "embedder load, which the resident MCP server does not pay."
+  ],
+  "closed": "2026-10-11",
+  "result": "Cold `atrium context --lane auto` re-measured on the updated index",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

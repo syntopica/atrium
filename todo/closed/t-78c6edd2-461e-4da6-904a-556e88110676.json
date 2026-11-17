@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-78c6edd2-461e-4da6-904a-556e88110676",
+  "title": "Review the 93 judged placements of run `20260918T031838Z` and apply the accepted ones",
+  "state": "done",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "result": "Codex (`codex exec -s read-only`, 5 batches) and Claude reviewed all 93 independently against the pages and live repos: Codex accepted 23, Claude 11, both 6; of 22 split verdicts 4 were accepted after checking code, the bot PM spec and Supabase's backup docs. Ten claims applied, the three Vertica ones to `projects/vertica.md` rather than the near-empty `verticagtm.md`; most rejections were already on a page or stale. The review also corrected Contratica's stack (Drizzle since `024ef31f`) and Supabase PITR (a paid add-on, not part of Pro).",
+  "evidence": [
+    "wiki `c350091d0`; `~/p/wiki/atrium/evaluations/review-2026-10-17/decisions.json`; every line of `review-judged.md` marked `[x]` or `[-]`."
+  ]
+}

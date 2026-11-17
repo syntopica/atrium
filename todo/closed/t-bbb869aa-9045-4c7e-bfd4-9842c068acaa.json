@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-bbb869aa-9045-4c7e-bfd4-9842c068acaa",
+  "title": "`synthesis recent` costs 2-6 s",
+  "state": "cancelled",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "resolution": "the entry was conditional on a reader polling it, and none does. Only the CLI view calls `synthesis_recent` (`atrium/ledger/run_synthesis_cli.py`); no hook, launch agent or script in `~/p/atrium`, `~/p/dotfiles`, `~/p/worker` or `~/.local/bin` runs it. Reopen if one starts to."
+}

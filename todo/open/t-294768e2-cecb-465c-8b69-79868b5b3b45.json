@@ -1,0 +1,25 @@
+{
+  "tadu": 2,
+  "id": "t-294768e2-cecb-465c-8b69-79868b5b3b45",
+  "title": "Add Codex plugin installation and cache-update verification to the owning",
+  "state": "in_progress",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "machine-convergence workflow. On 2026-10-21 the Mac mini had Atrium checkout",
+    "`e582eb6` and its MCP, but no plugin or legacy Atrium hooks. Installed and",
+    "verified six enabled, trusted hooks in a fresh Codex process; ongoing update",
+    "convergence remains unverified. Next: inspect the workflow owner's current",
+    "configuration and add an idempotent package refresh with changed-hook review.",
+    "Evidence: `docs/evaluations/mac-mini-codex-check-2026-10-21.md`.",
+    "**2026-11-09:** dotfiles `34a9b9c` adds step 2c to `sync-all-safe`:",
+    "`codex-refresh-atrium-plugin` reinstalls `atrium-context@atrium` when its cache",
+    "differs from the checkout (the MacBook's was behind `78c67b5`; refreshed by hand,",
+    "diff now identical), and `codex-atrium-hook-trust` asks a fresh `codex app-server`",
+    "for `hooks/list` and prints a PROBLEM line for every Atrium hook not trusted. After",
+    "the refresh all six report `modified`, so **Codex sessions on the MacBook run no",
+    "Atrium hook until the owner reviews them with `/hooks`** (trust is never recorded",
+    "automatically). Left: that review, and one daily run on each Mac showing the step."
+  ]
+}

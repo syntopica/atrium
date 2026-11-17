@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-edc32ebb-dbeb-430f-a7e6-2e25db7c67fe",
+  "title": "History fusion moved to 50/50 in context answers once the reranker was on",
+  "state": "done",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "`HISTORY_LEXICAL_WEIGHT = 0.5` in `context_hits`; `atrium search` keeps `fuse_ranked`'s 0.7. Curated stays 0.3 (0.15 changed nothing, 0.5 lost 3).",
+  "evidence": [
+    "R/MRR at 8 with gte rerank, acceptance 0.39/0.22 -> 0.40/0.25 (gained 3, lost 2), held-out 0.50/0.39 -> 0.52/0.43 (gained 2, lost 0); gate passes."
+  ]
+}

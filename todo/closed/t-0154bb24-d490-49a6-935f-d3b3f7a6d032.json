@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-0154bb24-d490-49a6-935f-d3b3f7a6d032",
+  "title": "The resident MCP server no longer closes at session start",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "No",
+    "",
+    "`CONNECTION_CLOSED` in 100 atrium MCP client logs over 9 days",
+    "(`~/Library/Caches/claude-cli-nodejs/*/mcp-logs-atrium`); the session that failed",
+    "recall at 20:27Z connected in 2.6 s, and `atrium_context` answered over MCP in this",
+    "session. Some logs show a version-negotiation probe timing out and then",
+    "connecting, without failure."
+  ],
+  "closed": "2026-10-09",
+  "result": "The resident MCP server no longer closes at session start",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

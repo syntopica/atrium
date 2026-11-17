@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-d239f9be-a65d-456f-9629-60390defcc2c",
+  "title": "Re-embedding the documents under EmbeddingGemma's document prompt (plan step 3)",
+  "state": "cancelled",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "resolution": "measured without a re-embed, from the 2026-10-14 nova vectors swapped into an experimental matrix (68,955 of 69,041 rows, `evaluations/docprompt-2026-10-15/`), end to end with the reranker on the 85 acceptance questions: similarity query 0.33/0.21, search 0.39/0.22, qa 0.36/0.21, against 0.39/0.22 in production; without the reranker, search 0.29/0.14 against 0.28/0.12. No gain worth a ~22 h re-embed."
+}

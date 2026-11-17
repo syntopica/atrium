@@ -1,0 +1,35 @@
+{
+  "tadu": 2,
+  "id": "t-ab2808ae-d1b3-4239-94d6-14c1d07e79f8",
+  "title": "Session scratchpads are indexed as if they were projects",
+  "state": "done",
+  "category": "ingest-store",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Paths like",
+    "",
+    "`/private/tmp/<session>/scratchpad`",
+    "carry a `workspace` and become their own workspaces in the index — found",
+    "2026-09-01 while folding renames. They are per-session temporary directories,",
+    "not projects: they inflate the workspace count that made coverage read 2.1%,",
+    "they never match a live `project_workspace`, so nothing can ever recall them,",
+    "and their content is scratch. Either map a scratchpad back to the project",
+    "whose name it encodes (the path contains it) or drop the workspace entirely",
+    "at ingest, but not silently keep them as phantom projects.",
+    "Done 2026-09-08 (`7e0ca9b`): mapped back, not dropped. The encoding replaces `/`, `.` and",
+    "spaces alike with a hyphen, so the decode walks the real directory tree rather than",
+    "splitting on hyphens -- which would have invented `p/inbox/tool` beside the real",
+    "`p/inbox-tool`, the same phantom under another name -- and answers None when two real",
+    "directories encode identically. Measured against the live index: 67 scratchpad workspaces",
+    "collapse to 19 real projects, 331 conversations remapped, 45 dropped because their project",
+    "directories are gone from disk (filed separately). 14 tests; the symlinked-project case",
+    "(`~/p/client-site -> /Volumes/archive-volume/client-site`) is one of them, because the obvious",
+    "`resolve()` guard against the encoded-prefix ambiguity rejects exactly that correct decode."
+  ],
+  "closed": "2026-09-08",
+  "result": "Session scratchpads are indexed as if they were projects",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-1985701d-134d-4c50-94c7-2a127e883259",
+  "title": "The last two things the retirement left open",
+  "state": "done",
+  "category": "cutover",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "- Also corrected a wrong finding from 2026-08-30: the `~/.claude` profile was",
+    "  reported as loading no stdio MCP server. It loads all of them. The test had",
+    "  used `CLAUDE_CONFIG_DIR=~/.claude`, which reads a third, near-empty",
+    "  `~/.claude/.claude.json` rather than `~/.claude.json`."
+  ],
+  "closed": "2026-08-31",
+  "result": "The dotfiles guidance is committed (`ff7e3b4`), which required finishing a real in-progress merge between the two machines — resolved as a union of `autoMode.soft_deny` so no machine lost a confirmation prompt. And memstore's knowledge graph is exported to `~/p/brain/inbox/memstore-knowledge-graph-export-2026-08-31.md`, split into 151 judgement triples worth keeping (closed audit findings, blockers, partners, enforced rules) and 1,761 code-structure triples CodeGraph can re-derive. That was the only memstore content not reconstructible from the archive, so its 118 GB is now free to reclaim whenever the operator wants.",
+  "evidence": [
+    "`git -C ~/p/dotfiles log -1` shows a two-parent merge commit; `claude mcp get atrium` connects under both real profiles."
+  ]
+}

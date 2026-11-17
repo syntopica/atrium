@@ -1,0 +1,19 @@
+{
+  "tadu": 2,
+  "id": "t-f20b051d-15b7-48e3-ae39-708a6feed774",
+  "title": "`build_metadata` written and enforced (Codex",
+  "state": "done",
+  "category": "backend",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "review finding 5). New indexes are stamped with schema+pipeline versions;",
+    "opening a mismatched or unstamped index fails with the remedy (delete and",
+    "re-ingest); `status` reports the stamp."
+  ],
+  "closed": "2026-08-27",
+  "result": "`build_metadata` written and enforced (Codex",
+  "evidence": [
+    "commit `132d776`; `tests/test_build_stamp.py` (4 tests); `atrium status` prints `built by: schema 2, pipeline 1`."
+  ]
+}

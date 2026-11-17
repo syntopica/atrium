@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-c6135bbb-057b-4755-9648-5d0aa5c591ba",
+  "title": "Pin the default Python runtime for CLI and required MCP startup",
+  "state": "done",
+  "category": "runtime-configuration",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-23",
+  "result": "Added the project Python 3.14 pin and documented its runtime purpose. Preserved both Python 3.15 virtual environments and recreated the project and installed release environments with Python 3.14.9. The required Atrium registration and all other user configuration remain unchanged.",
+  "evidence": [
+    "uv sync --locked --extra mcp --group quality selected Python 3.14.9; uv run python imported onnxruntime 1.31.0; installed CLI recall and exact configured MCP initialize/tools-call passed. Fresh codex app-server thread/start passed with the complete unmodified MCP configuration and required_atrium=true, without inference. uv run codeality-py gate --json passed all seven required stages. The SQL gate reports only the previously recorded BDB406 provider-revision scan."
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-39bf7f9e-3b4c-40a5-8d79-7d11b2109979",
+  "title": "Nine defects found auditing the stalled synthesis",
+  "state": "done",
+  "category": "bugs",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "and the new cutover code, four rounds with Codex as adversarial reviewer."
+  ],
+  "closed": "2026-08-30",
+  "result": "The drip loop had produced nothing for 30 h behind three of them — a manifest dropping a whole producer population from the index (3,686 episodes, 580 conversations), a quota probe reading the 5-hour window while the weekly one sat at 100%, and a dead loop nothing restarted. The rest came out of review: `write_conversation` destroyed every vector it touched on reconciliation; the synthesis registry claimed keys with `os.rename`, which replaces; `recent_episodes` matched a project prefix with `LIKE`, where `_` is a wildcard and 2,585 workspaces contain one; `project_workspace` returned the cwd instead of the project and matched nothing for `--project .`; and `verify_build_stamp` answered any operational fault with \"delete it and re-ingest\", which the session-start hook forwarded into an agent's context as an instruction.",
+  "evidence": [
+    "commits `d37ed44`, `28e2c7b`, `6c4de9c`, `3403b5d`, `38efc71`, `243f299`; each defect pinned by a test."
+  ]
+}

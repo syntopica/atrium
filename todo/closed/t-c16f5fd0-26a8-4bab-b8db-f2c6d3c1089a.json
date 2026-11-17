@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-c16f5fd0-26a8-4bab-b8db-f2c6d3c1089a",
+  "title": "331 conversations lose their vectors on the next ingest",
+  "state": "cancelled",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "A",
+    "",
+    "one-off note from 2026-09-08; that ingest ran a month ago, so there is nothing left",
+    "to watch for."
+  ],
+  "closed": "2026-10-09",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-b314ede9-63e5-4de0-a326-3cf84fc55447",
+  "title": "Codex rollouts over 64 MiB reach the archive",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "rocket-agents",
+    "",
+    "streams oversized JSONL since 2026-08-31 (its TODO_LOG), and the hourly refresh's export",
+    "manifest reports codex `available: true`, 31,119 artifacts, `skipped: 0`",
+    "(`refresh.log`, run of 2026-10-09 22:45); the index holds 113,385 codex records."
+  ],
+  "closed": "2026-10-09",
+  "result": "Codex rollouts over 64 MiB reach the archive",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

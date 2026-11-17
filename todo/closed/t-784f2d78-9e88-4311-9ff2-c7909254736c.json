@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-784f2d78-9e88-4311-9ff2-c7909254736c",
+  "title": "**The local lane's deadlock and shared-chunk collision are fixed and",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "verified live.** Root cause and fix in atrium 31e53cb: kept partials under",
+    "`<registry>/partials`, map chunks acked at once, consumed successes no longer spend the",
+    "failure budget. The 23:35 pass synthesized all seven \"retries exhausted\" conversations",
+    "(`4299d9a5ff18`, `61ecf36c111c`, `75c2a807acfb`, `8efe5765fd01`, `a40796f79d59`,",
+    "`e8582c66b2eb`, `f6b9cd0d8cf1`, each +1), succeeded-unacked jobs fell from 20 to 8",
+    "and 82 partials were kept. Follow-ups in 2d7c02c: a started marker walks half-done",
+    "conversations next, holding conversations with nothing left ack what they hold, and",
+    "partials older than 30 days are pruned. Codex found the root cause and reviewed both."
+  ],
+  "closed": "2026-10-09",
+  "result": "**The local lane's deadlock and shared-chunk collision are fixed and",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

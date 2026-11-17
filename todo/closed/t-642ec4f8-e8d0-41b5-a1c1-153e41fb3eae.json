@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-642ec4f8-e8d0-41b5-a1c1-153e41fb3eae",
+  "title": "Two defects found self-reviewing the first slice",
+  "state": "done",
+  "category": "bugs",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "against real data."
+  ],
+  "closed": "2026-08-27",
+  "result": "Version/identifier queries no longer return nothing (`3.7.0`, `C#`, `GPT-5.3` become phrase queries), and the <120-char message filter was replaced by a confirmation-pattern filter — the old filter discarded 43.4% of real messages (the 26.4% figure came from the old chunked index, a category error); the new one discards 1.0%.",
+  "evidence": [
+    "commit `2985c3a`; `tests/test_lexical_lanes.py` version test against a real index."
+  ]
+}

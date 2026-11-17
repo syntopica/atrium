@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-c2e60337-6680-4a80-9233-f1d940255834",
+  "title": "Codex adversarial review (BLOCK) — three",
+  "state": "done",
+  "category": "bugs",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "criticals and three minors fixed."
+  ],
+  "closed": "2026-08-27",
+  "result": "Record identity is now `sha256(conversation_id, event_id)` (canonical event IDs are only conversation-local; collisions lost rows and mixed provenance — OpenCode stored 2,569 of 2,586), re-ingest reconciles and deletes superseded records (corrected redactions now reach the index), ingest is atomic with trigger-maintained FTS, the substring lane is exposed via `--substring`, negative `--limit` is rejected, and read-only URIs escape `?`/`#` in paths.",
+  "evidence": [
+    "commit `83ac330`; re-ingest of the same OpenCode export stores 2,586/2,586 with the 17 collisions preserved; 19 tests green. Review transcript: Codex rollout `01a04379` (2026-08-27)."
+  ]
+}

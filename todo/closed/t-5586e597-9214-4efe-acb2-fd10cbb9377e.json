@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-5586e597-9214-4efe-acb2-fd10cbb9377e",
+  "title": "\"Stage three: semantic merge and page proposal\" as a pending design",
+  "state": "cancelled",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-16",
+  "resolution": "already built on 2026-09-17/18: near pairs adjudicated into clusters and contradictions (`21df872`), a quantity difference blocking a merge (`9a2a3d8`), placement of a durable claim on a curated page writing a manifest and `review.md` only (`eebe8e1`). What it left open is tracked in TODO.md: the unreviewed run, retirements unread by `curate-propose`, the unused triple."
+}

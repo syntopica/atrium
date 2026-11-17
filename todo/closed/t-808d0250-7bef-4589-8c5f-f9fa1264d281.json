@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-808d0250-7bef-4589-8c5f-f9fa1264d281",
+  "title": "Scribe archive contract vendored",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "scribe `2d9a1af` pins the",
+    "",
+    "export format with a provider-shaped fixture home and a drift test; Atrium ingests",
+    "the verbatim export in `tests/test_scribe_archive_contract.py` (3 tests), which also",
+    "pins the known Claude Code tool-result-as-user bug so its fix shows. Gate green."
+  ],
+  "closed": "2026-10-11",
+  "result": "Scribe archive contract vendored",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

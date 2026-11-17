@@ -1,0 +1,25 @@
+{
+  "tadu": 2,
+  "id": "t-4052e787-de56-4b24-b550-678b1302dbd9",
+  "title": "Canonical archive materialized durably",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "and the codex source landed. rocket-agents gained `--allow-partial`",
+    "(fail-closed default; partial manifests declare `complete:false` + every",
+    "skip), unblocking codex: 4,356 conversations -> 21,219 records ingested.",
+    "The merged durable archive lives at",
+    "`~/.local/share/rocket-agents/conversations/archive.jsonl` (11,164",
+    "conversations, 1.5 GB, per-consult XDG decision), built via",
+    "`conversations:import --apply` per source and verified by a convergence",
+    "dry-run (added 0, duplicates 4,734). Index total: 538,430 records across 7",
+    "sources."
+  ],
+  "closed": "2026-08-27",
+  "result": "Canonical archive materialized durably",
+  "evidence": [
+    "rocket-agents commits `bfa54ec`, `3f35a60` pushed; `atrium status`; import dry-run output."
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-7a84faff-af80-4390-9dd3-32996a799050",
+  "title": "Recency boost (claude-mem ACT-R, Engram/Anchored decay) and a per-conversation cap (Anchored)",
+  "state": "cancelled",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "resolution": "simulated on both sets from one reranked dump (`evaluations/ranking-2026-10-15/`): recency w=1, half-life 30 days moved holdout R 0.52 to 0.53 but acceptance MRR 0.25 to 0.22, w=2 acceptance R 0.40 to 0.34; the cap changed nothing at k=1..3. Neither shipped."
+}

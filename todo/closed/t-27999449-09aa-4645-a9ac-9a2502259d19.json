@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-27999449-09aa-4645-a9ac-9a2502259d19",
+  "title": "First slice: ingest the canonical",
+  "state": "done",
+  "category": "backend",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "rocket-agents archive into a two-lane lexical index with a CLI",
+    "(`ingest` / `search` / `--substring` / `status`)."
+  ],
+  "closed": "2026-08-27",
+  "result": "End-to-end ingest and retrieval over real exports; the `WAL` vs `wall...` defect of the old system is closed by test (word lane returns only the exact hit; fragment behavior isolated in the substring lane).",
+  "evidence": [
+    "commits `ae79234`..`5ff9cbb`; `uv run --with pytest pytest tests/ -q` — 19 passed; `ruff check` clean."
+  ]
+}

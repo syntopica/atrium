@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-17e267ab-8022-4c95-8a46-3e75cd318b49",
+  "title": "memstore retired; Atrium serves Claude and",
+  "state": "done",
+  "category": "cutover",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Codex."
+  ],
+  "closed": "2026-08-30",
+  "result": "The blocker was never synthesis coverage — it was freshness. Nothing refreshed the canonical archive, so the index was frozen. The first automated refresh took the archive from 11,164 to **23,449 conversations** and the index from 553,083 to **616,365 records** (`codex` alone 21,219 → 57,712). `atrium-refresh` now runs hourly and at session end under a real `flock`. Read side: `atrium recall` (project-scoped, ~1.2 s, no embedder) replaced the memstore SessionStart hook, and an MCP server with a resident `Embedder` serves both clients — first search 20.7 s, next 2.7 s. The dense lane is complete for the first time: 19,198 of 19,198.",
+  "evidence": [
+    "commits `d37ed44`..`243f299`; 77 tests pass, ruff clean; the work profile and Codex were each asked to quote back a real episode through the new path, and Claude answers NO to a memstore tool; a full `atrium-refresh` logged `2609 conversations -> 0 synthesis records written, 2609 unchanged` / `nothing to embed`, which is the vector-cascade fix proven on the live index."
+  ]
+}

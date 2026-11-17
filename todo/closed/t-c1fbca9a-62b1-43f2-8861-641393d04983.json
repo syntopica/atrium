@@ -1,0 +1,30 @@
+{
+  "tadu": 2,
+  "id": "t-c1fbca9a-62b1-43f2-8861-641393d04983",
+  "title": "Coverage was being measured against the wrong denominator",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "\"9.9% of",
+    "",
+    "conversations synthesized\" is true and misleading. Measured 2026-09-01 by",
+    "project instead: of 13,269 distinct workspaces only 284 have memory (2.1%),",
+    "but 13,162 of those workspaces hold fewer than five conversations — they are",
+    "directories someone opened once, not projects. Against projects with >=20",
+    "conversations coverage is **53.8%**, and against those with >=100 it is",
+    "**64%**. The memory already covers most of the work that matters, which is",
+    "the number that should decide whether a whole-corpus backfill is worth",
+    "buying. **Done 2026-09-01** (`9fc40b7`): `atrium status --coverage` reports",
+    "it — 36 of 51 projects, 71% — and names the largest projects recall would",
+    "answer nothing for. Behind a flag because the query scans all 1.1M records",
+    "at ~44 s against 4 s for the rest of status, and the hourly refresh should",
+    "not pay hourly for a number that moves by fractions of a percent."
+  ],
+  "closed": "2026-09-01",
+  "result": "Coverage was being measured against the wrong denominator",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-24b0d98e-b0ae-4ed5-bbe4-8fb76fc3e702",
+  "title": "Scribe (formerly `rocket-agents`), tracked in `~/p/scribe/TODO.md`: canonical event IDs are conversation-local in practice —",
+  "state": "pending",
+  "category": "cross-project",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "    `conversationEventFromRecord.ts:20` derives them from `event_index + text`",
+    "    with no conversation identity, and real cross-conversation collisions were",
+    "    measured (OpenCode, Cursor). Atrium works around it with",
+    "    `sha256(conversation_id, event_id)`; the canonical contract should carry the",
+    "    identity itself. It re-keys every archived event, so it lands with the v2",
+    "    stage 3 cutover."
+  ]
+}

@@ -1,0 +1,21 @@
+{
+  "tadu": 2,
+  "id": "t-c3640304-6f02-4c42-8e81-395be36d7885",
+  "title": "Archived client projects keep their sessions",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Owner approved",
+    "",
+    "aliases for `p/atc-prototype` and `p/thewealthadvisor`; both map to themselves, which",
+    "is what the encoded-path rescue needs once the directory is gone (dotfiles 6449b41).",
+    "Verified: `canonical_workspace` resolves both scratchpad paths."
+  ],
+  "closed": "2026-10-09",
+  "result": "Archived client projects keep their sessions",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

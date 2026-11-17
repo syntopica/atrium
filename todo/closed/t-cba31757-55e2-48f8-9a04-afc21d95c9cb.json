@@ -1,0 +1,11 @@
+{
+  "tadu": 2,
+  "id": "t-cba31757-55e2-48f8-9a04-afc21d95c9cb",
+  "title": "Entity graph expansion (Graphiti, HippoRAG 2, cognee)",
+  "state": "cancelled",
+  "category": "retrieval",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "resolution": "ceiling measured before building (`evaluations/entities-2026-10-15/`): the answer is a one-hop neighbour of the top candidates' backticked entities for 11/42 missed holdout questions, but among ~1,300 neighbours; ranked by IDF-weighted shared entities it is in the top 32 for 3/42 holdout and 0/51 acceptance, before any reranker. Not built."
+}

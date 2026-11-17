@@ -1,0 +1,43 @@
+{
+  "tadu": 2,
+  "id": "t-7e39f9cd-d00b-4d26-a521-175a309e10ee",
+  "title": "`atrium` was not on PATH, so the documented command did not exist",
+  "state": "done",
+  "category": "integrations",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "The console script",
+    "",
+    "is installed only inside `~/p/mem/.venv`, while the global agent guidance tells every",
+    "session to run `atrium search \"<question>\" --project .` — which answered",
+    "`command not found` on any machine that never activated that venv. The index was healthy the",
+    "whole time (1,252,652 records, `doctor` all-green, 44,076/44,076 conversations indexed), so",
+    "this was a live memory that no agent could reach by the only route it was told to use, and it",
+    "fails in the one way nobody reports: a session simply improvises instead. Only the helper",
+    "scripts `atrium-lock` and `atrium-refresh` were linked into `~/.local/bin`; the CLI itself",
+    "never was. Fixed on the second machine 2026-09-07: `dotfiles/bin/atrium/atrium` wraps",
+    "`uv run --directory ~/p/mem atrium \"$@\"` — the same call `atrium-refresh` already makes —",
+    "symlinked as `~/.local/bin/atrium` (dotfiles `9408859`). Verified from an unrelated directory",
+    "in a fresh login shell.",
+    "**That first wrapper was itself wrong, and a Codex review caught it the same day.**",
+    "`uv run --directory` changes the caller's working directory, so the `--project .` the guidance",
+    "prescribes resolved to `~/p/mem` and every scoped search silently answered from the wrong",
+    "project — a worse failure than `command not found`, because it returns plausible results.",
+    "Fixed in dotfiles `5439c53` with `uv run --project \"$HOME/p/mem\"`, which selects the",
+    "environment without moving the cwd. Verified from `~/p/brain`: `--project .` now hashes",
+    "identical to an explicit `--project ~/p/brain` and differs from `--project ~/p/mem`;",
+    "before the change it matched the atrium one exactly. A second install bug went with it —",
+    "`dotfiles/bootstrap.sh` linked every top-level `bin/*` entry, so a fresh machine got",
+    "`~/.local/bin/atrium` pointing at the *directory*, shadowing the wrapper and installing none",
+    "of the scripts inside it. Closed on the primary machine 2026-09-08: the symlink is in place",
+    "(`~/.local/bin/atrium -> ~/p/dotfiles/bin/atrium/atrium`, the `uv run --project` version) and",
+    "`atrium search \"test\" --project .` from `~/p/brain` returns brain hits, so the cwd bug is gone",
+    "on both machines."
+  ],
+  "closed": "2026-09-08",
+  "result": "`atrium` was not on PATH, so the documented command did not exist",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

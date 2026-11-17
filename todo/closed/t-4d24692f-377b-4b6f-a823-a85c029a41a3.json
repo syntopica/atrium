@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-4d24692f-377b-4b6f-a823-a85c029a41a3",
+  "title": "2026-11-06 — **`tests/test_context_protocol.py::test_context_cli_and_fresh_mcp_agree` is flaky in the full suite.**",
+  "state": "done",
+  "category": "observability",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "It failed once in a full `pytest` run (ranked vs linked lane order) and passed alone three times, and in the next full run. Next: rerun the full suite until it fails, then pin the tie order the CLI and the MCP path compare."
+  ],
+  "closed": "2026-11-09",
+  "result": "The test now demands identical evidence only when both processes' rerank steps scored the same number of candidates; otherwise it demands the same records, ignoring score and lane. Cause: the rerank budget is wall time (RERANK_BUDGET_S 3 s), so under load the CLI and the MCP process score different prefixes and order the same evidence differently.",
+  "evidence": [
+    "Before: 2 of 40 parallel runs (10 at a time) failed with the 'reranked' vs 'linked' order diff. After: 0 of 60 at 12 at a time; uv run pytest tests/test_context_protocol.py passes."
+  ]
+}

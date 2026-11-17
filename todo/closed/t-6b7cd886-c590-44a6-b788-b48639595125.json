@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-6b7cd886-c590-44a6-b788-b48639595125",
+  "title": "Notes-only FTS table: rejected",
+  "state": "cancelled",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "On the acceptance set's 20 note",
+    "",
+    "questions the unpruned OR over a notes-only table scored R@10 0.10 / MRR 0.02, against",
+    "0.50 / 0.29 for the shipped curated lexical pass (`selective_expression` drops corpus-wide",
+    "terms; the notes-only OR lets stopwords rank). The 2026-10-10 gain (8/12 against 5/12)",
+    "came from 12 questions written from note titles. Fused at 0.3 it only matched dense alone",
+    "(0.65). Evidence: `notes_fts.py` in `atrium/evaluations/acceptance-2026-10-11/`."
+  ],
+  "closed": "2026-10-11",
+  "resolution": "legacy item migrated to format 2 without a recorded resolution"
+}

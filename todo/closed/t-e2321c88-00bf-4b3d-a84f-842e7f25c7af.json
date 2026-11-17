@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-e2321c88-00bf-4b3d-a84f-842e7f25c7af",
+  "title": "`curate-propose` ignored retirements",
+  "state": "done",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "result": "a claim that names a retired term and was last seen before its date is refused before any model call, with the retirement as its reason (`803ec33`).",
+  "evidence": [
+    "`tests/test_claim_retirement.py`; on the live ledger 3 of 270 durable claims are caught (Holded, cPanel, MemPalace)."
+  ]
+}

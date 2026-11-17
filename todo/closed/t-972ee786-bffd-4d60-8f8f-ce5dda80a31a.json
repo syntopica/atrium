@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-972ee786-bffd-4d60-8f8f-ce5dda80a31a",
+  "title": "The agy lane calls a model agy still serves",
+  "state": "done",
+  "category": "synthesis",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-15",
+  "result": "`AGY_MODEL_ID` is `gemini-3.8-flash-medium` (agy stopped listing 3.7). Its runs are the new population `agy-gemini-3.8-flash-medium`; `gemini-3.7-flash-medium` keeps its bare name (`LEGACY_AGY_POPULATION`) so its 19,151 records stay one population. The default priority and the live `active-recipe.json` list 3.8 right after 3.7; no 3.8 records exist yet, so nothing served changes. The worker lane names its own runs from the executor and was not touched.",
+  "evidence": [
+    "`agy --print='Reply with the single word ok' --model gemini-3.8-flash-medium` answered `ok`; `tests/test_agy_lane_model_id.py`; pytest 639 passed."
+  ]
+}

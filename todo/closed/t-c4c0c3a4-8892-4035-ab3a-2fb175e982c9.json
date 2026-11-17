@@ -1,0 +1,38 @@
+{
+  "tadu": 2,
+  "id": "t-c4c0c3a4-8892-4035-ab3a-2fb175e982c9",
+  "title": "Hook coverage for Claude Code and Codex, and visible brain use",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Checked against the current [Codex hooks](https://learn.chatgpt.com/docs/hooks) and",
+    "[Claude Code hooks](https://code.claude.com/docs/en/hooks) references; reviewed by",
+    "Codex in two rounds (7 findings, then 4 residual ones, all addressed). Codex now gets the",
+    "session recall (`hooks/session-start-recall.sh`, moved from `~/.claude/hooks`, both",
+    "harnesses point at it), per-prompt context (the same `user-prompt-context.sh`, same",
+    "wire format), a `SubagentStart` pointer (its input has no task text) and",
+    "`hooks/codex/brain-use.sh` (PostToolUse + Stop, locked per-turn tally). The mod",
+    "(0.3.0) retrieves for each Agent task, counts lookups / notes read (evidence",
+    "`note_path` only) / notes cited, and shows `brain: 1 cited, 2 read, 1 lookup` or",
+    "`brain: no note cited`. Trial sessions: `claude -p` debug log showed recall,",
+    "prompt context, an observed MCP lookup and 3 cited notes; a subagent quoted the",
+    "evidence header from its own prompt; the Claude TUI footer read `Atrium · 2 past",
+    "sessions, 2 notes · brain: 1 cited, 2 read, 1 lookup`; the Codex TUI showed",
+    "`atrium: 12 episodes recalled` and `atrium · brain: 1 cited, 3 read, 1 lookup`.",
+    "Found on the way: Codex's `[mcp_servers.atrium]` had no `SYNTOPICA_DATA`, so every",
+    "Codex MCP call answered `index_unavailable_or_incompatible`; pinned in",
+    "`~/.codex/config.toml`. The five new Codex hooks were then trusted through",
+    "`/hooks` and ran without `--dangerously-bypass-hook-trust` (Codex 0.159.2 and",
+    "0.162.1). That trial exposed two defects, both fixed: the literal `brain/...md`",
+    "placeholder counted as a cited note (`7f06b19`, mod 0.3.1), and `lane=\"lexical\"`",
+    "failed as a bare `Error executing tool` (`e75278b`, lanes now a schema enum; a",
+    "real `codex exec` call got the validation message naming the four lanes)."
+  ],
+  "closed": "2026-10-11",
+  "result": "Hook coverage for Claude Code and Codex, and visible brain use",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-b43c24a7-93d8-4ebd-a75f-9151be914609",
+  "title": "Scribe archives Claude Code tool output as role `tool`",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "Scribe",
+    "",
+    "`199f393`: a line holding only `tool_result` blocks becomes kind `message`, role `tool`;",
+    "mixed lines stay `user`; schemaVersion 2, event ids unchanged, archived events keep",
+    "their `user` variant, no backfill. Atrium vendored the regenerated contract fixture;",
+    "`tests/test_scribe_archive_contract.py` now pins that tool output is not admitted to",
+    "records and stays inside its turn in `turn_blocks`. The live refresh already rejected 125",
+    "role-`tool` events."
+  ],
+  "closed": "2026-10-11",
+  "result": "Scribe archives Claude Code tool output as role `tool`",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

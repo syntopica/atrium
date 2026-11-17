@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-6a722b91-2e72-4d18-9e94-89f17f2379f8",
+  "title": "**Unchanged conversations are skipped by revision, and the synthesis",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "lane's own sessions are excluded.** `e224b74`: `conversation_revisions` keeps the sha256",
+    "of each conversation's derived rows; a match skips the stored-text read-back. Codex",
+    "sessions in `/var/folders/*/T/atrium-codex-*` index as nothing with an",
+    "`excluded_automation` verdict, and their synthesis is dropped. Live, 2026-10-11 03:11:",
+    "24,628 conversations excluded, 18,457 synthesis rows removed, vectors 87,642 -> 69,262.",
+    "No-op timings on the live index: `ingest` 115 s cold, 84 s warm (118 s before; the",
+    "6 GB archive parse dominates, so the read-back was not most of it after all);",
+    "`ingest-synthesis` 23 s against 87 s. Codex review: 6 findings, all accepted."
+  ],
+  "closed": "2026-10-11",
+  "result": "**Unchanged conversations are skipped by revision, and the synthesis",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

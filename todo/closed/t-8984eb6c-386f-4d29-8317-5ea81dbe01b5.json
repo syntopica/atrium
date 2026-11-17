@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-8984eb6c-386f-4d29-8317-5ea81dbe01b5",
+  "title": "Spend the 100-claim holdout once, on the placement's acceptance",
+  "state": "done",
+  "category": "promotion-pipeline",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "closed": "2026-10-17",
+  "result": "the 103 holdout candidates ran through debris, extraction, publishability, retirement and placement on Codex (`--model codex`, `b426737`), and a blind GPT-6 judge graded all 102 that passed the debris screen. Placed 19: 15 on the right page, 2 with a better shortlisted page, 2 not wiki material. Refused at placement 37: 25 not wiki material, 7 worth keeping with no page, 5 with a better shortlisted page (the lost recall). Stopped at publishability 44: 42 rightly. Retired 2. 91/102 judged correct; 15 of the 22 claims with a shortlisted home land on it.",
+  "evidence": [
+    "`evaluations/holdout-2026-10-17/` (`run_holdout.py`, `placements.jsonl`, `build_batches.py`, `labels1-4.json`). The judge and Codex are likely the same model family, so the agreement may read high."
+  ]
+}

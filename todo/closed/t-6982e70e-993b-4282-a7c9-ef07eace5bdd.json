@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-6982e70e-993b-4282-a7c9-ef07eace5bdd",
+  "title": "The session producer records from the Stop hook",
+  "state": "done",
+  "category": "general",
+  "type": "untriaged",
+  "priority": "untriaged",
+  "notes": [
+    "1,631 records",
+    "",
+    "with `model_requested: session-*` sit in the registry. They are served even though no",
+    "`session-*` entry is in `active-recipe.json`, because `choose_served_records` ranks an",
+    "unlisted population last instead of dropping it, and their episode ids are",
+    "session-cut, so they never compete with archive episodes. `claude -p` sessions remain",
+    "included; nothing in the records argues for excluding them yet."
+  ],
+  "closed": "2026-10-09",
+  "result": "The session producer records from the Stop hook",
+  "evidence": [
+    "legacy item migrated to format 2 without a recorded evidence"
+  ]
+}

@@ -5,11 +5,11 @@
 Atrium is layer 2 of a three-layer memory system: it builds a **derived, disposable index**
 over content it does not own, and serves retrieval to agents.
 
-| layer | owner | holds |
-| --- | --- | --- |
+| layer                            | owner                 | holds                                               |
+| -------------------------------- | --------------------- | --------------------------------------------------- |
 | 1. capture and canonical archive | the agents repository | the truth: redacted, SHA-256-verified conversations |
-| 2. index, retrieval, synthesis | **this repo** | nothing irreplaceable |
-| 3. curated judgment | the wiki | hand-written notes, single human writer |
+| 2. index, retrieval, synthesis   | **this repo**         | nothing irreplaceable                               |
+| 3. curated judgment              | the wiki              | hand-written notes, single human writer             |
 
 **The rule that governs every decision here: the source is canonical, the index is
 disposable.** Anything Atrium cannot rebuild from layer 1 or layer 3 is a design defect.
@@ -37,7 +37,7 @@ rebuilds in 27 days on the system this replaces.
   production: an uncapped embedding run OOM-killed its MariaDB (2026-10-12), and two
   memory-capped units holding ~19 of 32 cores starved Apache into `MaxRequestWorkers`
   (2026-10-14). Use a transient unit (`systemd-run --scope -p MemoryMax=<n>G -p
-  CPUQuota=<=400%`) in the day, or the night window; check load and Apache worker
+CPUQuota=<=400%`) in the day, or the night window; check load and Apache worker
   headroom before launching.
 
 ## Measured decisions
@@ -52,7 +52,7 @@ These are settled by measurement, not preference. Re-measure before changing the
   five-fold held out. Reached R@10 80.0% / MRR 0.635 against 77.3% / 0.580 for lexical
   alone.
 - **The dense lane stays separately addressable.** On queries sharing no informative word
-  with their answer, lexical scores 0% and fusion *suppresses* the dense signal
+  with their answer, lexical scores 0% and fusion _suppresses_ the dense signal
   (12% -> 8% R@10). Never expose only the fused list.
 - **Word-level lexical is separate from substring search.** The previous system's trigram
   FTS returned nine `wall...` false positives for `WAL`, with the first exact hit ranked
@@ -79,7 +79,7 @@ These are settled by measurement, not preference. Re-measure before changing the
   (status counts, doctor and ingest batches, `LIMIT 1` probes) are carried in
   `.codeality-db-baseline.json`.
 
-<!-- tadu:rule v4 -->
+<!-- tadu:rule v5 -->
 
 ## Continuous TODO, Work Log, and History Coverage
 
@@ -123,6 +123,8 @@ conversations more than once.
   (`--resolution`, or `--duplicate-of ID`). Close reports the tasks that no
   longer wait on it; decide for each whether it moves to pending. Every command
   is a dry run until `--write`.
+- In anything a person reads, such as a summary, a report or a question, name a
+  task by its title, never by its ID; IDs stay in commands and tool calls.
 - Before reviewing past conversations, consult the history index and skip
   unchanged records already marked `complete` or `irrelevant`. Update a record
   only after its findings are reconciled; interrupted work stays `partial`.

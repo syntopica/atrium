@@ -2,6 +2,14 @@
 
 import re
 
+# A whole prompt sent as the query is not a keyword search. Every term costs the
+# broad pass one frequency lookup (~2 ms) outside any budget: a real 33,745-char
+# prompt, 4,855 terms, held the auto lane for 24 s against a 7 s client
+# (2026-11-19). 128 terms keep a pass near 0.3 s and cover ~850 chars of prose.
+# shortcut: keeps the head of the prompt, not its rarest terms; rank by
+# frequency when a long query's tail is shown to carry the match.
+_MAX_TERMS = 128
+
 
 def query_terms(query: str) -> list[str]:
     """Return one quoted FTS5 term per word of ``query``, phrases kept adjacent.
@@ -18,16 +26,21 @@ def query_terms(query: str) -> list[str]:
 
     Everything is quoted, so a query like `memstore_delete_drawers()` is a
     search rather than an FTS5 syntax error.
+
+    A repeated term is returned once, and only the first ``_MAX_TERMS`` distinct
+    terms are kept.
     """
-    terms = []
+    terms: dict[str, None] = {}
     for raw_term in query.split():
+        if len(terms) == _MAX_TERMS:
+            break
         parts = re.findall(r"[^\W_]+", raw_term, flags=re.UNICODE)
         if not parts:
             continue
         if len(parts) > 1:
-            terms.append('"' + " ".join(parts) + '"')
+            terms['"' + " ".join(parts) + '"'] = None
         elif len(parts[0]) > 1 or len(raw_term) > len(parts[0]):
             # A one-character part is kept only when punctuation was stripped
             # from around it, which is what distinguishes `C#` from a stray `a`.
-            terms.append(f'"{parts[0]}"')
-    return terms
+            terms[f'"{parts[0]}"'] = None
+    return list(terms)

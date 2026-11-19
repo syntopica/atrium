@@ -2,7 +2,7 @@
   "tadu": 2,
   "id": "t-5e7ce9d9-f5e2-415f-a1d9-ebd2bcb4d1fb",
   "title": "Context service times out on long prompts: the lexical pass grows with query length and ignores the client deadline",
-  "state": "pending",
+  "state": "done",
   "category": "retrieval",
   "type": "bug",
   "priority": "high",
@@ -20,5 +20,10 @@
   ],
   "done_when": [
     "A 6,000-char query through the service returns served_by=service within the 7 s CLI timeout, with a test that fails without the change."
+  ],
+  "closed": "2026-11-19",
+  "result": "Context service times out on long prompts: the lexical pass grows with query length and ignores the client deadline",
+  "evidence": [
+    "6866d0f: query_terms returns each term once and keeps the first 128; tests/test_query_terms.py red before, 865 passed after. Live after atrium-release and kickstart, auto lane, 7 s client: the 33,745-char real prompt 24.2 s -> 6.6 s cold / 4.0 s warm; 7,572 chars 9.7 -> 3.3 s; the 6,132-char reproduction service_timeout -> served in 2.1 s through the CLI. Not done: the lexical passes still do not take the client deadline; that stays with the open task on the prompt hook under load."
   ]
 }

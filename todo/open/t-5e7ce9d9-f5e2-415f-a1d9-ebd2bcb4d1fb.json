@@ -1,0 +1,24 @@
+{
+  "tadu": 2,
+  "id": "t-5e7ce9d9-f5e2-415f-a1d9-ebd2bcb4d1fb",
+  "title": "Context service times out on long prompts: the lexical pass grows with query length and ignores the client deadline",
+  "state": "pending",
+  "category": "retrieval",
+  "type": "bug",
+  "priority": "high",
+  "kind": "task",
+  "created": "2026-11-19",
+  "related": [
+    "t-dfcba206-7cdb-4d0b-a31b-e0ae721f0992"
+  ],
+  "notes": [
+    "Observed 2026-11-19, idle machine, 123,185 vectors. Service steps with a 60 s client deadline, by query length: 192 chars history 149 ms / curated 265 ms; 2,757 chars 1,668 / 2,007 ms; 6,132 chars 3,567 / 4,023 ms. Rerank is a constant ~3.0 s (RERANK_BUDGET_S), so a query above ~2,800 chars passes the CLI's 7 s _SERVICE_TIMEOUT_S every time.",
+    "In-process split for the 6,132-char query: lexical_hits history 6,249 ms, curated 6,211 ms, embed 1,276 ms (192 chars: 94 / 154 / 236 ms). match_expression and conjunctive_expression grow with the raw text (287 -> 10,363 and 307 -> 11,219 chars) although the test query repeats one sentence, so repeated terms are not deduplicated.",
+    "Only the reranker honours the client deadline (DeadlineReranker). The lexical budgets (_NARROW_BUDGET 3,000 ms + _BROAD_BUDGET 1,200 ms, per pass, two passes) plus the 3 s rerank can exceed 7 s on their own. The query is also embedded once per pass.",
+    "In the query log 15 service_timeout events from 2026-11-17 to 2026-11-19; 7 are <task-notification> prompts passed whole as the query. The short-query timeouts are the load case of the related task: a short query already takes 3.6-6.4 s idle because the rerank spends its full 3 s.",
+    "Smallest step: cap or deduplicate the query terms before building the FTS expressions (or truncate the hook's query), then give the lexical passes the request deadline."
+  ],
+  "done_when": [
+    "A 6,000-char query through the service returns served_by=service within the 7 s CLI timeout, with a test that fails without the change."
+  ]
+}

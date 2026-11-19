@@ -46,3 +46,20 @@ def test_all_terms_survive_when_all_of_them_are_common(tmp_path):
     connection = _corpus(tmp_path, 200)
     total = connection.execute(load_test_sql("count_records")).fetchone()[0]
     assert selective_expression(connection, "words", "the meeting", total) == '"the" OR "meeting"'
+
+
+def test_a_long_query_is_cut_to_its_rarest_terms(tmp_path):
+    """The rare term sits at the tail, past every place a head cut would keep."""
+    connection = open_store(tmp_path / "index.sqlite3")
+    filler = [f"filler{number}" for number in range(40)]
+    with connection:
+        records = [_record(f"filler-{number}", " ".join(filler)) for number in range(3)]
+        records.append(_record("rare", "vault"))
+        records += [_record(f"pad-{number}", "padding") for number in range(400)]
+        write_conversation(connection, "c", records)
+    total = connection.execute(load_test_sql("count_records")).fetchone()[0]
+
+    expression = selective_expression(connection, "words", " ".join([*filler, "vault"]), total)
+
+    assert '"vault"' in expression
+    assert expression.count(" OR ") == 31

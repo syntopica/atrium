@@ -6,8 +6,9 @@ import re
 # broad pass one frequency lookup (~2 ms) outside any budget: a real 33,745-char
 # prompt, 4,855 terms, held the auto lane for 24 s against a 7 s client
 # (2026-11-19). 128 terms keep a pass near 0.3 s and cover ~850 chars of prose.
-# shortcut: keeps the head of the prompt, not its rarest terms; rank by
-# frequency when a long query's tail is shown to carry the match.
+# shortcut: only the head of the prompt is weighed, and the broad pass keeps its
+# rarest terms; weigh more of it when a long query's tail is shown to carry the
+# match.
 _MAX_TERMS = 128
 
 

@@ -95,9 +95,14 @@ class Embedder:
             from atrium.embed.batch_session_options import batch_session_options
             from atrium.embed.cached_model_file import cached_model_file
             from atrium.embed.cpu_session_options import cpu_session_options
+            from atrium.embed.materialized_model_file import materialized_model_file
 
-            model_path = cached_model_file(MODEL_REPO, _ONNX_FILE, subfolder="onnx")
-            cached_model_file(MODEL_REPO, _ONNX_FILE + "_data", subfolder="onnx")
+            model_path = materialized_model_file(
+                cached_model_file(MODEL_REPO, _ONNX_FILE, subfolder="onnx")
+            )
+            materialized_model_file(
+                cached_model_file(MODEL_REPO, _ONNX_FILE + "_data", subfolder="onnx")
+            )
             tokenizer_path = cached_model_file(MODEL_REPO, "tokenizer.json")
 
             session = onnxruntime.InferenceSession(

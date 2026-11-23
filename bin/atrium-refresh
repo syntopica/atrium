@@ -1,0 +1,74 @@
+#!/bin/sh
+# Refresh the conversation archive and everything Atrium derives from it.
+#
+# Nothing else writes the archive, so without this job the index stops at the
+# day of its first export. The chain is export -> import -> ingest ->
+# ingest-synthesis -> ingest-notes -> embed, and every step is idempotent: a
+# repeated run costs time, never correctness.
+#
+# The export goes to a slice that the import merges into the archive, never
+# straight over it: a client deletes its old transcripts, and an archive
+# replaced by each export would forget every conversation the client dropped.
+#
+# No lock here. The scheduler `syntopica schedule` installs is the only caller,
+# the session-end hook included, and it never runs two copies of one job.
+set -eu
+
+: "${SYNTOPICA_DATA:?set SYNTOPICA_DATA to the instance data directory}"
+export SYNTOPICA_DATA
+here=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+atrium="$here/.venv/bin/atrium"
+scribe="${SCRIBE_CHECKOUT:-$SYNTOPICA_DATA/engines/scribe}"
+# shortcut: the schema defaults for conversations.path and atrium.path, read
+# the configuration instead when an instance moves either.
+archive="$SYNTOPICA_DATA/conversations/archive.jsonl"
+state="$SYNTOPICA_DATA/atrium"
+slice="$state/slice.jsonl"
+stamp="$state/last-refresh"
+# A session end asks for a run every time; a full pass costs minutes.
+min_interval="${MIN_INTERVAL:-900}"
+
+mkdir -p "$state" "$(dirname "$archive")"
+exec >>"$state/refresh.log" 2>&1
+log() { echo "$(date '+%F %T') $*"; }
+
+if [ "$min_interval" -gt 0 ] && [ -f "$stamp" ]; then
+  # Atrium writes the stamp as a float; shell arithmetic is integer-only.
+  last=$(cat "$stamp")
+  age=$(($(date +%s) - ${last%%.*}))
+  if [ "$age" -lt "$min_interval" ]; then
+    log "last refresh was ${age}s ago, under the ${min_interval}s floor; skipping"
+    exit 0
+  fi
+fi
+
+# The caller reads nothing but this log, so a failure has to be written to it.
+trap 'status=$?; [ "$status" -eq 0 ] || log "refresh FAILED (exit $status)"' EXIT
+renice 10 -p $$ >/dev/null 2>&1 || true
+log "refresh start"
+
+# --allow-partial: one unreadable transcript must not stop every other one.
+log "stage export"
+(cd "$scribe" && pnpm conversations:export --output "$slice" --force --allow-partial)
+log "stage import"
+(cd "$scribe" && pnpm conversations:import --input "$slice" --archive "$archive" --apply)
+rm -f "$slice"
+# Each import leaves a full copy of the archive beside it; keep the newest.
+ls -1t "$archive".backup-* 2>/dev/null | tail -n +2 | while read -r stale; do
+  rm -f "$stale"
+done
+
+log "stage ingest"
+"$atrium" ingest "$archive"
+log "stage ingest-synthesis"
+"$atrium" ingest-synthesis
+if [ -d "$SYNTOPICA_DATA/pages" ]; then
+  log "stage ingest-notes"
+  "$atrium" ingest-notes "$SYNTOPICA_DATA/pages" --exclude sources
+fi
+log "stage embed"
+nice -n 10 "$atrium" embed
+date +%s >"$stamp"
+log "refresh done: $("$atrium" status --publish | tr '\n' ' ' | tr -s ' ')"
+# A failing check is the report's content, not a failed refresh.
+"$atrium" doctor --publish >/dev/null || log "doctor published: some check is broken"

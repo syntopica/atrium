@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-d81e5a5c-3a39-46b6-833e-f84843be07b2",
+  "title": "Refuse or shorten a context socket path longer than the AF_UNIX limit instead of crash-looping serve-context",
+  "state": "pending",
+  "category": "general",
+  "type": "bug",
+  "priority": "normal",
+  "kind": "task",
+  "created": "2026-11-23",
+  "notes": [
+    "Found 2026-11-23: with a data directory whose absolute path is long, <data>/atrium/context.sock exceeds the macOS 104-byte sun_path limit and 'atrium serve-context' dies with 'OSError: AF_UNIX path too long'; under launchd it respawns every 30 s forever. A 30-character data path works."
+  ],
+  "done_when": [
+    "serve-context either binds through a short path or exits with one clear message, and atrium doctor reports the cause"
+  ]
+}

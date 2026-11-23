@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-42ae2c9e-60ea-41f6-8c40-ea9a1a2cf272",
+  "title": "README names the export engine 'agents' (engines/agents) while syntopica AGENTS.md uses 'scribe' (engines/scribe)",
+  "state": "pending",
+  "category": "general",
+  "type": "docs",
+  "priority": "low",
+  "created": "2026-11-23",
+  "notes": [
+    "Found 2026-11-23 installing a fresh instance on a second macOS machine (Darwin 27.2, uv 0.11, pnpm 11) following syntopica AGENTS.md.",
+    "README Usage: '(cd engines/agents && pnpm conversations:export ...)'; the hub's init writes engines.scribe and AGENTS.md clones syntopica/scribe. A newcomer following the README hits a missing directory."
+  ],
+  "done_when": [
+    "README and AGENTS.md name the same engine and path"
+  ]
+}

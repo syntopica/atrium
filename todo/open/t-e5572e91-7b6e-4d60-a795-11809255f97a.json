@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-e5572e91-7b6e-4d60-a795-11809255f97a",
+  "title": "atrium embed fails on a fresh machine: onnxruntime rejects model_quantized.onnx_data from the Hugging Face cache",
+  "state": "pending",
+  "category": "bugs",
+  "type": "bug",
+  "priority": "high",
+  "created": "2026-11-23",
+  "notes": [
+    "Found 2026-11-23 installing a fresh instance on a second macOS machine (Darwin 27.2, uv 0.11, pnpm 11) following syntopica AGENTS.md.",
+    "onnxruntime 1.31.0 + huggingface-hub 2.2.0: 'External data path validation failed for initializer model.embed_tokens.weight_quantized ... External data path escapes model directory'. cached_model_file returns the snapshot symlink; onnxruntime resolves it to blobs/ and the .onnx_data sibling resolves to a different blob path, so it refuses to load. Machines whose cache predates these versions are unaffected, which hides it.",
+    "Workaround in use: replace the two symlinks in snapshots/<rev>/onnx/ with real copies. Fix options: hf_hub_download(local_dir=...) into an atrium-owned model dir, or copy both files into one dir before InferenceSession."
+  ],
+  "done_when": [
+    "atrium embed succeeds on an empty HF cache with current onnxruntime/huggingface-hub; a test covers the symlinked-cache layout"
+  ]
+}

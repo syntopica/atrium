@@ -1,0 +1,17 @@
+{
+  "tadu": 2,
+  "id": "t-fcfb094b-530c-4a1e-abb8-1cba3c554bd1",
+  "title": "Claude Code <system-reminder> blocks are admitted into the index as user records",
+  "state": "pending",
+  "category": "ingest",
+  "type": "bug",
+  "priority": "normal",
+  "created": "2026-11-23",
+  "notes": [
+    "Found 2026-11-23 installing a fresh instance on a second macOS machine (Darwin 27.2, uv 0.11, pnpm 11) following syntopica AGENTS.md.",
+    "On a first ingest of claude-code conversations, 'atrium search' returned a user-role record whose text begins with '<system-reminder>' (harness-injected context, not the person's words). It pollutes retrieval and may carry account context into the index."
+  ],
+  "done_when": [
+    "Ingest drops or strips system-reminder content from user turns; a fixture covers it"
+  ]
+}

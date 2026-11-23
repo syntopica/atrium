@@ -1,11 +1,13 @@
 {
   "tadu": 2,
   "id": "t-d3134eee-aed1-42a2-82bd-1d9cb223e642",
-  "title": "Cause of the 2026-10-15 orphan posting is unknown",
+  "title": "Find the cause of the 2026-10-15 FTS orphan posting (probe exists; wait for recurrence)",
   "state": "pending",
   "category": "observability",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "bug",
+  "priority": "low",
+  "kind": "waiting",
+  "check_on": "2026-12-24",
   "notes": [
     "`words` held a posting",
     "",
@@ -32,6 +34,7 @@
     "    triggers). Left: the forced refresh rewriting 18,093 records, a path that only",
     "    uses the triggers. Smallest step: when `doctor` next reports `fts_orphan_postings`,",
     "    copy the index before repairing and bisect the refresh log for the last",
-    "    write between the two doctor runs."
+    "    write between the two doctor runs.",
+    "2026-11-24 audit: verified: doctor fts_consistency probe (atrium/doctor/fts_consistency.py, tests/test_fts_consistency.py) landed, repair-index exists; no later commit or log shows a cause or a recurrence. Cause still unproven, only the forced-refresh suspect remains. Smallest next step: nothing to do until doctor next reports fts_orphan_postings; then copy the index before repairing and bisect refresh.log."
   ]
 }

@@ -1,11 +1,13 @@
 {
   "tadu": 2,
   "id": "t-e0763202-d5ef-44ab-9c70-d3b2c5f2519f",
-  "title": "Whole conversations that have never entered the archive at all",
-  "state": "pending",
+  "title": "Archive is incomplete: Windsurf, Trae, ChatGPT and Grok conversations never captured (codex gap closed)",
+  "state": "blocked",
   "category": "ingest-store",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "chore",
+  "priority": "low",
+  "kind": "waiting",
+  "blocker": "Depends on the Windsurf/Trae integrations task (Trae store encrypted, Windsurf history server-side only); ChatGPT and Grok leave no local transcript",
   "notes": [
     "The",
     "",
@@ -14,6 +16,7 @@
     "    and Grok leave no local transcript, so nothing has ever been captured from",
     "    them. Windsurf and Trae are filed under Integrations below, but",
     "    together they are the answer to \"is the archive complete\", and today the",
-    "    answer is no."
+    "    answer is no.",
+    "2026-11-24 audit: codex gap closed per notes (not re-measured: no refresh run). Windsurf/Trae still blocked in the integrations backlog task (encrypted/server-side); ChatGPT/Grok have no local transcript so need a web export or capture path. Nothing in atrium code handles them. Smallest next step: decide whether to track a ChatGPT/Grok export path, else close as a duplicate umbrella of the integrations task. Evidence: tadu show for the integrations task; no source in atrium/ names windsurf or trae except provider lists; scribe docs/research/conversation-capability-map.md."
   ]
 }

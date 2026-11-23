@@ -1,17 +1,19 @@
 {
   "tadu": 2,
   "id": "t-24b0d98e-b0ae-4ed5-bbe4-8fb76fc3e702",
-  "title": "Scribe (formerly `rocket-agents`), tracked in `~/p/scribe/TODO.md`: canonical event IDs are conversation-local in practice —",
+  "title": "Scribe: make canonical conversation event IDs carry conversation identity (currently index+text hash), landing with the v2 stage 3 cutover",
   "state": "pending",
   "category": "cross-project",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "bug",
+  "priority": "normal",
+  "kind": "task",
   "notes": [
     "    `conversationEventFromRecord.ts:20` derives them from `event_index + text`",
     "    with no conversation identity, and real cross-conversation collisions were",
     "    measured (OpenCode, Cursor). Atrium works around it with",
     "    `sha256(conversation_id, event_id)`; the canonical contract should carry the",
     "    identity itself. It re-keys every archived event, so it lands with the v2",
-    "    stage 3 cutover."
+    "    stage 3 cutover.",
+    "2026-11-24 audit: still open. scribe scripts/lib/conversations/conversationEventFromRecord.ts still sets id = hashText(index + NUL + text), no conversation identity; last touched by 72c0e7d (unrelated). Atrium workaround live: atrium/ingest/record_identity.py:23 and atrium/synthesize/qualify_event_id.py:21 use sha256(conversation_id NUL event_id). Left: add conversation id to the scribe event id and re-key archive at v2 stage 3 (scribe stage-3 task t-298e8055 still open); then drop the atrium workaround. Next: fold into the stage 3 plan, no standalone work."
   ]
 }

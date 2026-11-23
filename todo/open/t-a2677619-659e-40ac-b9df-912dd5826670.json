@@ -1,14 +1,16 @@
 {
   "tadu": 2,
   "id": "t-a2677619-659e-40ac-b9df-912dd5826670",
-  "title": "The claim ledger stores `project` as resolved at extraction time. It is",
+  "title": "Add a re-project step to the claim ledger so a changed project-resolution rule rewrites `project` without re-calling the model",
   "state": "pending",
   "category": "promotion-pipeline",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "feature",
+  "priority": "low",
+  "kind": "later",
   "notes": [
     "    derived from the index and cheap to recompute, so if the resolution rule",
     "    changes again, rewrite the field rather than re-calling the model -- the",
-    "    first two rules changed 42 of 527 rows between them."
+    "    first two rules changed 42 of 527 rows between them.",
+    "2026-11-24 audit: verdict not_done, conditional. project is still set once in atrium/curate/run_curate_extract_cli.py:51 via project_of_workspace(conversation_workspaces(...)); the rule has since changed again (ce20e71 refuse scratch dir, 865ea11, 4c6e331). No command in atrium/curate/ re-derives the field on existing ledger rows (grep for reproject/rewrite finds nothing). Smallest next step: a small CLI (e.g. run_curate_reproject_cli) that re-reads ledger rows, recomputes project from conversation workspace, rewrites in place, only when the rule next changes."
   ]
 }

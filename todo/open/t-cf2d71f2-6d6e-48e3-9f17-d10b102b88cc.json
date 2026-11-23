@@ -1,12 +1,14 @@
 {
   "tadu": 2,
   "id": "t-cf2d71f2-6d6e-48e3-9f17-d10b102b88cc",
-  "title": "Opt-in tree navigation for curated notes (PageIndex study, 2026-11-12)",
+  "title": "Implement opt-in 'atrium navigate' deep mode (LLM tree navigation over curated notes) and validate on full question sets",
   "state": "pending",
   "category": "measurement",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "feature",
+  "priority": "low",
+  "kind": "task",
   "notes": [
-    "Offline test on the 39 note-answer questions (`docs/studies/pageindex.md`, which holds the method, prompts, results and implementation proposal): an LLM picking pages from the full brain tree (title + summary, then H2/H3 outlines) reached page MRR 0.774 / H@8 0.872 with gemini-4-argon versus 0.576 / 0.769 for fused + cross-encoder; Flash low 0.684 at a 10.7 s median. Heading paths or summaries in chunk text gave no gain after rerank, so no re-embed. Too slow for the prompt hook. Smallest next step: expose it as an explicit MCP/CLI deep mode (e.g. `atrium navigate \"<question>\"`) and confirm on the full 85+88 sets plus a fresh question set before any default use."
+    "Offline test on the 39 note-answer questions (`docs/studies/pageindex.md`, which holds the method, prompts, results and implementation proposal): an LLM picking pages from the full brain tree (title + summary, then H2/H3 outlines) reached page MRR 0.774 / H@8 0.872 with gemini-4-argon versus 0.576 / 0.769 for fused + cross-encoder; Flash low 0.684 at a 10.7 s median. Heading paths or summaries in chunk text gave no gain after rerank, so no re-embed. Too slow for the prompt hook. Smallest next step: expose it as an explicit MCP/CLI deep mode (e.g. `atrium navigate \"<question>\"`) and confirm on the full 85+88 sets plus a fresh question set before any default use.",
+    "2026-11-24 audit: not_done. Only the study exists (docs/studies/pageindex.md, commit 172f121); grep finds no `atrium navigate`, no deep-mode code or MCP tool anywhere in the repo. Left: implement the explicit CLI/MCP deep mode, then confirm on the full 85+88 sets plus a fresh question set before any default use. Not for the prompt hook (10.7 s median)."
   ]
 }

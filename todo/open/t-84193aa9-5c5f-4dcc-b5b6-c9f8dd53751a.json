@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-84193aa9-5c5f-4dcc-b5b6-c9f8dd53751a",
-  "title": "Trials from the November 2026 study of other memory projects",
+  "title": "Finish 2026-11 memory-study trials: owner call on re-redacting the archive, Haiku tick output truncation, faithfulness A/B retry (cite facts only)",
   "state": "in_progress",
   "category": "self-improvement",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "chore",
+  "priority": "normal",
+  "kind": "decision",
   "notes": [
     "    (`docs/studies/memory-projects-2026-11.md`), run 2026-11-06. Done: partial",
     "    rerank `845562c` (holdout Hit@8 0.511 full vs 0.443 fused vs 0.511 at 24",
@@ -35,6 +36,7 @@
     "    (counted, values never printed). Re-redacting the archive is a rewrite of",
     "    the canonical store through scribe's erasure plan: owner decision.",
     "    Left: that decision; tool-output truncation for the Haiku tick; one",
-    "    unreproduced flaky test in 3 full runs (5 reruns clean)."
+    "    unreproduced flaky test in 3 full runs (5 reruns clean).",
+    "2026-11-24 audit: partial. Verified: commits 845562c 4f257ac d16be2f 4a2d49a 9b6e30c exist in atrium, 92c97a4 in scribe; study doc docs/studies/memory-projects-2026-11.md and wiki/atrium/evaluations/{compact-2026-11-06,faithfulness-cite-2026-11-06,gitleaks-residual-2026-11-06} present. No commit since 2026-11-07 on faithfulness re-run or Haiku tick truncation. Left: (1) owner decision whether to re-redact conversations/archive.jsonl via scribe erasure plan; (2) tool-output truncation for Haiku tick; (3) faithfulness A/B retry with cite-facts-only prompt; (4) flaky test unreproduced. Next: owner answers (1); split 2-4 into separate tasks."
   ]
 }

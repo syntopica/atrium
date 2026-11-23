@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-dfcba206-7cdb-4d0b-a31b-e0ae721f0992",
-  "title": "**The prompt hook gets nothing under load, and the service keeps working for",
-  "state": "in_progress",
+  "title": "Capture the retrieval steps of a context call that still times out under load (deadline, partial rerank and long-query fixes already landed)",
+  "state": "pending",
   "category": "observability",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "bug",
+  "priority": "normal",
+  "kind": "task",
   "notes": [
     "    clients that left (2026-10-18).** Partly fixed 2026-10-19 by `9e9b462`: clients",
     "    send `timeout_s`, and the service's `DeadlineReranker` ends every rerank at the",
@@ -40,6 +41,7 @@
     "    the point is a hook that answers. ORT defaults are already `ORT_ENABLE_ALL`,",
     "    and `intra_op_num_threads=2` measured slower (3.39 s vs 2.38 s for 16 pairs), so",
     "    neither is an easy win. Smallest step: a test where the client disconnects at",
-    "    7 s and the server stops at the next batch boundary."
+    "    7 s and the server stops at the next batch boundary.",
+    "2026-11-24 audit: Verified partial. Landed: deadline-aware rerank (224b341 area / 9e9b462), batch 1 (39b2111), partial rerank keeping the scored head (845562c), long-query term dedupe+cap (6866d0f, closes the long-prompt task). Left: the smallest step in the notes, the steps timing of a call that still ends service_timeout under load. service_timeout_response (atrium/serve/service_timeout_response.py) builds an empty response and records no steps; no later commit adds a capture. Lexical passes still ignore the client deadline. Next: log steps in the service on timeout (or run a load test and read the query log), then decide whether to give the lexical passes the deadline. Not state in_progress: no work since 2026-11-06."
   ]
 }

@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-523585b9-d7f6-43bb-8e85-c00954185fbe",
-  "title": "Fresh blinded judgments for cross-system memory evaluation",
+  "title": "Freeze a new question set, pool all backends with identities hidden, and blind-judge answer-bearing passages before claiming a cross-system ranking",
   "state": "pending",
   "category": "measurement",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "test",
+  "priority": "low",
+  "kind": "task",
   "notes": [
     "The",
     "",
@@ -13,6 +14,7 @@
     "judged from Atrium candidate pools. Competitor-only valid sources can be",
     "unjudged. Smallest next step: freeze a new question set, pool all backends'",
     "sources with identities hidden, and independently judge answer-bearing",
-    "passages before claiming a general system ranking."
+    "passages before claiming a general system ranking.",
+    "2026-11-24 audit: not done. Only the 2026-11-09 comparison (c53deaa, ff068c7, e2486e2) exists; docs/evaluations/local-memory-comparison-2026-10-21.md still says the acceptance (85) and holdout (88) sets were judged from Atrium candidate pools and that a jointly pooled blinded round is required. No commit since 2026-11-09 touches benchmarks/ or docs/evaluations/. Smallest next step: freeze new questions with benchmarks/memory_compare/freeze_queries.py, pool Atrium, Mem0 and Chroma results with identities hidden, judge independently, then rerun summarize. Pure measurement; no production impact."
   ]
 }

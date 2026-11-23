@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-47cee660-d170-4cb5-97d7-a7a4278a989d",
-  "title": "`atrium embed` sat at 0% CPU for twelve minutes printing nothing",
-  "state": "in_progress",
+  "title": "Diagnose the next silent atrium embed stall; fixes shipped, waiting for a recurrence to name the blocking step",
+  "state": "pending",
   "category": "observability",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "bug",
+  "priority": "low",
+  "kind": "later",
   "notes": [
     "The",
     "",
@@ -26,6 +27,7 @@
     "named model (from cache or network, probed without touching the network and across all",
     "three files the load needs), then the batch size. What stays open is only the diagnosis:",
     "the next time embed goes quiet the log will name the step, and that is the evidence this",
-    "item has been missing."
+    "item has been missing.",
+    "2026-11-24 audit: verified. Network fix present (atrium/embed/cached_model_file.py, used by embedder.py and cross_encoder.py). Legibility fix present (atrium/commands/run_embed.py prints and flushes opening index, counting records, loading embedder with cache/network source, batch size; dd66cee added timestamps and batch durations). Hashes 23c3bb8 and e52b6d9 no longer exist in history (rewritten); same content under other ids. Nothing left to code; only the unexplained 12-minute observation remains. Next step: when embed goes quiet, read the last progress line to name the step, then close or file a specific bug. Low priority, check_on not needed."
   ]
 }

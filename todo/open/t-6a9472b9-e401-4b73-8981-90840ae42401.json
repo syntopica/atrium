@@ -1,11 +1,13 @@
 {
   "tadu": 2,
   "id": "t-6a9472b9-e401-4b73-8981-90840ae42401",
-  "title": "The atrium-context mod was silently disabled from 2026-10-18 to 2026-11-06",
-  "state": "in_progress",
+  "title": "Confirm no PLUGINS_DROPPED in sync-all-safe.log on both Macs, then close the enabledPlugins drop investigation",
+  "state": "pending",
   "category": "self-improvement",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "bug",
+  "priority": "normal",
+  "kind": "later",
+  "check_on": "2026-11-25",
   "notes": [
     "    The dotfiles auto-sync `d554437` (and `9831be7` on the Mac mini) committed a",
     "    settings file whose `enabledPlugins` lacked `atrium-context@atrium`, so Claude",
@@ -35,6 +37,7 @@
     "    notification (turn a plugin off with `false`, never by deleting the entry).",
     "    Left: whether Claude Code itself prunes uninstalled plugins on write is",
     "    unproven; close this after a week with no `PLUGINS_DROPPED` in",
-    "    `~/.local/state/sync-all-safe.log` on either Mac."
+    "    `~/.local/state/sync-all-safe.log` on either Mac.",
+    "2026-11-24 audit: verified on this Mac: settings.json has atrium-context@atrium true, installed_plugins.json lists it, dotfiles 73bec09 (2026-11-08) exists, prompt_retrieval_missing.py hook present (de2174f), and ~/.local/state/sync-all-safe.log has 0 PLUGINS_DROPPED lines (16 days since the fix, over the one-week bar). Not verified: the Mac mini log (other machine). Left: read the mini sync-all-safe.log for PLUGINS_DROPPED; if none, close (root cause of the 2026-10-18 rewrite stays unproven). Smallest next step: ssh to the mini and grep the log."
   ]
 }

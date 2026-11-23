@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-eaa08d06-fbe6-4b90-a059-acb336fc158e",
-  "title": "Synthesis now runs on Claude Haiku under the Favish profile (2026-11-05)",
+  "title": "Decide the synthesis lane: Claude Haiku lane still hits the shared Favish weekly limit (quota wall 2026-11-24)",
   "state": "pending",
   "category": "observability",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "chore",
+  "priority": "normal",
+  "kind": "decision",
   "notes": [
     "Owner:",
     "",
@@ -24,6 +25,7 @@
     "    conversations walkable and 14,063 deferred. The lane is starved by the shared",
     "    Favish weekly limit, so the worker count is not the lever. Owner decision: another",
     "    lane for synthesis, or accepting near-zero synthesis on weeks Favish work spends",
-    "    the limit. The usage page itself was not read (browser, not needed for this)."
+    "    the limit. The usage page itself was not read (browser, not needed for this).",
+    "2026-11-24 audit: still starved. synthesis-pass.log (00:45 today) shows \"[3/2633] quota wall, aborting pass: You have hit your weekly limit\", synthesized 0 and deferred 591; tick still runs --producer claude --workers 3. Lane guard ed304ab (stop at 80% of fullest window) is in atrium history; skip-finished perf (bc602ca) cut the deferred backlog from 14063 to 591. Ollama lane retired (atrium-drip plist .retired). Left: owner decision, another synthesis lane or accept near-zero synthesis on weeks Favish work uses the limit. Evidence: ~/p/wiki/atrium/synthesis/synthesis-pass.log, synthesis.log, launchd com.cristian.atrium-synthesis."
   ]
 }

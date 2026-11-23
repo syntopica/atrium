@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-a4d68168-c68c-4f89-b6da-ec95e8d2908d",
-  "title": "Synthesis coverage and quality",
+  "title": "Re-measure synthesis coverage and faithfulness on the Claude Code lane; the 2026-10 lane/model notes predate the 2026-11-05 lane switch",
   "state": "pending",
   "category": "synthesis",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "chore",
+  "priority": "low",
+  "kind": "task",
   "notes": [
     "Built 2026-08-28 (`6263938`); the lane question is",
     "",
@@ -160,6 +161,7 @@
     "    claim, both about the episode's outcome on the two longest transcripts (a review",
     "    said to end without a verdict that ended \"fix first\"; a refactor said to end",
     "    failing that ended green). 2/9 against qwen's 3/8; too few to call better.",
-    "    Report: `~/p/wiki/atrium/evaluations/flash-spotcheck-2026-10-17.md`."
+    "    Report: `~/p/wiki/atrium/evaluations/flash-spotcheck-2026-10-17.md`.",
+    "2026-11-24 audit: partial. Landed: short fact-bound summary prompt (2026-10-16), executor-label fix, daily_key_cap, OpenJev not wired, machine-job skip (3744a9d 2026-10-17). Since then the producer lane changed: 68266f0 (2026-11-05) adds a Claude Code CLI lane, ed304ab stops it at 80% of the usage window, 28e9651/8e5891b redact records, bc602ca/5f51600 cut input cost; todo commit 4f238ac records that no local model runs for synthesis, so the qwen3.6/gpt-oss/OpenRouter lane comparisons are moot. Eval dir faithfulness-cite-2026-11-06 exists under ~/p/wiki/atrium/evaluations. Left: coverage (60.3% on 2026-10-10) and the 2026-10-17 flash spot-check are stale; re-run atrium status coverage and a 10-record faithfulness spot-check on current Claude-lane records, then close or drop the lane levers. Not verified: current coverage number (atrium status printed nothing cheap)."
   ]
 }

@@ -1,11 +1,12 @@
 {
   "tadu": 2,
   "id": "t-14d56d99-44e1-4e2d-ba8f-b5c491d363b6",
-  "title": "The archive's shape will not scale",
+  "title": "Atrium side of archive v2: persist a per-writer cursor so ingest reads only the scribe pending slice; cutover still waits on scribe stage 3",
   "state": "in_progress",
   "category": "ingest-store",
-  "type": "untriaged",
-  "priority": "untriaged",
+  "type": "feature",
+  "priority": "normal",
+  "kind": "task",
   "notes": [
     "Specification agreed 2026-08-31",
     "",
@@ -31,6 +32,7 @@
     "capture; measured on 25,000 synthetic artifacts a warm no-op takes 1.91 s against the v1",
     "baseline of 226.91 s). Stage 3 remains: transport, erasure, the pending slice handed to",
     "`atrium ingest --partial`, and cutover. It moves with the capture code to",
-    "`syntopica/scribe` (owner decision 2026-10-11)."
+    "`syntopica/scribe` (owner decision 2026-10-11).",
+    "2026-11-24 audit: PARTIAL. Verified: writer is scribe (stage 2 landed 8cc2849; erase/receive/export-pending/ack-pending landed, remaining there: freeze sentinel, recovery drill, live cutover; scribe task t-298e8055 still in_progress). Atrium already has `ingest --partial` (atrium/cli_parser/add_ingest_parser.py, run_ingest.py), generation recording (atrium/doctor/archive_generation_freshness.py), and a pending-slice + erasure-plan contract test (tests/test_scribe_segment_contract.py, fixtures from scribe 1136f5b). No per-writer cursor code found (grep cursor in run_ingest.py/store: none). Left: add the disposable per-writer cursor driving incremental ingest from export-pending/ack-pending, then live cutover after scribe parity checks. Next: read tests/test_scribe_segment_contract.py to see whether ack-pending already acts as the cursor; if so close, else implement."
   ]
 }

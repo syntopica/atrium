@@ -1,10 +1,14 @@
 {
   "tadu": 2,
   "id": "t-b15d2231-83b6-49cf-aa87-d9f54de953fa",
-  "title": "Windsurf and Trae remain unindexable at layer 1, and not for an exporter",
+  "title": "Windsurf and Trae dialogue cannot be exported: Trae store is encrypted at rest, Windsurf history is server-side only",
   "state": "blocked",
   "category": "integrations",
-  "type": "untriaged",
-  "priority": "untriaged",
-  "blocker": "bug: agents' `TODO_LOG.md` (2026-08-31) found Trae's dialogue store encrypted at rest and Windsurf's Cascade history server-side only; the bogus Trae records (VS Code picker state) were fixed the same day. Tracked in `~/p/scribe/TODO.md` (git-ignored there, so local to this Mac). **Blocked on:** decrypting Trae's store, and a server-side export for Windsurf if one exists."
+  "type": "feature",
+  "priority": "low",
+  "kind": "waiting",
+  "blocker": "bug: agents' `TODO_LOG.md` (2026-08-31) found Trae's dialogue store encrypted at rest and Windsurf's Cascade history server-side only; the bogus Trae records (VS Code picker state) were fixed the same day. Tracked in `~/p/scribe/TODO.md` (git-ignored there, so local to this Mac). **Blocked on:** decrypting Trae's store, and a server-side export for Windsurf if one exists.",
+  "notes": [
+    "2026-11-24 audit: still blocked, no unblocker found. Duplicate of the scribe task t-3a76c389 (scribe todo/open, same blocker; the real exporter lives in scribe). Scribe docs/research/conversation-capability-map.md still lists Trae/Windsurf SQLite adapters yet they yield zero conversations. Left: decrypt Trae ModularData/ai-agent/database.db and find a Windsurf server-side export; neither exists. Smallest next step: close this as duplicate of the scribe task (the atrium side needs nothing) or leave to owner. Evidence: grep of atrium repo shows only archive-revision comment mentioning trae; atrium todo t-e0763202 tracks archive completeness."
+  ]
 }

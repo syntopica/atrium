@@ -2,7 +2,7 @@
   "tadu": 2,
   "id": "t-d81e5a5c-3a39-46b6-833e-f84843be07b2",
   "title": "Refuse or shorten a context socket path longer than the AF_UNIX limit instead of crash-looping serve-context",
-  "state": "pending",
+  "state": "done",
   "category": "general",
   "type": "bug",
   "priority": "normal",
@@ -13,5 +13,10 @@
   ],
   "done_when": [
     "serve-context either binds through a short path or exits with one clear message, and atrium doctor reports the cause"
+  ],
+  "closed": "2026-11-23",
+  "result": "Refuse or shorten a context socket path longer than the AF_UNIX limit instead of crash-looping serve-context",
+  "evidence": [
+    "context_socket_path falls back to ~/.cache/atrium/<state digest>.sock when <state>/context.sock exceeds 103 bytes; tests/test_context_socket_path.py binds the fallback for a 120-character state path. pytest 870 passed, ruff clean, mypy atrium clean."
   ]
 }

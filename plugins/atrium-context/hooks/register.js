@@ -17,6 +17,7 @@ import { PROGRESS_DOTS } from './progress-dots.js'
 import { PULSE_MS } from './pulse-ms.js'
 import { renderEvidence } from './render-evidence.js'
 import { retrievalNotice } from './retrieval-notice.js'
+import { NOT_A_PROJECT } from './not-a-project.js'
 import { readAnswer } from './read-answer.js'
 import { retrievalArgv } from './retrieval-argv.js'
 import { retrievalDetails } from './retrieval-details.js'
@@ -170,7 +171,7 @@ export function register(on) {
     } finally {
       await stop()
     }
-    // Not a project: nothing applies to this directory, healthy or not.
+    // Refused even without a scope: nothing applies, healthy or not.
     if (answer === null) {
       $.ui.status(undefined)
       await $.state.set(SUMMARY, null).catch(() => {})
@@ -296,12 +297,24 @@ export function register(on) {
 // short pause when it fails, since a saturated machine often answers the second
 // run; throws the last failure. Keeps the instance it served from, which is how
 // a file read is recognised as a note.
+//
+// A directory that names no project (the home directory, a folder outside any
+// repository) is asked again without a scope, over all history and the notes.
+// It used to get nothing: a session opened in `~` ran every prompt without
+// atrium and showed no line, which read as the mod not being installed
+// (2026-11-24). The refusal comes back in about 0.1 s, so the second run is
+// not a retry and waits for nothing.
 async function retrieve($, text, onRetry = () => {}) {
   const cwd = await $.session.cwd()
+  let scope = cwd
   let answer
   for (let attempt = 1; ; attempt += 1) {
     try {
-      const run = await $.process.run(retrievalArgv(text, cwd), { cwd, timeoutMs: RETRIEVAL_TIMEOUT_MS })
+      let run = await $.process.run(retrievalArgv(text, scope), { cwd, timeoutMs: RETRIEVAL_TIMEOUT_MS })
+      if (scope && run.exitCode === NOT_A_PROJECT) {
+        scope = null
+        run = await $.process.run(retrievalArgv(text, scope), { cwd, timeoutMs: RETRIEVAL_TIMEOUT_MS })
+      }
       answer = readAnswer(run)
       break
     } catch (error) {

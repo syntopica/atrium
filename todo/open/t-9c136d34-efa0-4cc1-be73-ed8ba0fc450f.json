@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-9c136d34-efa0-4cc1-be73-ed8ba0fc450f",
+  "title": "Plugin test 'counts lookups that finish together, and drops one from a finished turn' fails on main",
+  "state": "pending",
+  "category": "plugins",
+  "type": "bug",
+  "priority": "low",
+  "kind": "task",
+  "created": "2026-11-24",
+  "created_by": "agent:claude",
+  "notes": [
+    "Office Mac, Claude Code 2.1.331, 2026-11-24, at cc28441 before any change: claude plugin test plugins/atrium-context reports 39 pass, 1 fail, three runs out of three. Expected 'Atrium · 1 past session, 1 note', received 'Atrium · 1 past session, 1 note · brain: 1 read, 1 lookup'."
+  ],
+  "done_when": [
+    "claude plugin test plugins/atrium-context passes entirely, or the test states what it now expects"
+  ]
+}

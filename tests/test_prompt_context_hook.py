@@ -88,17 +88,44 @@ def test_a_read_index_with_no_match_stays_silent(tmp_path: Path) -> None:
     assert _answering(tmp_path, {"index_status": "ready", "evidence": []}) == ""
 
 
-def test_a_session_outside_any_project_is_not_told_retrieval_failed(tmp_path: Path) -> None:
-    """`atrium context` refuses a scope outside a repository; that is no failure."""
+def test_a_session_outside_any_project_retrieves_over_all_history(tmp_path: Path) -> None:
+    """Outside a repository the hook asks without a scope instead of asking nothing."""
+    body = {
+        "index_status": "ready",
+        "evidence": [{"trust": "curated", "note_path": "brain/topics/a.md", "text": "A note."}],
+    }
     fake = tmp_path / "atrium"
-    fake.write_text("#!/bin/sh\nexit 2\n")
+    fake.write_text(
+        f"#!/bin/sh\nprintf '%s\\n' \"$@\" >'{tmp_path}/argv'\n"
+        f"cat <<'EOF'\n{json.dumps(body)}\nEOF\n"
+    )
     fake.chmod(0o755)
     out = _run(
         {"prompt": "a prompt long enough to reach retrieval", "cwd": str(tmp_path)},
         {},
         tmp_path,
     )
-    assert out == ""
+    argv = (tmp_path / "argv").read_text().splitlines()
+    assert argv[:2] == ["context", "a prompt long enough to reach retrieval"]
+    assert "--project" not in argv
+    assert "brain/topics/a.md" in json.loads(out)["hookSpecificOutput"]["additionalContext"]
+
+
+def test_a_session_inside_a_project_keeps_its_scope(tmp_path: Path) -> None:
+    (tmp_path / ".git").mkdir()
+    fake = tmp_path / "atrium"
+    fake.write_text(
+        f"#!/bin/sh\nprintf '%s\\n' \"$@\" >'{tmp_path}/argv'\n"
+        'echo \'{"index_status": "ready", "evidence": []}\'\n'
+    )
+    fake.chmod(0o755)
+    _run(
+        {"prompt": "a prompt long enough to reach retrieval", "cwd": str(tmp_path)},
+        {},
+        tmp_path,
+    )
+    argv = (tmp_path / "argv").read_text().splitlines()
+    assert argv[argv.index("--project") + 1] == str(tmp_path)
 
 
 def test_a_healthy_retrieval_shows_the_person_no_warning(tmp_path: Path) -> None:

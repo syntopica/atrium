@@ -1,13 +1,11 @@
+import { NOT_A_PROJECT } from './not-a-project.js'
 import { runFailure } from './run-failure.js'
 
-// `atrium context --project` exits 2 when the directory names no project, such
-// as a session opened in the home directory. That is a refusal, not a failure.
-const NOT_A_PROJECT = 2
 // The index statuses that mean the index was read: anything else is a failure.
 const ANSWERED = ['ready', 'empty']
 
 // Reads one `atrium context` run. Returns the parsed answer, or null when the
-// directory is not a project; throws on any other failure.
+// scope it asked for names no project; throws on any other failure.
 export function readAnswer(run) {
   if (run.exitCode === NOT_A_PROJECT) return null
   if (run.exitCode !== 0) throw new Error(runFailure(run))

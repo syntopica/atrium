@@ -1,0 +1,23 @@
+{
+  "tadu": 2,
+  "id": "t-93d611e4-91e4-42fa-8645-32e595e04b93",
+  "title": "The prompt context retrieves over all history when the session directory names no project",
+  "state": "done",
+  "category": "hooks",
+  "type": "feature",
+  "priority": "normal",
+  "kind": "task",
+  "created": "2026-11-24",
+  "created_by": "agent:claude",
+  "notes": [
+    "Owner request, 2026-11-24: atrium should work anywhere. A session opened in the home directory or outside any repository got no context and no footer line, which read as the mod not being installed (office Mac)."
+  ],
+  "done_when": [
+    "The atrium-context mod and the shell prompt hook ask atrium context without --project when the directory names no project, with tests"
+  ],
+  "closed": "2026-11-24",
+  "result": "The prompt context retrieves over all history when the session directory names no project",
+  "evidence": [
+    "plugins/atrium-context 0.14.0: retrieve() asks again without --project on exit 2 (tests 'retrieves over all history outside a project', 'stays silent when even an unscoped retrieval is refused'); plugins/atrium-codex/hooks/user_prompt_context.py omits --project outside a project (tests/test_prompt_context_hook.py). claude plugin test: 40 pass, 1 fail that also fails on main; pytest 879 passed"
+  ]
+}

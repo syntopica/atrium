@@ -44,8 +44,9 @@ def _in_project(cwd: str) -> bool:
     """Whether ``cwd`` names a project, the way `atrium context --project` decides.
 
     Outside a repository, or at the home directory itself, `atrium context`
-    refuses the scope and exits 2. That is not a retrieval failure, so it must
-    not raise the failure notice on every prompt of a session opened in `~`.
+    refuses the scope and exits 2. Such a session is asked without a scope
+    instead, over all history and the notes: it used to get nothing at all, so
+    a session opened in `~` ran every prompt without atrium (2026-11-24).
     """
     home = Path.home().resolve()
     try:
@@ -138,11 +139,7 @@ def main() -> int:
         return 0
     prompt = payload.get("prompt") or ""
     cwd = payload.get("cwd")
-    if (
-        os.environ.get("ATRIUM_PROMPT_CONTEXT") == "off"
-        or _skip(prompt)
-        or (cwd and not _in_project(cwd))
-    ):
+    if os.environ.get("ATRIUM_PROMPT_CONTEXT") == "off" or _skip(prompt):
         return 0
     command = [
         "atrium",
@@ -155,7 +152,7 @@ def main() -> int:
         "--max-chars",
         os.environ.get("ATRIUM_PROMPT_CONTEXT_CHARS", "1400"),
     ]
-    if cwd:
+    if cwd and _in_project(cwd):
         command += ["--project", cwd]
     try:
         result = json.loads(_retrieved(command))

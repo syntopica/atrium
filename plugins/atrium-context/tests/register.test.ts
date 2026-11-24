@@ -122,10 +122,37 @@ test('adds nothing when nothing matched', async ($, on) => {
   expect(await footer($)).toBe('Atrium · nothing relevant')
 })
 
-test('stays silent outside a project', async ($, on) => {
+test('retrieves over all history outside a project', async ($, on) => {
+  const seen: any = {}
+  const argvs: string[][] = []
+  const runs = [
+    { value: { exitCode: 2, stdout: '', stderr: 'not a project' } },
+    { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } },
+  ]
+  stubs(
+    on,
+    () => {
+      argvs.push(seen.argv)
+      return runs.shift()
+    },
+    seen,
+  )
+  await $.prompt.submit({ text: PROMPT })
+  expect(argvs[0]).toContain('--project')
+  expect(argvs[1]).not.toContain('--project')
+  expect(argvs[1].slice(0, 3)).toEqual(['atrium', 'context', PROMPT])
+  // The refusal is not a failure: no pause, no retry, no warning.
+  expect(seen.sleeps).toBeUndefined()
+  expect(await warning($)).toBeUndefined()
+  expect(await footer($)).toBe('Atrium · 1 past session, 1 note')
+  expect(seen.context[0]).toContain('# atrium context (retrieved for this prompt)')
+})
+
+test('stays silent when even an unscoped retrieval is refused', async ($, on) => {
   const seen: any = {}
   stubs(on, { value: { exitCode: 2, stdout: '', stderr: 'not a project' } }, seen)
   await $.prompt.submit({ text: PROMPT })
+  expect(seen.runs).toBe(2)
   expect(seen.context ?? []).toEqual([])
   expect(seen.status).toBeUndefined()
 })
@@ -288,10 +315,11 @@ test('a skipped prompt after a healthy one takes the green line down', async ($,
   expect(await footer($)).toBeUndefined()
 })
 
-test('leaving a project after a healthy prompt takes the green line down', async ($, on) => {
+test('a prompt refused even without a scope takes the green line down', async ($, on) => {
   const seen: any = {}
   const runs = [
     { value: { exitCode: 0, stdout: JSON.stringify(ANSWER), stderr: '' } },
+    { value: { exitCode: 2, stdout: '', stderr: 'not a project' } },
     { value: { exitCode: 2, stdout: '', stderr: 'not a project' } },
   ]
   on('ui.render', engineFooter)

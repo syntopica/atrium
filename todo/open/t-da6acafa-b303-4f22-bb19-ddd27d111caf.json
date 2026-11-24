@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-da6acafa-b303-4f22-bb19-ddd27d111caf",
+  "title": "Make atrium-refresh index every brain.pages directory, shared brains included, and fast-forward mounted shared repositories first",
+  "state": "pending",
+  "category": "general",
+  "type": "task",
+  "priority": "high",
+  "kind": "task",
+  "created": "2026-11-24",
+  "created_by": "agent:claude",
+  "notes": [
+    "bin/atrium-refresh runs ingest-notes only on $SYNTOPICA_DATA/pages, so a shared brain cloned at shared/vibra (Vibra-Lab/brain-vibra, listed in brain.pages of the office instance since 2026-11-24) is never re-indexed after a pull.",
+    "ingest-notes on the wiki root rejects the clone as git-ignored (12 files rejected on the office Mac); it must be run on the clone itself, with a provider of its own so the per-provider sweep does not remove the instance's notes. The office Mac and the MBP dotfiles refresh (dotfiles 21cc5d2) both carry a local loop for this.",
+    "The clone's README.md is indexed as a note today; only files under the configured page directories should be."
+  ],
+  "done_when": [
+    "After git pull in a mounted shared brain, the next scheduled refresh indexes the changed page with no manual command, on an instance set up only by the hub."
+  ]
+}

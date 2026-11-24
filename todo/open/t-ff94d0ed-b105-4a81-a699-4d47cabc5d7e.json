@@ -1,0 +1,14 @@
+{
+  "tadu": 2,
+  "id": "t-ff94d0ed-b105-4a81-a699-4d47cabc5d7e",
+  "title": "Purge the Favish MongoDB Atlas credentials (zh-talk-prod, zh-talk-dev, talkprod) from the conversation archive, segments, index and source transcripts on this Mac",
+  "state": "pending",
+  "category": "security",
+  "type": "security",
+  "priority": "high",
+  "kind": "task",
+  "created": "2026-11-24",
+  "notes": [
+    "2026-11-24 owner decision: these clusters belong to Favish; nothing at Favish may be touched or rotated, only remove the credentials from this computer. Inventory with passwords masked: 50 lines in conversations/archive.jsonl and 73 segment files across two generations, three user/host pairs. Use the supported scribe erase or rewrite --redact path and atrium erase, never a direct edit; scribe secret redaction must first learn non-HTTP URL passwords. Also pending: the Mac mini copy, the import backups under ~/.cache/atrium/archive-backups, provider transcripts that would be re-imported."
+  ]
+}

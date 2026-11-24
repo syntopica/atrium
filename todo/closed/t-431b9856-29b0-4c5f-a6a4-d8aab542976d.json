@@ -2,7 +2,7 @@
   "tadu": 2,
   "id": "t-431b9856-29b0-4c5f-a6a4-d8aab542976d",
   "title": "Owner decides whether to rotate credentials that context replies exposed before the URL-password fix (resident service on this Mac reloaded; Mac mini pending)",
-  "state": "pending",
+  "state": "done",
   "category": "measurement",
   "type": "security",
   "priority": "high",
@@ -12,5 +12,10 @@
     "2026-11-24 audit: source fixes verified present (redaction commits incl. 1d4eefe qualified table labels, 28e9651 synthesis records; tests test_is_secret_table_label.py, test_markdown_secret_boundary.py, test_synthesis_records_redaction.py exist); resident service com.cristian.atrium-context running (launchctl pid 1546). Not verified: no synthetic runtime acceptance exists (no sentinel test against the live service/MCP/CLI output), and the 2026-11-05 probe was the last live check. Owner-authorized rotation of the exposed credentials has no separate task (notes claim one; tadu list --kind decision finds none). Left: (1) run a synthetic-sentinel probe against the live service on all serialization surfaces, (2) add a decision task for rotation, then close.",
     "2026-11-24: c43e2e6. Resident path shares render_hit redaction with the one-shot path (atrium/context/render_hit.py:16). Real leak found and fixed: the URL rule matched only http(s), so postgres/mysql/redis/smtp URL passwords came back in clear. tests/test_resident_service_redaction.py drives a real ContextServer on a temp socket; fails with the old pattern. The running service keeps the old code until it is reloaded.",
     "2026-11-24: owner approved the reload. dotfiles bin/atrium/atrium-release moved ~/.local/share/atrium/release from d7a84bc to 1eefc9f; launchctl kickstart -k gui/501/com.cristian.atrium-context exit 0; atrium context answered served_by=service degraded=False on the first try; the release code redacts postgres://user:pass@host to postgres://[REDACTED:credentials]@host. The job label is com.cristian.atrium-context, not dev.syntopica.atrium-context. Not done: the Mac mini service, and already-indexed text is not re-redacted."
+  ],
+  "closed": "2026-11-24",
+  "result": "Owner decides whether to rotate credentials that context replies exposed before the URL-password fix (resident service on this Mac reloaded; Mac mini pending)",
+  "evidence": [
+    "Owner decided 2026-11-24: rotate every exposed non-Favish credential (tracked in the ~/p backlog: Supabase projects, local database users on nova) and purge the Favish MongoDB credentials from this Mac without touching Favish (tracked here). Inventory taken with passwords masked."
   ]
 }

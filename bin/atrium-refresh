@@ -25,6 +25,9 @@ archive="$SYNTOPICA_DATA/conversations/archive.jsonl"
 state="$SYNTOPICA_DATA/atrium"
 slice="$state/slice.jsonl"
 stamp="$state/last-refresh"
+# Optional: keep the import's full-archive backup out of the synced tree.
+# Unset, scribe writes and prunes it beside the archive, as before.
+backup_dir="${ATRIUM_ARCHIVE_BACKUP_DIR:-}"
 # A session end asks for a run every time; a full pass costs minutes.
 min_interval="${MIN_INTERVAL:-900}"
 
@@ -51,12 +54,18 @@ log "refresh start"
 log "stage export"
 (cd "$scribe" && pnpm conversations:export --output "$slice" --force --allow-partial)
 log "stage import"
-(cd "$scribe" && pnpm conversations:import --input "$slice" --archive "$archive" --apply)
-rm -f "$slice"
-# Each import leaves a full copy of the archive beside it; keep the newest.
-ls -1t "$archive".backup-* 2>/dev/null | tail -n +2 | while read -r stale; do
-  rm -f "$stale"
-done
+if [ -n "$backup_dir" ]; then
+  # scribe prunes older backups in that directory itself.
+  (cd "$scribe" && pnpm conversations:import --input "$slice" --archive "$archive" --apply --backup-dir "$backup_dir")
+  rm -f "$slice"
+else
+  (cd "$scribe" && pnpm conversations:import --input "$slice" --archive "$archive" --apply)
+  rm -f "$slice"
+  # Each import leaves a full copy of the archive beside it; keep the newest.
+  ls -1t "$archive".backup-* 2>/dev/null | tail -n +2 | while read -r stale; do
+    rm -f "$stale"
+  done
+fi
 
 log "stage ingest"
 "$atrium" ingest "$archive"

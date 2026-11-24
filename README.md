@@ -328,6 +328,17 @@ It requires project history, a workspace-less access note and its linked runbook
 appear together, preserves provenance, checks the text budget, and rejects unrelated
 history and third-party instructions. It uses synthetic data, never a private wiki.
 
+## Moving the import backup out of a synced tree
+
+Each refresh import copies the whole conversation archive (gigabytes) to
+`archive.jsonl.backup-<stamp>` before replacing it, beside the archive by
+default. To keep that copy elsewhere, for example outside a folder a backup
+service uploads, set `ATRIUM_ARCHIVE_BACKUP_DIR` to an absolute directory in
+the environment of `bin/atrium-refresh` (the launchd job `syntopica schedule`
+installs, or your own scheduler). Scribe creates it if missing, writes the
+backup there and prunes older `archive.jsonl.backup-<stamp>` files in that
+directory only. Unset, nothing changes.
+
 ## Where state lives
 
 Everything Atrium can rebuild -- the index, the synthesis registry, the refresh

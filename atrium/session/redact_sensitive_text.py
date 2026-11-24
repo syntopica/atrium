@@ -19,7 +19,7 @@ _TOKEN_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     (re.compile(r"\bsk-[A-Za-z0-9_-]{20,}\b"), "[REDACTED:token]"),
     (re.compile(r"\bxox[baprs]-[A-Za-z0-9-]{10,}\b"), "[REDACTED:token]"),
     (
-        re.compile(r"(https?://)(?!\[REDACTED:)[^\s@]+@", re.IGNORECASE),
+        re.compile(r"\b([a-z][a-z0-9+.-]*://)(?!\[REDACTED:)[^\s@]+@", re.IGNORECASE),
         r"\g<1>[REDACTED:credentials]@",
     ),
 ]

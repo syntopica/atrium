@@ -33,3 +33,11 @@ def test_tokens_and_url_credentials_are_redacted():
 def test_ordinary_prose_is_untouched():
     text = "The password rotation policy was decided on 2026-09-16; see docs/auth.md."
     assert redact_sensitive_text(text) == text
+
+
+def test_a_database_url_password_is_redacted() -> None:
+    secret = "pw" + "x9Zq7Lm2Kd"
+    for scheme in ("postgres", "mysql", "redis", "smtp", "mongodb+srv"):
+        out = redact_sensitive_text(f"{scheme}://admin:{secret}@db.invalid/app")
+        assert secret not in out
+        assert f"{scheme}://[REDACTED:credentials]@db.invalid/app" in out

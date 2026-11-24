@@ -1,16 +1,17 @@
 {
   "tadu": 2,
   "id": "t-0b2d886a-5bda-439a-b6c2-0560386672a6",
-  "title": "Write the conversation archive backup outside the synced tree (scribe backupConversationArchive and prune take a backup directory)",
+  "title": "Set ATRIUM_ARCHIVE_BACKUP_DIR for the live refresh job so the archive backup leaves the synced tree, then drop the Backblaze exclusion rule",
   "state": "pending",
   "category": "general",
   "type": "feature",
   "priority": "normal",
-  "kind": "task",
+  "kind": "decision",
   "created": "2026-11-23",
   "notes": [
     "Observation: scribe backupConversationArchive (scribe/scripts/lib/conversations/backupConversationArchive.ts) writes a full 8-10 GiB clone as archive.jsonl.backup-<stamp> beside archive.jsonl, hardcoded via dirname(archive); no directory option. Backblaze re-uploaded each copy; excluded by hand-edited rule 033 on 2026-11-23 (dotfiles/backblaze/README.md). Smallest next step: add an env/option for the backup directory (default ~/.cache/atrium/archive-backups, already excluded) in scribe, update pruneConversationArchiveBackups to look there, and drop rule 033 once moved.",
-    "2026-11-24 audit: not done. scribe/scripts/lib/conversations/backupConversationArchive.ts still writes join(dirname(archive), basename+\".backup-<stamp>\") with no directory option; pruneConversationArchiveBackups.ts still scans dirname(archive); no ARCHIVE_BACKUP/archive-backups reference in scribe/scripts. Last touch: 35d800b (APFS clone). Next: add optional backup dir (env or arg, default ~/.cache/atrium/archive-backups) to both files, then drop Backblaze rule 033 in dotfiles/backblaze."
+    "2026-11-24 audit: not done. scribe/scripts/lib/conversations/backupConversationArchive.ts still writes join(dirname(archive), basename+\".backup-<stamp>\") with no directory option; pruneConversationArchiveBackups.ts still scans dirname(archive); no ARCHIVE_BACKUP/archive-backups reference in scribe/scripts. Last touch: 35d800b (APFS clone). Next: add optional backup dir (env or arg, default ~/.cache/atrium/archive-backups) to both files, then drop Backblaze rule 033 in dotfiles/backblaze.",
+    "2026-11-24: code landed (scribe 7f997bf --backup-dir, atrium 828c26e reads ATRIUM_ARCHIVE_BACKUP_DIR in bin/atrium-refresh). Nothing sets the variable yet: the owner picks the directory; the launchd plist comes from syntopica schedule. Backups already beside the archive are not removed by the switch."
   ],
   "done_when": [
     "backup copies are written under ~/.cache/atrium and prune finds them"

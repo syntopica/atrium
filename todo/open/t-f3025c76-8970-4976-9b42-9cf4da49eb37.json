@@ -1,0 +1,20 @@
+{
+  "tadu": 2,
+  "id": "t-f3025c76-8970-4976-9b42-9cf4da49eb37",
+  "title": "Give an installed atrium a default instance that does not depend on the caller environment",
+  "state": "pending",
+  "category": "install",
+  "type": "bug",
+  "priority": "normal",
+  "kind": "task",
+  "created": "2026-11-24",
+  "created_by": "agent:claude",
+  "notes": [
+    "Office Mac, 2026-11-24: ~/.local/bin/atrium was a wrapper exporting SYNTOPICA_DATA=~/wiki. uv tool upgrade atrium (run by RocketUpdater) replaced it with the uv entry point. From then on every caller without the variable failed: the atrium-context plugin runs atrium context with the Claude Code process environment and got exit 1 in a repository (index not found), shown as Retrieval failed or timed out twice; atrium record-session answered no pending checkpoint. With SYNTOPICA_DATA set the same commands answer in about 1 s.",
+    "Worked around on that Mac with SYNTOPICA_DATA in ~/.zshenv and in the env block of ~/.claude/settings.json. The MCP server, the Stop hook and the LaunchAgents already carried the variable; the plugin, the SessionStart recall hook and the SessionEnd refresh hook did not.",
+    "Also misleading: record-session exits 3 with no pending checkpoint when the real cause is that no instance was resolved."
+  ],
+  "done_when": [
+    "A machine installed per the documented steps keeps answering atrium context and record-session after uv tool upgrade atrium with no SYNTOPICA_DATA in the caller environment, or the install step that sets the variable for every caller is documented and checked by doctor"
+  ]
+}

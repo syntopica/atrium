@@ -9,6 +9,7 @@ from atrium.ingest.canonical_workspace import canonical_workspace
 from atrium.ingest.conversation_hosts import conversation_hosts
 from atrium.ingest.is_machine_prompt import is_machine_prompt
 from atrium.ingest.record_identity import record_identity
+from atrium.ingest.strip_system_reminders import strip_system_reminders
 from atrium.ingest.tool_round import ToolRound
 from atrium.ingest.workspace_alias import WorkspaceAlias
 from atrium.record import Record
@@ -69,7 +70,7 @@ def to_records(
     counts = tally if tally is not None else AdmissionTally()
 
     for index, event in enumerate(conversation.get("events") or []):
-        text = (event.get("text") or "").strip()
+        text = strip_system_reminders(event.get("role"), (event.get("text") or "").strip())
         tool_rule = tool_round.classify(event.get("role"), event.get("kind"), text)
         if tool_rule:
             counts.reject(tool_rule)

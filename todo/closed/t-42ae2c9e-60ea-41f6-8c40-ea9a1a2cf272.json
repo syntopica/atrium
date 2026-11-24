@@ -2,7 +2,7 @@
   "tadu": 2,
   "id": "t-42ae2c9e-60ea-41f6-8c40-ea9a1a2cf272",
   "title": "README Usage names engines/agents; change to engines/scribe to match syntopica AGENTS.md",
-  "state": "pending",
+  "state": "done",
   "category": "general",
   "type": "docs",
   "priority": "low",
@@ -15,5 +15,10 @@
   ],
   "done_when": [
     "README and AGENTS.md name the same engine and path"
+  ],
+  "closed": "2026-11-24",
+  "result": "README Usage names engines/agents; change to engines/scribe to match syntopica AGENTS.md",
+  "evidence": [
+    "README Usage now names engines/scribe; grep for engines/agents outside todo/ finds nothing."
   ]
 }

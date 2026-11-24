@@ -8,7 +8,7 @@ from atrium.ingest.machine_job_prefixes import MACHINE_JOB_PREFIXES
 # carried 69.5% of the role's text (the security-review template alone 39%, the
 # Vexa classifier 11.5%), against 7.9% for human-sized prompts. `<system-reminder>`
 # is left out: 194 of its 236 messages carry text after the tag, which may be the
-# person's own prompt. A compaction summary ("This session is being continued")
+# person's own prompt, so strip_system_reminders removes the blocks instead. A compaction summary ("This session is being continued")
 # is left out too: it is machine-written but restates real work.
 MACHINE_PROMPT_PREFIXES = (
     "<recommended_plugins> Here is a list of plugins that are available but not installed.",

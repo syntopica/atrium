@@ -2,7 +2,7 @@
   "tadu": 2,
   "id": "t-fcfb094b-530c-4a1e-abb8-1cba3c554bd1",
   "title": "Strip harness <system-reminder> blocks from Claude Code user turns at ingest, keeping any person text after the tag; add fixture",
-  "state": "pending",
+  "state": "done",
   "category": "ingest",
   "type": "bug",
   "priority": "normal",
@@ -15,5 +15,10 @@
   ],
   "done_when": [
     "Ingest drops or strips system-reminder content from user turns; a fixture covers it"
+  ],
+  "closed": "2026-11-24",
+  "result": "Strip harness <system-reminder> blocks from Claude Code user turns at ingest, keeping any person text after the tag; add fixture",
+  "evidence": [
+    "strip_system_reminders removes closed system-reminder blocks from user turns in to_records before admission; a reminder-only turn yields no record. tests/test_system_reminder_stripping.py failed first (4 of 6) and passes; 'uv run pytest tests/test_system_reminder_stripping.py tests/test_ingest.py -q' 19 passed; ruff and mypy clean. Records already indexed keep their text until re-ingest."
   ]
 }

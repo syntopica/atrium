@@ -40,7 +40,7 @@ deliberate step: it copies your agent transcripts into the instance.
 
 ```bash
 data="$PWD"
-(cd engines/agents && pnpm conversations:export \
+(cd engines/scribe && pnpm conversations:export \
   --output "$data/conversations/archive.jsonl" --source claude-code)
 uv run --project engines/atrium atrium ingest "$data/conversations/archive.jsonl"
 ```

@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-9128bb5e-83f4-4711-89e3-96d4e0cc8f86",
+  "title": "Make doctor and recall name a present migration freeze sentinel, with its age, as the cause of a stale refresh",
+  "state": "pending",
+  "category": "ops",
+  "type": "bug",
+  "priority": "high",
+  "kind": "task",
+  "created": "2026-11-27",
+  "notes": [
+    "2026-11-27: Atrium was stale for 3.4 days. Cause: ~/.local/state/rocket-agents/conversations/migration.freeze, written 2026-11-24 02:41 UTC by 'conversation-writers freeze --all-peers' inside a syntopica session command the owner interrupted (cp had failed, ';' let the freeze run). The session then reported that it had not frozen anything. Every hourly and session-end refresh logged 'frozen: ... refresh skipped'; doctor only said 'archive last written 293902s ago' and the recall banner only 'memory may be stale'. Fixed by 'conversation-writers unfreeze' and a kickstarted refresh.",
+    "Smallest next step: in the doctor refresh check (and the recall staleness warning), test the sentinel via conversation-writers-frozen and report 'frozen since <mtime>' instead of a bare age. Also consider having freeze remove the sentinel when it is interrupted before writers drain."
+  ],
+  "done_when": [
+    "atrium doctor prints the sentinel path and age when it exists, with a test"
+  ]
+}

@@ -165,3 +165,25 @@ def test_recall_stays_silent_when_fresh_and_empty(tmp_path, capsys):
     out = capsys.readouterr().out
     assert code == 0
     assert out == ""
+
+
+def test_status_names_a_present_freeze_sentinel(tmp_path, capsys, isolated_writer_state):
+    (isolated_writer_state / "migration.freeze").write_text("frozen\n")
+    index = _index(tmp_path, [_record("r1", "2026-08-01T00:00:00.000Z")])
+    main(
+        [
+            "--index",
+            str(index),
+            "status",
+            "--archive",
+            str(_fresh_archive(tmp_path)),
+            "--refresh-stamp",
+            str(_fresh_stamp(tmp_path)),
+            "--synthesis-registry",
+            str(tmp_path / "no-registry"),
+        ]
+    )
+    out = capsys.readouterr().out
+    assert "conversation writers frozen" in out
+    assert "migration.freeze" in out
+    assert "STALE" in out

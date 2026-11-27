@@ -35,7 +35,9 @@ def run_status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     from atrium.doctor.archive_freshness import archive_freshness
     from atrium.doctor.newest_content_gap import newest_content_gap
     from atrium.doctor.refresh_health import refresh_health
+    from atrium.doctor.writer_freeze import writer_freeze
     from atrium.recall.project_coverage import project_coverage
+    from atrium.state.freeze_sentinel_path import freeze_sentinel_path
     from atrium.status.indexed_synthesis_episodes import indexed_synthesis_episodes
     from atrium.status.publish_json_atomically import publish_json_atomically
     from atrium.status.refresh_status import refresh_status
@@ -49,6 +51,7 @@ def run_status(  # noqa: PLR0913 -- the CLI surface: each argument is one flag
     freshness = [
         archive_freshness(archive),
         refresh_health(stamp),
+        writer_freeze(freeze_sentinel_path()),
         newest_content_gap(connection),
     ]
     indexed_episodes = indexed_synthesis_episodes(connection)

@@ -16,6 +16,8 @@ from atrium.doctor.record_total_coherence import record_total_coherence
 from atrium.doctor.refresh_health import refresh_health
 from atrium.doctor.synthesis_coherence import synthesis_coherence
 from atrium.doctor.synthesis_event_membership import synthesis_event_membership
+from atrium.doctor.writer_freeze import writer_freeze
+from atrium.state.freeze_sentinel_path import freeze_sentinel_path
 from atrium.store.open_store import open_store
 
 
@@ -40,6 +42,8 @@ def run_doctor(
         prompt_retrieval_health(),
         archive_freshness(archive),
         refresh_health(stamp),
+        # Right after the refresh: a freeze is the usual reason it stopped.
+        writer_freeze(freeze_sentinel_path()),
     ]
     if inventory is not None:
         # Segment mode. The v1 file stopped being written at the cutover, so

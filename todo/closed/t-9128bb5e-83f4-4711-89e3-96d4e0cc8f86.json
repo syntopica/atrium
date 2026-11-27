@@ -2,7 +2,7 @@
   "tadu": 2,
   "id": "t-9128bb5e-83f4-4711-89e3-96d4e0cc8f86",
   "title": "Make doctor and recall name a present migration freeze sentinel, with its age, as the cause of a stale refresh",
-  "state": "pending",
+  "state": "done",
   "category": "ops",
   "type": "bug",
   "priority": "high",
@@ -14,5 +14,10 @@
   ],
   "done_when": [
     "atrium doctor prints the sentinel path and age when it exists, with a test"
+  ],
+  "closed": "2026-11-27",
+  "result": "Make doctor and recall name a present migration freeze sentinel, with its age, as the cause of a stale refresh",
+  "evidence": [
+    "atrium doctor and the recall banner now include a freeze check (atrium/doctor/writer_freeze.py, path from atrium/state/freeze_sentinel_path.py): ok when absent, warn naming the sentinel path and age, broken past 21600s. tests/test_writer_freeze.py covers absent, young, abandoned and the env/relative/empty path cases; codeality-py gate ruff/mypy/pytest pass."
   ]
 }

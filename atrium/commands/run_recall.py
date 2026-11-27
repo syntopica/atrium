@@ -21,9 +21,11 @@ def run_recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path) -
     """
     from atrium.doctor.archive_freshness import archive_freshness
     from atrium.doctor.refresh_health import refresh_health
+    from atrium.doctor.writer_freeze import writer_freeze
     from atrium.recall.project_workspace import project_workspace
     from atrium.recall.recent_episodes import recent_episodes
     from atrium.recall.render_snapshot import render_snapshot
+    from atrium.state.freeze_sentinel_path import freeze_sentinel_path
 
     if not index.exists():
         print(f"no index at {index}; run `atrium ingest` first", file=sys.stderr)
@@ -38,7 +40,11 @@ def run_recall(index: Path, cwd: Path, limit: int, archive: Path, stamp: Path) -
         connection.close()
     stale = [
         finding
-        for finding in (archive_freshness(archive), refresh_health(stamp))
+        for finding in (
+            archive_freshness(archive),
+            refresh_health(stamp),
+            writer_freeze(freeze_sentinel_path()),
+        )
         if finding.severity != "ok"
     ]
     if stale:

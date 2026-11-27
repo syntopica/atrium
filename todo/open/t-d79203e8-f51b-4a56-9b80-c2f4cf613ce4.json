@@ -1,0 +1,18 @@
+{
+  "tadu": 2,
+  "id": "t-d79203e8-f51b-4a56-9b80-c2f4cf613ce4",
+  "title": "Make a plain atrium doctor detect segment mode instead of checking the frozen v1 archive",
+  "state": "pending",
+  "category": "ops",
+  "type": "bug",
+  "priority": "normal",
+  "kind": "task",
+  "created": "2026-11-27",
+  "notes": [
+    "Observed 2026-11-27 14:29: plain `atrium doctor` ran the v1 checks (archive-schema, index-coverage, synthesis, synthesis-events) and FAILed synthesis-events with '3 conversations absent', while the refresh's own `doctor --publish --segment-inventory` at 14:26:57 reported all 8 checks ok (status/doctor.json).",
+    "Cause: run_doctor switches to segment mode only when the caller passes --segment-inventory; atrium-refresh decides that with dotfiles/bin/conversation-segment-mode and $STATE/segment-inventory.json. A person running doctor by hand gets the frozen-world comparison run_doctor's own docstring calls false drift, and the sampled FAIL comes and goes between runs (0 absent earlier the same day)."
+  ],
+  "done_when": [
+    "atrium doctor with no flags uses the segment inventory when segment mode is on, with a test, and prints the same checks as status/doctor.json"
+  ]
+}
